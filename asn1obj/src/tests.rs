@@ -1,7 +1,7 @@
 
 use crate::base::{Asn1Integer};
 use crate::{asn1obj_log_trace};
-use crate::logger::{asn1obj_debug_out};
+use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 use crate::asn1impl::{Asn1Op};
 
 

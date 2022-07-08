@@ -4,6 +4,7 @@ use std::io::{Write};
 use std::fs;
 //use std::io::prelude::*;
 use lazy_static::lazy_static;
+use chrono::{Local,Timelike,Datelike};
 
 
 
@@ -82,25 +83,30 @@ lazy_static! {
 
 pub (crate)  fn asn1obj_debug_out(level :i32, outs :String) {
 	if ASN1_OBJ_LOG_LEVEL.level >= level {
-		eprintln!("will out");
+		let c = format!("{}\n",outs);
 		if !ASN1_OBJ_LOG_LEVEL.nostderr {
-			eprintln!("{}", outs);
+			let _ = std::io::stderr().write_all(c.as_bytes());
 		}
 
 		if ASN1_OBJ_LOG_LEVEL.wfile.is_some() {
 			let mut wf = ASN1_OBJ_LOG_LEVEL.wfile.as_ref().unwrap();
-			let _ = wf.write(outs.as_bytes());
-			let _ = wf.write(b"\n");
+			let _ = wf.write(c.as_bytes());
 		}
 	}
 	return;
 }
 
 
+pub (crate) fn asn1obj_log_get_timestamp() -> String {
+	let now = Local::now();
+	return format!("{}/{}/{} {}:{}:{}",now.year(),now.month(),now.day(),now.hour(),now.minute(),now.second());
+}
+
+
 #[macro_export]
 macro_rules! asn1obj_log_error {
 	($($arg:tt)+) => {
-		let mut c :String= format!("[{}:{}] <ERROR> ",file!(),line!());
+		let mut c :String= format!("<ERROR>{}[{}:{}]  ",asn1obj_log_get_timestamp(),file!(),line!());
 		c.push_str(&(format!($($arg)+)[..]));
 		asn1obj_debug_out(0, c);
 	}
@@ -109,7 +115,7 @@ macro_rules! asn1obj_log_error {
 #[macro_export]
 macro_rules! asn1obj_log_warn {
 	($($arg:tt)+) => {
-		let mut c :String= format!("[{}:{}] <WARN> ",file!(),line!());
+		let mut c :String= format!("<WARN>{}[{}:{}]  ",asn1obj_log_get_timestamp(),file!(),line!());
 		c.push_str(&(format!($($arg)+)[..]));
 		asn1obj_debug_out(10, c);
 	}
@@ -119,7 +125,7 @@ macro_rules! asn1obj_log_warn {
 #[macro_export]
 macro_rules! asn1obj_log_info {
 	($($arg:tt)+) => {
-		let mut c :String= format!("[{}:{}] <INFO> ",file!(),line!());
+		let mut c :String= format!("<INFO>{}[{}:{}]  ",asn1obj_log_get_timestamp(),file!(),line!());
 		c.push_str(&(format!($($arg)+)[..]));
 		asn1obj_debug_out(20, c);
 	}
@@ -128,7 +134,7 @@ macro_rules! asn1obj_log_info {
 #[macro_export]
 macro_rules! asn1obj_log_trace {
 	($($arg:tt)+) => {
-		let mut _c :String= format!("[{}:{}] <TRACE> ",file!(),line!());
+		let mut _c :String= format!("<TRACE>{}[{}:{}]  ",asn1obj_log_get_timestamp(),file!(),line!());
 		_c.push_str(&(format!($($arg)+)[..]));
 		asn1obj_debug_out(40, _c);
 	}

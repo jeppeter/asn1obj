@@ -96,6 +96,7 @@ pub fn asn1obj_extract_header(code :&[u8]) -> Result<(u64,usize,usize),Box<dyn E
 	Ok((flag,llen,totallen))
 }
 
+#[derive(Clone)]
 pub struct Asn1Integer {
 	pub val :i64,
 	data :Vec<u8>,
