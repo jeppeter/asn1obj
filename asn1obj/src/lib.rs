@@ -8,3 +8,5 @@ pub mod strop;
 pub mod base;
 pub mod complex;
 
+#[cfg(test)]
+mod tests;

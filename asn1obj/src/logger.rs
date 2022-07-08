@@ -80,10 +80,11 @@ lazy_static! {
 }
 
 
-pub (crate)  fn asn1_debug_out(level :i32, outs :String) {
+pub (crate)  fn asn1obj_debug_out(level :i32, outs :String) {
 	if ASN1_OBJ_LOG_LEVEL.level >= level {
+		eprintln!("will out");
 		if !ASN1_OBJ_LOG_LEVEL.nostderr {
-			eprintln!("{}\n", outs);
+			eprintln!("{}", outs);
 		}
 
 		if ASN1_OBJ_LOG_LEVEL.wfile.is_some() {
@@ -99,7 +100,7 @@ pub (crate)  fn asn1_debug_out(level :i32, outs :String) {
 #[macro_export]
 macro_rules! asn1obj_log_error {
 	($($arg:tt)+) => {
-		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		let mut c :String= format!("[{}:{}] <ERROR> ",file!(),line!());
 		c.push_str(&(format!($($arg)+)[..]));
 		asn1obj_debug_out(0, c);
 	}
@@ -108,7 +109,7 @@ macro_rules! asn1obj_log_error {
 #[macro_export]
 macro_rules! asn1obj_log_warn {
 	($($arg:tt)+) => {
-		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		let mut c :String= format!("[{}:{}] <WARN> ",file!(),line!());
 		c.push_str(&(format!($($arg)+)[..]));
 		asn1obj_debug_out(10, c);
 	}
@@ -118,7 +119,7 @@ macro_rules! asn1obj_log_warn {
 #[macro_export]
 macro_rules! asn1obj_log_info {
 	($($arg:tt)+) => {
-		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		let mut c :String= format!("[{}:{}] <INFO> ",file!(),line!());
 		c.push_str(&(format!($($arg)+)[..]));
 		asn1obj_debug_out(20, c);
 	}
@@ -127,7 +128,7 @@ macro_rules! asn1obj_log_info {
 #[macro_export]
 macro_rules! asn1obj_log_trace {
 	($($arg:tt)+) => {
-		let mut _c :String= format!("[{}:{}] ",file!(),line!());
+		let mut _c :String= format!("[{}:{}] <TRACE> ",file!(),line!());
 		_c.push_str(&(format!($($arg)+)[..]));
 		asn1obj_debug_out(40, _c);
 	}
