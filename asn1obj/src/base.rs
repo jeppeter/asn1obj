@@ -2,11 +2,15 @@
 
 use std::error::Error;
 use crate::asn1impl::{Asn1Op};
-use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG};
+use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_LL};
 use crate::strop::{asn1_format_line};
 use crate::{asn1obj_error_class,asn1obj_new_error};
 
 use std::io::{Write};
+
+use crate::{asn1obj_log_trace};
+use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
+
 
 asn1obj_error_class!{Asn1ObjBaseError}
 
@@ -131,50 +135,37 @@ impl Asn1Op for Asn1Integer {
 		if totallen < 1 {
 			asn1obj_new_error!{Asn1ObjBaseError,"need 1 length"}
 		}
-		if (code[0] & 0x80) != 0 {
+		if (code[hdrlen] & 0x80) != 0 {
 			neg = true;
 		}
 
-		if totallen == 1 {
-			if neg {
-				ival = ((code[0] ^ 0xff) + 1) as i64;
-				ival = - ival;
-			} else {
-				ival = code[0] as i64;
+
+
+		if neg {
+			let mut uval :u64;
+			let cval :u64;
+			uval = 0;
+			for i in 0..totallen {
+				uval <<= 8;
+				uval += (code[hdrlen+i]) as u64;
+				asn1obj_log_trace!("[0x{:x}]", uval);
 			}
-		} else {
-			if neg {
-				let mut cval :u64;
-				let mut uval :u64;
-				cval = 0;
-				for _ in 0..totallen {
-					cval <<= 8;
-					cval += 0xff as u64;
-				}
 
-				uval = 0;
-				for i in 0..totallen {
-					uval <<= 8;
-					uval += (code[hdrlen+i]) as u64;
-				}
+			cval = (uval) ^ ASN1_MAX_LL;
+			asn1obj_log_trace!("cval [0x{:x}]", cval);
 
-				if totallen == 8 {
-					let mut cc :u64 = cval + uval;
-					cc += 1;
-					ival = cc as i64;
-					ival = - ival;
-				} else {
-					ival = (cval + uval) as i64;
-					ival -= cval as i64 ;
-					ival -= 1;
-					ival = - ival;
-				}
-			} else {				
-				ival = 0;
-				for i in 0..totallen {
-					ival <<= 8;
-					ival += (code[hdrlen+i]) as i64;
-				}
+			if uval > ASN1_MAX_INT_4{
+				asn1obj_new_error!{Asn1ObjBaseError,"[0x{:x}] > [0x{:x}]", uval, ASN1_MAX_INT_4}
+			}
+
+			ival = cval as i64;
+			asn1obj_log_trace!("ival {}",ival);
+
+		} else {				
+			ival = 0;
+			for i in 0..totallen {
+				ival <<= 8;
+				ival += (code[hdrlen+i]) as i64;
 			}
 		}
 		self.val = ival;
@@ -190,9 +181,54 @@ impl Asn1Op for Asn1Integer {
 		let mut retv :Vec<u8> = Vec::new();
 		retv.push(ASN1_INTEGER_FLAG);
 		retv.push(8);
-		for i in 0..8 {
-			let c = ((self.val >> ((7-i) * 8)) & 0xff) as u8;
-			retv.push(c);
+		if self.val >= 0 {
+			if self.val <= ASN1_MAX_INT_NEG_1 as i64 {
+				retv.push((self.val & 0xff) as u8);
+				retv[1] = 1;
+			} else if self.val <= ASN1_MAX_INT_NEG_2 as i64 {
+				retv.push(((self.val >> 8) & 0xff) as u8);
+				retv.push((self.val & 0xff) as u8);
+				retv[1] = 2;
+			} else if self.val <= ASN1_MAX_INT_NEG_3 as i64 {
+				retv.push(((self.val >> 16) & 0xff) as u8);
+				retv.push(((self.val >> 8) & 0xff) as u8);
+				retv.push((self.val & 0xff) as u8);
+				retv[1] = 3;
+			} else if self.val <= ASN1_MAX_INT_NEG_4 as i64 {
+				retv.push(((self.val >> 24) & 0xff) as u8);
+				retv.push(((self.val >> 16) & 0xff) as u8);
+				retv.push(((self.val >> 8) & 0xff) as u8);
+				retv.push((self.val & 0xff) as u8);
+				retv[1] = 4;
+			} else {
+				asn1obj_new_error!{Asn1ObjBaseError,"value [0x{:x}] > [0x{:x}]", self.val, ASN1_MAX_INT_NEG_4}
+			}
+		} else {
+			let ival :i64 = - self.val;
+			let mut uval :u64 = self.val as u64;
+			uval = uval ^ 0;
+			asn1obj_log_trace!("uval [0x{:x}]", uval);
+			if ival <= ASN1_MAX_INT_NEG_1 as i64 {
+				retv.push((uval & 0xff) as u8);
+				retv[1] = 1;
+			} else if ival <= ASN1_MAX_INT_NEG_2 as i64 {
+				retv.push(((uval >> 8) & 0xff) as u8);
+				retv.push((uval & 0xff) as u8);
+				retv[1] = 2;
+			} else if ival <= ASN1_MAX_INT_NEG_3 as i64 {
+				retv.push(((uval >> 16) & 0xff) as u8);
+				retv.push(((uval >> 8) & 0xff) as u8);
+				retv.push((uval & 0xff) as u8);
+				retv[1] = 3;
+			} else if ival <= ASN1_MAX_INT_NEG_4 as i64 {
+				retv.push(((uval >> 24) & 0xff) as u8);
+				retv.push(((uval >> 16) & 0xff) as u8);
+				retv.push(((uval >> 8) & 0xff) as u8);
+				retv.push((uval & 0xff) as u8);
+				retv[1] = 4;
+			} else {
+				asn1obj_new_error!{Asn1ObjBaseError,"neg value [0x{:x}] >= [0x{:x}]", uval, ASN1_MAX_INT_NEG_4}
+			}
 		}
 		Ok(retv)
 	}
