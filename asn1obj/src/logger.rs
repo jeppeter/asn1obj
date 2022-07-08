@@ -1,4 +1,11 @@
 
+use std::env;
+use std::io::{Write};
+use std::fs;
+//use std::io::prelude::*;
+use lazy_static::lazy_static;
+
+
 
 fn _asn1_get_environ_var(envname :&str) -> String {
 	match env::var(envname) {
@@ -14,23 +21,19 @@ fn _asn1_get_environ_var(envname :&str) -> String {
 struct LogVar {
 	level :i32,
 	nostderr : bool,
-	wfile : 
+	wfile : Option<fs::File>,
 }
 
 
-fn asn1_proc_log_init(prefix :&str) -> i32 {
-	let mut msgfmt :String = String::from(DEFAULT_MSG_FMT);
+fn asn1_proc_log_init(prefix :&str) -> LogVar {
 	let mut getv :String;
 	let mut retv :i32 = 0;
-	key = format!("{}_MSGFMT", prefix);
-	getv = _extargs_get_environ_var(&key);
-	if getv.len() > 0 {
-		msgfmt = format!("{}",getv);
-	}
-	let stderr =ConsoleAppender::builder().encoder(Box::new(PatternEncoder::new(&msgfmt))).target(Target::Stderr).build();
+	let mut nostderr :bool = false;
+	let mut coptfile :Option<fs::File> = None;
+	let mut key :String;
 
 	key = format!("{}_LEVEL", prefix);
-	getv = _extargs_get_environ_var(&key);
+	getv = _asn1_get_environ_var(&key);
 	if getv.len() > 0 {
 		match getv.parse::<i32>() {
 			Ok(v) => {
@@ -43,37 +46,101 @@ fn asn1_proc_log_init(prefix :&str) -> i32 {
 		}
 	}
 
-	if retv >= 40 {
-		level = log::LevelFilter::Trace;
-	} else if retv >= 30 {
-		level = log::LevelFilter::Debug;
-	} else if retv >= 20 {
-		level = log::LevelFilter::Info;
-	} else if retv >= 10 {
-		level = log::LevelFilter::Warn;
+	key = format!("{}_NOSTDERR",prefix);
+	getv = _asn1_get_environ_var(&key);
+	if getv.len() > 0 {
+		nostderr = true;
 	}
 
-	cbuild = Config::builder()
-	.appender(
-		Appender::builder()
-		.filter(Box::new(ThresholdFilter::new(level)))
-		.build("stderr", Box::new(stderr)),
-		);
-	rbuiler =  Root::builder().appender("stderr");
+
 
 	key = format!("{}_LOGFILE",prefix);
-	wfile = _extargs_get_environ_var(&key);
-	if wfile.len() > 0 {
-		let logfile = FileAppender::builder().encoder(Box::new(PatternEncoder::new(&msgfmt))).build(&wfile).unwrap();
-
-		cbuild = cbuild.appender(Appender::builder().build("logfile", Box::new(logfile)));
-		rbuiler = rbuiler.appender("logfile");
+	getv = _asn1_get_environ_var(&key);
+	if getv.len() > 0 {
+		let fo = fs::File::create(&getv);
+		if fo.is_err() {
+			eprintln!("can not open [{}]", getv);
+		} else {
+			coptfile = Some(fo.unwrap());
+		}
 	}
 
-	let config = cbuild.build(rbuiler.build(level)).unwrap();
-	let _handle = log4rs::init_config(config).unwrap();
 	return LogVar {
 		level : retv,
-		hdl :_handle,
+		nostderr : nostderr,
+		wfile : coptfile,		
 	};
+}
+
+
+lazy_static! {
+	static ref ASN1_OBJ_LOG_LEVEL : LogVar = {
+		asn1_proc_log_init("ASN1OBJ")
+	};
+}
+
+
+pub (crate)  fn asn1_debug_out(level :i32, outs :String) {
+	if ASN1_OBJ_LOG_LEVEL.level >= level {
+		if !ASN1_OBJ_LOG_LEVEL.nostderr {
+			eprintln!("{}\n", outs);
+		}
+
+		if ASN1_OBJ_LOG_LEVEL.wfile.is_some() {
+			let mut wf = ASN1_OBJ_LOG_LEVEL.wfile.as_ref().unwrap();
+			let _ = wf.write(outs.as_bytes());
+			let _ = wf.write(b"\n");
+		}
+	}
+	return;
+}
+
+
+#[macro_export]
+macro_rules! asn1obj_log_error {
+	($($arg:tt)+) => {
+		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		c.push_str(&(format!($($arg)+)[..]));
+		asn1obj_debug_out(0, c);
+	}
+}
+
+#[macro_export]
+macro_rules! asn1obj_log_warn {
+	($($arg:tt)+) => {
+		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		c.push_str(&(format!($($arg)+)[..]));
+		asn1obj_debug_out(10, c);
+	}
+}
+
+
+#[macro_export]
+macro_rules! asn1obj_log_info {
+	($($arg:tt)+) => {
+		let mut c :String= format!("[{}:{}] ",file!(),line!());
+		c.push_str(&(format!($($arg)+)[..]));
+		asn1obj_debug_out(20, c);
+	}
+}
+
+#[macro_export]
+macro_rules! asn1obj_log_trace {
+	($($arg:tt)+) => {
+		let mut _c :String= format!("[{}:{}] ",file!(),line!());
+		_c.push_str(&(format!($($arg)+)[..]));
+		asn1obj_debug_out(40, _c);
+	}
+}
+
+
+#[macro_export]
+macro_rules! asn1obj_assert {
+	($v:expr , $($arg:tt)+) => {
+		if !($v) {
+			let mut _c :String= format!("[{}:{}] ",file!(),line!());
+			_c.push_str(&(format!($($arg)+)[..]));
+			panic!("{}", _c);
+		}
+	}
 }

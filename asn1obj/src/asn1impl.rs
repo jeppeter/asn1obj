@@ -1,4 +1,6 @@
 
+use std::io::{Write};
+use std::error::Error;
 
 pub trait Asn1Op {
 	fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>>;
