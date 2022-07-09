@@ -2,7 +2,7 @@
 
 use std::error::Error;
 use crate::asn1impl::{Asn1Op};
-use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_LL};
+use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4};
 use crate::strop::{asn1_format_line};
 use crate::{asn1obj_error_class,asn1obj_new_error};
 
@@ -143,7 +143,6 @@ impl Asn1Op for Asn1Integer {
 
 		if neg {
 			let mut uval :u64;
-			let cval :u64;
 			uval = 0;
 			for i in 0..totallen {
 				uval <<= 8;
@@ -151,16 +150,20 @@ impl Asn1Op for Asn1Integer {
 				asn1obj_log_trace!("[0x{:x}]", uval);
 			}
 
-			cval = (uval) ^ ASN1_MAX_LL;
-			asn1obj_log_trace!("cval [0x{:x}]", cval);
-
-			if uval > ASN1_MAX_INT_4{
-				asn1obj_new_error!{Asn1ObjBaseError,"[0x{:x}] > [0x{:x}]", uval, ASN1_MAX_INT_4}
+			if uval <= ASN1_MAX_INT_1 {
+				ival = (ASN1_MAX_INT_1 - uval + 1) as i64;
+			} else if uval <= ASN1_MAX_INT_2 {
+				ival = (ASN1_MAX_INT_2 - uval + 1) as i64;
+			} else if uval <= ASN1_MAX_INT_3 {
+				ival = (ASN1_MAX_INT_3 - uval + 1) as i64;
+			} else if uval <= ASN1_MAX_INT_4 {
+				ival = (ASN1_MAX_INT_4 - uval + 1) as i64;
+			} else {
+				asn1obj_new_error!{Asn1ObjBaseError,"invalid uval [0x{:x}]", uval}
 			}
 
-			ival = cval as i64;
 			asn1obj_log_trace!("ival {}",ival);
-
+			ival = -ival;
 		} else {				
 			ival = 0;
 			for i in 0..totallen {
@@ -207,7 +210,6 @@ impl Asn1Op for Asn1Integer {
 			let ival :i64 = - self.val;
 			let mut uval :u64 = self.val as u64;
 			uval = uval ^ 0;
-			asn1obj_log_trace!("uval [0x{:x}]", uval);
 			if ival <= ASN1_MAX_INT_NEG_1 as i64 {
 				retv.push((uval & 0xff) as u8);
 				retv[1] = 1;
