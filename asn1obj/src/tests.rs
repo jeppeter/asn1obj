@@ -27,41 +27,75 @@ fn test_a001() {
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x1,0xfe];
 	assert!(check_equal_u8(&c,&v1));
+
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -2);
+	assert!(s == 3);
+
 	a1.val = -256;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x2,0xff,0x00];
 	assert!(check_equal_u8(&c,&v1));
+
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -256);
+	assert!(s == 4);
+
+
 	a1.val = -255;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x2,0xff,0x01];
 	assert!(check_equal_u8(&c,&v1));
+
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -255);
+	assert!(s == 4);
+
 
 	a1.val = -128;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x1,0x80];
 	assert!(check_equal_u8(&c,&v1));
 
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -128);
+	assert!(s == 3);
+
 	a1.val = -127;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x1,0x81];
 	assert!(check_equal_u8(&c,&v1));
 
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -127);
+	assert!(s == 3);
+
+
 	a1.val = -129;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x2,0xff,0x7f];
 	assert!(check_equal_u8(&c,&v1));
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -129);
+	assert!(s == 4);
 
 
 	a1.val = 128;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x2,0x00,0x80];
 	assert!(check_equal_u8(&c,&v1));
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == 128);
+	assert!(s == 4);
 
 
 	a1.val = 65535;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x3,0x00,0xff,0xff];
 	assert!(check_equal_u8(&c,&v1));
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == 65535);
+	assert!(s == 5);
 
 
 	a1.val = 32768;
@@ -69,20 +103,39 @@ fn test_a001() {
 	v1 = vec![0x2,0x3,0x00,0x80,0x00];
 	assert!(check_equal_u8(&c,&v1));
 
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == 32768);
+	assert!(s == 5);
+
+
 	a1.val = 32767;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x2,0x7f,0xff];
 	assert!(check_equal_u8(&c,&v1));
+
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == 32767);
+	assert!(s == 4);
+
 
 	a1.val = -32767;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x2,0x80,0x01];
 	assert!(check_equal_u8(&c,&v1));
 
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -32767);
+	assert!(s == 4);
+
+
 	a1.val = -32769;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x3,0xff,0x7f,0xff];
 	assert!(check_equal_u8(&c,&v1));
+
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -32769);
+	assert!(s == 5);
 
 
 	a1.val = -65537;
@@ -90,16 +143,29 @@ fn test_a001() {
 	v1 = vec![0x2,0x3,0xfe,0xff,0xff];
 	assert!(check_equal_u8(&c,&v1));
 
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -65537);
+	assert!(s == 5);
+
 
 	a1.val = -16777216;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x4,0xff,0x00,0x00,0x00];
 	assert!(check_equal_u8(&c,&v1));
 
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -16777216);
+	assert!(s == 6);
+
+
 	a1.val = -16777217;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x4,0xfe,0xff,0xff,0xff];
 	assert!(check_equal_u8(&c,&v1));
+
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -16777217);
+	assert!(s == 6);
 
 
 	a1.val = 16777217;
@@ -107,24 +173,77 @@ fn test_a001() {
 	v1 = vec![0x2,0x4,0x01,0x00,0x00,0x01];
 	assert!(check_equal_u8(&c,&v1));
 
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == 16777217);
+	assert!(s == 6);
+
+
 	a1.val = -8388608;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x3,0x80,0x00,0x00];
 	assert!(check_equal_u8(&c,&v1));
+
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -8388608);
+	assert!(s == 5);
+
 
 	a1.val = 8388608;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x4,0x00,0x80,0x00,0x00];
 	assert!(check_equal_u8(&c,&v1));
 
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == 8388608);
+	assert!(s == 6);
+
+
 	a1.val = -2147483648;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x4,0x80,0x00,0x00,0x00];
 	assert!(check_equal_u8(&c,&v1));
 
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -2147483648);
+	assert!(s == 6);
+
+
 	a1.val = 2147483648;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x2,0x5,0x00,0x80,0x00,0x00,0x00];
 	assert!(check_equal_u8(&c,&v1));
+	
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == 2147483648);
+	assert!(s == 7);
+
+
+	a1.val = 2147483649;
+	let c = a1.encode_asn1().unwrap();
+	v1 = vec![0x2,0x5,0x00,0x80,0x00,0x00,0x01];
+	assert!(check_equal_u8(&c,&v1));
+	
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == 2147483649);
+	assert!(s == 7);
+
+	a1.val = 4294967297;
+	let c = a1.encode_asn1().unwrap();
+	v1 = vec![0x2,0x5,0x01,0x00,0x00,0x00,0x01];
+	assert!(check_equal_u8(&c,&v1));
+	
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == 4294967297);
+	assert!(s == 7);
+
+	a1.val = -4294967297;
+	let c = a1.encode_asn1().unwrap();
+	v1 = vec![0x2,0x5,0xfe,0xff,0xff,0xff,0xff];
+	assert!(check_equal_u8(&c,&v1));
+	
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == -4294967297);
+	assert!(s == 7);
+
 	return ;
 }

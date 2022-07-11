@@ -2,7 +2,7 @@
 
 use std::error::Error;
 use crate::asn1impl::{Asn1Op};
-use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5};
+use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5};
 use crate::strop::{asn1_format_line};
 use crate::{asn1obj_error_class,asn1obj_new_error};
 
@@ -158,6 +158,8 @@ impl Asn1Op for Asn1Integer {
 				ival = (ASN1_MAX_INT_3 - uval + 1) as i64;
 			} else if uval <= ASN1_MAX_INT_4 {
 				ival = (ASN1_MAX_INT_4 - uval + 1) as i64;
+			} else if uval <= ASN1_MAX_INT_5 {
+				ival = (ASN1_MAX_INT_5 - uval + 1) as i64;
 			} else {
 				asn1obj_new_error!{Asn1ObjBaseError,"invalid uval [0x{:x}]", uval}
 			}
@@ -257,5 +259,4 @@ impl Asn1Op for Asn1Integer {
 		Ok(())
 	}
 }
-
 
