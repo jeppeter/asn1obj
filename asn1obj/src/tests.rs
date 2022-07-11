@@ -1,5 +1,5 @@
 
-use crate::base::{Asn1Integer};
+use crate::base::{Asn1Integer,Asn1Boolean};
 //use crate::{asn1obj_log_trace};
 //use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 use crate::asn1impl::{Asn1Op};
@@ -246,4 +246,28 @@ fn test_a001() {
 	assert!(s == 7);
 
 	return ;
+}
+
+#[test]
+fn test_a002() {
+	let mut a1 :Asn1Boolean = Asn1Boolean::init_asn1();
+	let mut v1 :Vec<u8>;
+
+	a1.val = false;
+	let c = a1.encode_asn1().unwrap();
+	v1 = vec![0x1,0x1,0x0];
+	assert!(check_equal_u8(&v1,&c));
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == false);
+	assert!(s == 3);
+
+	a1.val = true;
+	let c = a1.encode_asn1().unwrap();
+	v1 = vec![0x1,0x1,0xff];
+	assert!(check_equal_u8(&v1,&c));
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == true);
+	assert!(s == 3);
+
+
 }
