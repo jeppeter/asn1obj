@@ -2,7 +2,7 @@
 
 use std::error::Error;
 use crate::asn1impl::{Asn1Op};
-use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4};
+use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5};
 use crate::strop::{asn1_format_line};
 use crate::{asn1obj_error_class,asn1obj_new_error};
 
@@ -185,24 +185,31 @@ impl Asn1Op for Asn1Integer {
 		retv.push(ASN1_INTEGER_FLAG);
 		retv.push(8);
 		if self.val >= 0 {
-			if self.val <= ASN1_MAX_INT_NEG_1 as i64 {
+			if self.val < ASN1_MAX_INT_NEG_1 as i64 {
 				retv.push((self.val & 0xff) as u8);
 				retv[1] = 1;
-			} else if self.val <= ASN1_MAX_INT_NEG_2 as i64 {
+			} else if self.val < ASN1_MAX_INT_NEG_2 as i64 {
 				retv.push(((self.val >> 8) & 0xff) as u8);
 				retv.push((self.val & 0xff) as u8);
 				retv[1] = 2;
-			} else if self.val <= ASN1_MAX_INT_NEG_3 as i64 {
+			} else if self.val < ASN1_MAX_INT_NEG_3 as i64 {
 				retv.push(((self.val >> 16) & 0xff) as u8);
 				retv.push(((self.val >> 8) & 0xff) as u8);
 				retv.push((self.val & 0xff) as u8);
 				retv[1] = 3;
-			} else if self.val <= ASN1_MAX_INT_NEG_4 as i64 {
+			} else if self.val < ASN1_MAX_INT_NEG_4 as i64 {
 				retv.push(((self.val >> 24) & 0xff) as u8);
 				retv.push(((self.val >> 16) & 0xff) as u8);
 				retv.push(((self.val >> 8) & 0xff) as u8);
 				retv.push((self.val & 0xff) as u8);
 				retv[1] = 4;
+			} else if self.val < ASN1_MAX_INT_NEG_5 as i64 {
+				retv.push(((self.val >> 32) & 0xff) as u8);
+				retv.push(((self.val >> 24) & 0xff) as u8);
+				retv.push(((self.val >> 16) & 0xff) as u8);
+				retv.push(((self.val >> 8) & 0xff) as u8);
+				retv.push((self.val & 0xff) as u8);
+				retv[1] = 5;
 			} else {
 				asn1obj_new_error!{Asn1ObjBaseError,"value [0x{:x}] > [0x{:x}]", self.val, ASN1_MAX_INT_NEG_4}
 			}
@@ -210,6 +217,7 @@ impl Asn1Op for Asn1Integer {
 			let ival :i64 = - self.val;
 			let mut uval :u64 = self.val as u64;
 			uval = uval ^ 0;
+			asn1obj_log_trace!("ival [{}] uval [{}]",ival,uval);
 			if ival <= ASN1_MAX_INT_NEG_1 as i64 {
 				retv.push((uval & 0xff) as u8);
 				retv[1] = 1;
@@ -228,9 +236,17 @@ impl Asn1Op for Asn1Integer {
 				retv.push(((uval >> 8) & 0xff) as u8);
 				retv.push((uval & 0xff) as u8);
 				retv[1] = 4;
+			} else if ival <= ASN1_MAX_INT_NEG_5 as i64 {
+				retv.push(((uval >> 32) & 0xff ) as u8);
+				retv.push(((uval >> 24) & 0xff) as u8);
+				retv.push(((uval >> 16) & 0xff) as u8);
+				retv.push(((uval >> 8) & 0xff) as u8);
+				retv.push((uval & 0xff) as u8);
+				retv[1] = 5;
 			} else {
 				asn1obj_new_error!{Asn1ObjBaseError,"neg value [0x{:x}] >= [0x{:x}]", uval, ASN1_MAX_INT_NEG_4}
 			}
+			asn1obj_log_trace!("retv {:?}", retv);
 		}
 		Ok(retv)
 	}

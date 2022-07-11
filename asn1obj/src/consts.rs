@@ -14,8 +14,12 @@ pub const ASN1_MAX_INT_4 :u64 = 0xffffffff;
 pub const ASN1_MAX_INT_MASK_4 :u64 = 0x00000000;
 pub const ASN1_MAX_LL :u64 = 0xffffffffffffffff;
 
-pub const ASN1_MAX_INT_NEG_1 :u64 = 0x7f;
-pub const ASN1_MAX_INT_NEG_2 :u64 = 0x7fff;
-pub const ASN1_MAX_INT_NEG_3 :u64 = 0x7fffff;
-pub const ASN1_MAX_INT_NEG_4 :u64 = 0x7fffffff;
+pub const ASN1_MAX_INT_NEG_1 :u64 = 0x80;
+pub const ASN1_MAX_INT_NEG_2 :u64 = 0x8000;
+pub const ASN1_MAX_INT_NEG_3 :u64 = 0x800000;
+pub const ASN1_MAX_INT_NEG_4 :u64 = 0x80000000;
+pub const ASN1_MAX_INT_NEG_5 :u64 = 0x8000000000;
+pub const ASN1_MAX_INT_NEG_6 :u64 = 0x800000000000;
+pub const ASN1_MAX_INT_NEG_7 :u64 = 0x80000000000000;
+pub const ASN1_MAX_INT_NEG_8 :u64 = 0x8000000000000000;
 
