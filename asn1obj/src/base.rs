@@ -2,7 +2,7 @@
 
 use std::error::Error;
 use crate::asn1impl::{Asn1Op};
-use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_BOOLEAN_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5,ASN1_BIT_STRING_FLAG};
+use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_BOOLEAN_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5,ASN1_BIT_STRING_FLAG,ASN1_OCT_STRING_FLAG};
 use crate::strop::{asn1_format_line};
 use crate::{asn1obj_error_class,asn1obj_new_error};
 
@@ -71,7 +71,9 @@ pub fn asn1obj_extract_header(code :&[u8]) -> Result<(u64,usize,usize),Box<dyn E
 			if code.len() <= (llen + (i as usize)) {
 				asn1obj_new_error!{Asn1ObjBaseError,"llen [0x{:08x}] + [0x{:08x}] >= [0x{:08x}]", llen, i, code.len()}
 			}
-
+			/*skip this one*/
+			i -= 1;
+			llen += 1;
 			while i > 0 && code[llen] == 0x0 {
 				llen += 1;
 				i -= 1;
@@ -84,10 +86,13 @@ pub fn asn1obj_extract_header(code :&[u8]) -> Result<(u64,usize,usize),Box<dyn E
 			while i > 0 {
 				totallen <<= 8;
 				totallen += (code[llen]) as usize;
+				asn1obj_log_trace!("code[{}]=[0x{:02x}]",llen,code[llen]);
 				llen += 1;
 				i -= 1;
 			}
-			/*to add 0x81*/
+			/*to add last one*/
+			totallen <<= 8;
+			totallen += (code[llen]) as usize;
 			llen += 1;
 
 			if totallen > ASN1_MAX_LONG as usize {
@@ -459,6 +464,72 @@ impl Asn1Op for Asn1BitString {
 
 	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {		
 		let s = asn1_format_line(tab,&(format!("{}: ASN1_BIT_STRING {}", name, self.val)));
+		iowriter.write(s.as_bytes())?;
+		Ok(())
+	}
+}
+
+
+#[derive(Clone)]
+pub struct Asn1OctString {
+	pub val :String,
+	data :Vec<u8>,
+}
+
+
+impl Asn1Op for Asn1OctString {
+	fn init_asn1() -> Self {
+		Asn1OctString {
+			val : "".to_string(),
+			data : Vec::new(),
+		}
+	}
+
+	fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let retv :usize;
+		if code.len() < 2 {
+			asn1obj_new_error!{Asn1ObjBaseError,"len [{}] < 2", code.len()}
+		}
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+
+		if flag != ASN1_OCT_STRING_FLAG as u64 {
+			asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != ASN1_OCT_STRING_FLAG [0x{:02x}]", flag,ASN1_OCT_STRING_FLAG}
+		}
+
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
+		}
+
+
+		let mut retm = BytesMut::with_capacity(totallen);
+		for i in 0..totallen {
+			retm.put_u8(code[hdrlen + i]);
+		}
+		let a = retm.freeze();
+		self.val = String::from_utf8_lossy(&a).to_string();
+		self.data = Vec::new();
+		retv = hdrlen + totallen;
+		for i in 0..retv {
+			self.data.push(code[i]);
+		}
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let vcode = self.val.as_bytes();
+		let llen :u64 = (vcode.len() ) as u64;
+		let mut retv :Vec<u8>;
+
+		retv = asn1obj_format_header(ASN1_OCT_STRING_FLAG as u64,llen);
+
+		for i in 0..vcode.len() {
+			retv.push(vcode[i]);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {		
+		let s = asn1_format_line(tab,&(format!("{}: ASN1_OCT_STRING {}", name, self.val)));
 		iowriter.write(s.as_bytes())?;
 		Ok(())
 	}
