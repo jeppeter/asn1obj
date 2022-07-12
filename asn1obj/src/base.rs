@@ -2,7 +2,7 @@
 
 use std::error::Error;
 use crate::asn1impl::{Asn1Op};
-use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_BOOLEAN_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5,ASN1_BIT_STRING_FLAG,ASN1_OCT_STRING_FLAG,ASN1_NULL_FLAG,ASN1_OBJECT_FLAG};
+use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_BOOLEAN_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5,ASN1_BIT_STRING_FLAG,ASN1_OCT_STRING_FLAG,ASN1_NULL_FLAG,ASN1_OBJECT_FLAG,ASN1_ENUMERATED_FLAG};
 use crate::strop::{asn1_format_line};
 use crate::{asn1obj_error_class,asn1obj_new_error};
 
@@ -858,6 +858,167 @@ impl Asn1Op for Asn1Object {
 
 	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {		
 		let s = asn1_format_line(tab,&(format!("{}: ASN1_OBJECT {}", name, self.val)));
+		iowriter.write(s.as_bytes())?;
+		Ok(())
+	}
+}
+
+
+#[derive(Clone)]
+pub struct Asn1Enumerated {
+	pub val :i64,
+	data :Vec<u8>,
+}
+
+
+impl Asn1Op for Asn1Enumerated {
+	fn init_asn1() -> Self {
+		Asn1Enumerated {
+			val : 0,
+			data : Vec::new(),
+		}
+	}
+
+	fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let retv :usize;
+		let mut ival :i64;
+		let mut neg :bool = false;
+		if code.len() < 2 {
+			asn1obj_new_error!{Asn1ObjBaseError,"len [{}] < 2", code.len()}
+		}
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+
+		if flag != ASN1_ENUMERATED_FLAG as u64 {
+			asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != ASN1_ENUMERATED_FLAG [0x{:02x}]", flag,ASN1_ENUMERATED_FLAG}
+		}
+
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
+		}
+
+		if totallen < 1 {
+			asn1obj_new_error!{Asn1ObjBaseError,"need 1 length"}
+		}
+		if (code[hdrlen] & 0x80) != 0 {
+			neg = true;
+		}
+
+
+
+		if neg {
+			let mut uval :u64;
+			uval = 0;
+			for i in 0..totallen {
+				uval <<= 8;
+				uval += (code[hdrlen+i]) as u64;
+				asn1obj_log_trace!("[0x{:x}]", uval);
+			}
+
+			if uval <= ASN1_MAX_INT_1 {
+				ival = (ASN1_MAX_INT_1 - uval + 1) as i64;
+			} else if uval <= ASN1_MAX_INT_2 {
+				ival = (ASN1_MAX_INT_2 - uval + 1) as i64;
+			} else if uval <= ASN1_MAX_INT_3 {
+				ival = (ASN1_MAX_INT_3 - uval + 1) as i64;
+			} else if uval <= ASN1_MAX_INT_4 {
+				ival = (ASN1_MAX_INT_4 - uval + 1) as i64;
+			} else if uval <= ASN1_MAX_INT_5 {
+				ival = (ASN1_MAX_INT_5 - uval + 1) as i64;
+			} else {
+				asn1obj_new_error!{Asn1ObjBaseError,"invalid uval [0x{:x}]", uval}
+			}
+
+			asn1obj_log_trace!("ival {}",ival);
+			ival = -ival;
+		} else {				
+			ival = 0;
+			for i in 0..totallen {
+				ival <<= 8;
+				ival += (code[hdrlen+i]) as i64;
+			}
+		}
+		self.val = ival;
+		self.data = Vec::new();
+		for i in 0..(hdrlen + totallen) {
+			self.data.push(code[i]);
+		}
+		retv= hdrlen + totallen;
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let mut retv :Vec<u8> = Vec::new();
+		retv.push(ASN1_ENUMERATED_FLAG);
+		retv.push(8);
+		if self.val >= 0 {
+			if self.val < ASN1_MAX_INT_NEG_1 as i64 {
+				retv.push((self.val & 0xff) as u8);
+				retv[1] = 1;
+			} else if self.val < ASN1_MAX_INT_NEG_2 as i64 {
+				retv.push(((self.val >> 8) & 0xff) as u8);
+				retv.push((self.val & 0xff) as u8);
+				retv[1] = 2;
+			} else if self.val < ASN1_MAX_INT_NEG_3 as i64 {
+				retv.push(((self.val >> 16) & 0xff) as u8);
+				retv.push(((self.val >> 8) & 0xff) as u8);
+				retv.push((self.val & 0xff) as u8);
+				retv[1] = 3;
+			} else if self.val < ASN1_MAX_INT_NEG_4 as i64 {
+				retv.push(((self.val >> 24) & 0xff) as u8);
+				retv.push(((self.val >> 16) & 0xff) as u8);
+				retv.push(((self.val >> 8) & 0xff) as u8);
+				retv.push((self.val & 0xff) as u8);
+				retv[1] = 4;
+			} else if self.val < ASN1_MAX_INT_NEG_5 as i64 {
+				retv.push(((self.val >> 32) & 0xff) as u8);
+				retv.push(((self.val >> 24) & 0xff) as u8);
+				retv.push(((self.val >> 16) & 0xff) as u8);
+				retv.push(((self.val >> 8) & 0xff) as u8);
+				retv.push((self.val & 0xff) as u8);
+				retv[1] = 5;
+			} else {
+				asn1obj_new_error!{Asn1ObjBaseError,"value [0x{:x}] > [0x{:x}]", self.val, ASN1_MAX_INT_NEG_4}
+			}
+		} else {
+			let ival :i64 = - self.val;
+			let mut uval :u64 = self.val as u64;
+			uval = uval ^ 0;
+			asn1obj_log_trace!("ival [{}] uval [{}]",ival,uval);
+			if ival <= ASN1_MAX_INT_NEG_1 as i64 {
+				retv.push((uval & 0xff) as u8);
+				retv[1] = 1;
+			} else if ival <= ASN1_MAX_INT_NEG_2 as i64 {
+				retv.push(((uval >> 8) & 0xff) as u8);
+				retv.push((uval & 0xff) as u8);
+				retv[1] = 2;
+			} else if ival <= ASN1_MAX_INT_NEG_3 as i64 {
+				retv.push(((uval >> 16) & 0xff) as u8);
+				retv.push(((uval >> 8) & 0xff) as u8);
+				retv.push((uval & 0xff) as u8);
+				retv[1] = 3;
+			} else if ival <= ASN1_MAX_INT_NEG_4 as i64 {
+				retv.push(((uval >> 24) & 0xff) as u8);
+				retv.push(((uval >> 16) & 0xff) as u8);
+				retv.push(((uval >> 8) & 0xff) as u8);
+				retv.push((uval & 0xff) as u8);
+				retv[1] = 4;
+			} else if ival <= ASN1_MAX_INT_NEG_5 as i64 {
+				retv.push(((uval >> 32) & 0xff ) as u8);
+				retv.push(((uval >> 24) & 0xff) as u8);
+				retv.push(((uval >> 16) & 0xff) as u8);
+				retv.push(((uval >> 8) & 0xff) as u8);
+				retv.push((uval & 0xff) as u8);
+				retv[1] = 5;
+			} else {
+				asn1obj_new_error!{Asn1ObjBaseError,"neg value [0x{:x}] >= [0x{:x}]", uval, ASN1_MAX_INT_NEG_4}
+			}
+			asn1obj_log_trace!("retv {:?}", retv);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {		
+		let s = asn1_format_line(tab,&(format!("{}: ASN1_ENUMERATED {}", name, self.val)));
 		iowriter.write(s.as_bytes())?;
 		Ok(())
 	}
