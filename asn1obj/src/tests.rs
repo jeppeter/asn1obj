@@ -1,5 +1,5 @@
 
-use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString};
+use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null};
 use crate::{asn1obj_log_trace};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 use crate::asn1impl::{Asn1Op};
@@ -347,5 +347,16 @@ fn test_a004() {
 	asn1obj_log_trace!("val [{}]",a1.val);
 	asn1obj_log_trace!("cv  [{}]",cv);
 	assert!(a1.val == cv);
+	assert!(s == v1.len());
+}
+
+#[test]
+fn test_a005() {
+	let mut a1 :Asn1Null = Asn1Null::init_asn1();
+	let v1 :Vec<u8>;
+	let c = a1.encode_asn1().unwrap();
+	v1 = vec![0x05,0x00];
+	assert!(check_equal_u8(&v1,&c));
+	let s = a1.decode_asn1(&v1).unwrap();
 	assert!(s == v1.len());
 }
