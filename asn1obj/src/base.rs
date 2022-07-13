@@ -58,7 +58,7 @@ pub fn asn1obj_extract_header(code :&[u8]) -> Result<(u64,usize,usize),Box<dyn E
 		llen += 1;
 		flag = i;
 	} else {
-		flag = i;
+		flag = code[0] as u64;
 		llen += 1;
 	}
 

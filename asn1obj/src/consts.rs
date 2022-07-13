@@ -14,6 +14,7 @@ pub const ASN1_UTF8STRING_FLAG :u8 = 0xc;
 pub const ASN1_SET_OF_FLAG :u8 = 0xa0;
 
 
+
 pub const ASN1_MAX_INT :u64 = 0xffffffff;
 pub const ASN1_MAX_LONG :u64 = 0xffffffff;
 pub const ASN1_MAX_INT_1 :u64 = 0xff;
