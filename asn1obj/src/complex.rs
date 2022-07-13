@@ -2,8 +2,18 @@
 use crate::asn1impl::{Asn1Op};
 use std::io::{Write};
 use std::error::Error;
-use crate::strop::{asn1_format_line};
 
+
+use crate::{asn1obj_error_class,asn1obj_new_error};
+use crate::{asn1obj_log_trace};
+use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
+
+use crate::strop::{asn1_format_line};
+use crate::base::{asn1obj_extract_header,asn1obj_format_header};
+
+use crate::consts::{ASN1_SET_OF_FLAG};
+
+asn1obj_error_class!{Asn1ComplexError}
 
 pub struct Asn1Opt<T : Asn1Op + Clone> {
 	val : Option<T>,
@@ -57,6 +67,86 @@ impl<T: Asn1Op + Clone> Asn1Op for Asn1Opt<T> {
 		Asn1Opt {
 			data : Vec::new(),
 			val : None,			
+		}
+	}
+}
+
+
+pub struct Asn1SetOf<T : Asn1Op> {
+	pub val : Vec<T>,
+	data : Vec<u8>,
+}
+
+
+impl<T: Asn1Op> Asn1Op for Asn1SetOf<T> {
+	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let mut retv :usize = 0;
+		self.val = Vec::new();
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+		if flag != ASN1_SET_OF_FLAG as u64 {
+			/*we do have any type*/
+			return Ok(retv);
+		}
+
+		retv += hdrlen;
+		while retv < (totallen + hdrlen) {
+			let mut v :T = T::init_asn1();
+			let c = v.decode_asn1(&(code[retv..(hdrlen+totallen)]))?;
+			retv += c;
+			self.val.push(v);
+		}
+
+		self.data = Vec::new();
+		for i in 0..retv {
+			self.data.push(code[i]);
+		}
+
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let mut retv :Vec<u8> = Vec::new();
+		let mut encv :Vec<u8> = Vec::new();
+		let mut idx :usize = 0;
+
+
+		if self.val.len() == 0{
+			return Ok(retv);
+		}
+		while idx < self.val.len() {
+			let code = self.val[idx].encode_asn1()?;
+			for i in 0..code.len() {
+				encv.push(code[i]);
+			}
+			idx += 1;
+		}
+
+		retv = asn1obj_format_header(ASN1_SET_OF_FLAG as u64,encv.len() as u64);
+		for i in 0..encv.len() {
+			retv.push(encv[i]);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		if self.val.len() == 0 {
+			let s = asn1_format_line(tab,&(format!("{} SET_OF 0",name)));
+			iowriter.write(s.as_bytes())?;
+		} else {
+			let mut idx :usize = 0;
+			while idx < self.val.len() {
+				let s = format!("{}[{}]",name,idx);
+				let _ = self.val[idx].print_asn1(&s,tab,iowriter)?;
+				idx += 1;
+			}
+		}
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		Asn1SetOf {
+			data : Vec::new(),
+			val : Vec::new(),
 		}
 	}
 }
