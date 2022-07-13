@@ -698,11 +698,12 @@ fn test_a010() {
 	v1 = vec![0xa3,0x9,0x2,0x1,0xec,0x2,0x1,0x1e,0x2,0x1,0x32];
 	let c1 = a1.encode_asn1().unwrap();
 	assert!(check_equal_u8(&c1,&v1));
+	v1 = vec![0xa3,0x9,0x2,0x1,0xec,0x2,0x1,0x1e,0x2,0x1,0x32];
 	let c = a1.decode_asn1(&v1).unwrap();
 	assert!(c == v1.len());
+	assert!(a1.get_tag() == 0x3);
 	assert!(a1.val.len() == 3);
 	assert!(a1.val[0].val == -20);
 	assert!(a1.val[1].val == 30);
 	assert!(a1.val[2].val == 50);
-
 }
