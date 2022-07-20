@@ -1113,4 +1113,6 @@ fn test_a017() {
 	assert!(a1.val.len() == 3);
 	assert!(a1.get_tag() == 0x4);
 	assert!(a1.val[0].val[0].val == -20);
+	assert!(a1.val[1].val[0].val == 30);
+	assert!(a1.val[2].val[0].val == 50);
 }
