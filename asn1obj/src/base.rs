@@ -594,6 +594,8 @@ impl Asn1Op for Asn1Null {
 	}
 }
 
+const ULONG_MAX :u64 = 0xffffffffffffffff;
+
 
 #[derive(Clone)]
 pub struct Asn1Object {
@@ -601,7 +603,6 @@ pub struct Asn1Object {
 	data :Vec<u8>,
 }
 
-const ULONG_MAX :u64 = 0xffffffffffffffff;
 
 impl Asn1Object {
 	pub fn set_value(&mut self,val :&str) -> Result<String,Box<dyn Error>> {
@@ -1266,6 +1267,294 @@ impl Asn1Op for Asn1ImpInteger {
 
 	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {		
 		let s = asn1_format_line(tab,&(format!("{}: ASN1_IMP_INTEGER {} tag[{}]", name, self.val,self.tag)));
+		iowriter.write(s.as_bytes())?;
+		Ok(())
+	}
+}
+
+
+#[derive(Clone)]
+pub struct Asn1ImpObject {
+	val :String,
+	tag : u8,
+	data :Vec<u8>,
+}
+
+
+impl Asn1ImpObject {
+	pub fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
+		let oldtag :u8;
+		if (tag & ASN1_PRIMITIVE_TAG) != tag {
+			asn1obj_new_error!{Asn1ObjBaseError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
+		}
+		oldtag = self.tag;
+		self.tag = tag;
+		Ok(oldtag)
+	}
+
+	pub fn get_tag(&self) -> u8 {
+		return self.tag;
+	}
+}
+
+
+impl Asn1ImpObject {
+	pub fn set_value(&mut self,val :&str) -> Result<String,Box<dyn Error>> {
+		let restr = format!("^([0-9\\.]+)$");
+		let oldstr :String;
+		let vo = Regex::new(&restr);
+		if vo.is_err() {
+			let err = vo.err().unwrap();
+			asn1obj_new_error!{Asn1ObjBaseError,"can parse [{}] error [{:?}]", restr,err}
+		}
+		let re = vo.unwrap();
+		if !re.is_match(val) {
+			asn1obj_new_error!{Asn1ObjBaseError,"[{}] not valid for [{}]", val, restr}
+		}
+		let sarr :Vec<&str> = val.split(".").collect();
+		if sarr.len() < 1 {
+			asn1obj_new_error!{Asn1ObjBaseError,"need at least 1 number"}
+		}
+		if sarr[0] != "1" && sarr[0] != "1" {
+			asn1obj_new_error!{Asn1ObjBaseError,"must start 1. or 2. not [{}.]",sarr[0]}
+		}
+
+		for s in sarr.iter() {
+			if s.len() == 0 {
+				asn1obj_new_error!{Asn1ObjBaseError,"not allow [] empty on in the [{}]",val}
+			}
+		}
+
+		oldstr = format!("{}",self.val);
+		self.val = val.to_string();
+		Ok(oldstr)
+	}
+
+	pub fn get_value(&self) -> String {
+		return format!("{}",self.val);
+	}
+
+	fn decode_object(&self,v8 :&[u8]) -> Result<String,Box<dyn Error>> {
+		let mut rets :String = "".to_string();
+		let mut bn :BigUint = Zero::zero();
+		let mut l :u64;
+		let mut lenv :usize = v8.len();
+		let mut usebn :bool;
+		let mut idx :usize = 0;
+		let mut bfirst :bool = true;
+		let mut i :u32;
+
+		while lenv > 0 {
+			l = 0;
+			usebn = false;
+			loop {
+				let c = v8[idx];
+				idx += 1;
+				lenv -= 1;
+				if lenv == 0 && (c & 0x80) != 0 {
+					asn1obj_new_error!{Asn1ObjBaseError,"c [0x{:02x}] at the end",c}
+				}
+				if usebn {
+					bn += c & 0x7f;
+					asn1obj_log_trace!("bn [{}]",bn);
+				} else {
+					l += (c & 0x7f) as u64;
+					asn1obj_log_trace!("l [{}]", l);
+				}
+
+				if (c & 0x80) == 0 {
+					break;
+				}
+
+				if !usebn && l >( ULONG_MAX >> 7) {
+					bn = Zero::zero();
+					bn += l;
+					usebn = true;
+				}
+
+				if usebn {
+					bn <<= 7;
+				} else {
+					l <<= 7;
+				}
+			}
+
+			if bfirst {
+				bfirst = false;
+				if l >= 80 {
+					i = 2;
+					if usebn {
+						bn -= 80 as u64;
+					} else {
+						l -= 80;
+					}
+				} else {
+					i = (l / 40) as u32;
+					l -= (i * 40) as u64;
+				}
+
+				asn1obj_log_trace!("i {}",i);
+				rets.push_str(&format!("{}",i));
+
+			} 
+			if usebn {
+				rets.push_str(".");
+				rets.push_str(&format!("{}",bn));
+			} else {
+				rets.push_str(".");
+				rets.push_str(&format!("{}", l));
+			}
+		}
+
+		Ok(rets)
+	}
+
+	fn encode_object(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let mut retv :Vec<u8> = Vec::new();
+		let mut idx :usize = 0;
+		let sarr :Vec<&str> = self.val.split(".").collect();
+		let  mut curn :u64 = 0;
+		for v in sarr.iter() {
+			match u64::from_str_radix(v,10) {
+				Ok(cn) => {
+					if idx < 2 {
+						if idx == 0 {
+							curn = cn;
+						} else {
+							curn *= 40;
+							curn += cn;
+
+							retv.push(curn as u8);
+							curn = 0;
+						}
+
+					} else {
+						let mut maxidx :usize = 0;
+
+						curn = cn;
+						loop {
+							if (curn >> (maxidx * 7))  == 0 {
+								break;
+							}
+							maxidx += 1;
+						}
+
+						if maxidx == 0 {
+							retv.push(0);
+						} else {
+							while maxidx > 1 {
+								let bb :u8 = ((cn >> ((maxidx - 1) * 7)) & 0x7f) as u8;
+								retv.push(bb | 0x80 );
+								maxidx -= 1;
+							}
+							if maxidx == 1 {
+								let bb :u8 = (cn & 0x7f) as u8;
+								retv.push(bb);
+							}
+						}
+
+					}
+					idx += 1;
+				},
+				Err(e) => {
+					match BigUint::from_str(v) {
+						Ok(bn2) => {
+							if idx < 2 {
+								asn1obj_new_error!{Asn1ObjBaseError,"can not parse [{}] at [{}] with bigint", self.val,v}
+							}
+
+							let mut maxidx :usize = 0;
+							loop {
+								let bn :BigUint = bn2.clone();
+								let cb :BigUint = bn.shr(maxidx * 7);
+								let zb :BigUint = Zero::zero();
+								if cb.eq(&zb) {
+									break;
+								}
+								maxidx += 1;
+							}
+
+							if maxidx < 1 {
+								asn1obj_new_error!{Asn1ObjBaseError	,"bignum is {} to small", bn2}
+							} else {
+								while maxidx > 1 {
+									let bn :BigUint = bn2.clone();
+									let cb :BigUint = bn.shr((maxidx - 1) * 7);
+									let bv :Vec<u8> = cb.to_bytes_le();
+									let bb :u8 = bv[0] & 0x7f;
+									retv.push(bb | 0x80);
+									maxidx -= 1;
+								}
+
+								let bv :Vec<u8> = bn2.to_bytes_le();
+								let bb :u8 = bv[0] & 0x7f;
+								retv.push(bb);
+							}
+
+							idx += 1;
+						},
+						Err(_e2) => {
+							asn1obj_new_error!{Asn1ObjBaseError,"can not parse [{}] at [{}] {:?}", self.val,v,e}
+						}
+					}
+				}
+			}
+		}
+		Ok(retv)
+	}
+}
+
+
+impl Asn1Op for Asn1ImpObject {
+	fn init_asn1() -> Self {
+		Asn1ImpObject {
+			val : "".to_string(),
+			tag : 0,
+			data : Vec::new(),
+		}
+	}
+
+	fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let retv :usize;
+		if code.len() < 2 {
+			asn1obj_new_error!{Asn1ObjBaseError,"len [{}] < 2", code.len()}
+		}
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+
+		if (flag as u8) & ASN1_IMP_FLAG_MASK != ASN1_IMP_FLAG_MASK {
+			asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] & ASN1_IMP_FLAG_MASK [0x{:02x}] != ASN1_IMP_FLAG_MASK [0x{:02x}]", flag,ASN1_IMP_FLAG_MASK,ASN1_IMP_FLAG_MASK}
+		}
+
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
+		}
+
+		let _ = self.set_tag(code[0] & ASN1_PRIMITIVE_TAG)?;
+		let s = self.decode_object(&code[hdrlen..(hdrlen+totallen)])?;
+		self.val = s;
+		self.data = Vec::new();
+		retv = hdrlen + totallen;
+		for i in 0..retv {
+			self.data.push(code[i]);
+		}
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let mut retv :Vec<u8>;
+		if self.val.len() == 0 {
+			asn1obj_new_error!{Asn1ObjBaseError,"not set val yet"}
+		}
+		let vv :Vec<u8> = self.encode_object()?;
+		retv = asn1obj_format_header((ASN1_IMP_FLAG_MASK | self.tag) as u64,vv.len() as u64);
+		for v in vv.iter() {
+			retv.push(*v);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {		
+		let s = asn1_format_line(tab,&(format!("{}: ASN1_IMP_OBJECT {} tag {}", name, self.val,self.tag)));
 		iowriter.write(s.as_bytes())?;
 		Ok(())
 	}
