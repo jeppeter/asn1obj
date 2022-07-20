@@ -15,6 +15,7 @@ use crate::consts::{ASN1_SET_OF_FLAG,ASN1_PRIMITIVE_TAG,ASN1_SEQ_MASK,ASN1_SET_M
 
 asn1obj_error_class!{Asn1ComplexError}
 
+#[derive(Clone)]
 pub struct Asn1Opt<T : Asn1Op + Clone> {
 	pub val : Option<T>,
 	data : Vec<u8>,
@@ -71,7 +72,7 @@ impl<T: Asn1Op + Clone> Asn1Op for Asn1Opt<T> {
 	}
 }
 
-
+#[derive(Clone)]
 pub struct Asn1SetOf<T : Asn1Op> {
 	pub val : Vec<T>,
 	tag : u8,
@@ -175,7 +176,7 @@ impl<T: Asn1Op> Asn1Op for Asn1SetOf<T> {
 	}
 }
 
-
+#[derive(Clone)]
 pub struct Asn1Seq<T : Asn1Op> {
 	pub val : Vec<T>,
 	data : Vec<u8>,
@@ -255,13 +256,11 @@ impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
 	}
 }
 
-
+#[derive(Clone)]
 pub struct Asn1Set<T : Asn1Op> {
 	pub val : Vec<T>,
 	data : Vec<u8>,
 }
-
-
 
 impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
@@ -335,14 +334,15 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 	}
 }
 
-pub struct Asn1ImpSet<T : Asn1Op> {
+#[derive(Clone)]
+pub struct Asn1ImpEncap<T : Asn1Op> {
 	pub val : Vec<T>,
 	tag : u8,
 	data : Vec<u8>,
 }
 
 
-impl<T: Asn1Op> Asn1TagOp for Asn1ImpSet<T> {
+impl<T: Asn1Op> Asn1TagOp for Asn1ImpEncap<T> {
 	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
 		let oldtag :u8;
 		if (tag & ASN1_PRIMITIVE_TAG) != tag {
@@ -358,7 +358,7 @@ impl<T: Asn1Op> Asn1TagOp for Asn1ImpSet<T> {
 	}	
 }
 
-impl<T: Asn1Op> Asn1Op for Asn1ImpSet<T> {
+impl<T: Asn1Op> Asn1Op for Asn1ImpEncap<T> {
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize = 0;
 		self.val = Vec::new();
@@ -414,7 +414,7 @@ impl<T: Asn1Op> Asn1Op for Asn1ImpSet<T> {
 
 	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
 		if self.val.len() == 0 {
-			let s = asn1_format_line(tab,&(format!("{} IMP_SET 0",name)));
+			let s = asn1_format_line(tab,&(format!("{} IMP_ENCAP 0",name)));
 			iowriter.write(s.as_bytes())?;
 		} else {
 			let mut idx :usize = 0;
@@ -428,7 +428,7 @@ impl<T: Asn1Op> Asn1Op for Asn1ImpSet<T> {
 	}
 
 	fn init_asn1() -> Self {
-		Asn1ImpSet {
+		Asn1ImpEncap {
 			data : Vec::new(),
 			tag : 0,
 			val : Vec::new(),
