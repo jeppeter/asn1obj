@@ -1559,3 +1559,88 @@ impl Asn1Op for Asn1ImpObject {
 		Ok(())
 	}
 }
+
+#[derive(Clone)]
+pub struct Asn1ImpString {
+	pub val :String,
+	tag : u8,
+	data :Vec<u8>,
+}
+
+impl Asn1ImpString {
+	pub fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
+		let oldtag :u8;
+		if (tag & ASN1_PRIMITIVE_TAG) != tag {
+			asn1obj_new_error!{Asn1ObjBaseError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
+		}
+		oldtag = self.tag;
+		self.tag = tag;
+		Ok(oldtag)
+	}
+
+	pub fn get_tag(&self) -> u8 {
+		return self.tag;
+	}
+}
+
+
+impl Asn1Op for Asn1ImpString {
+	fn init_asn1() -> Self {
+		Asn1ImpString {
+			val : "".to_string(),
+			tag : 0,
+			data : Vec::new(),
+		}
+	}
+
+	fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let retv :usize;
+		if code.len() < 2 {
+			asn1obj_new_error!{Asn1ObjBaseError,"len [{}] < 2", code.len()}
+		}
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+
+		if (flag as u8) & ASN1_IMP_FLAG_MASK != ASN1_IMP_FLAG_MASK {
+			asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] & ASN1_IMP_FLAG_MASK [0x{:02x}] != ASN1_IMP_FLAG_MASK [0x{:02x}]", flag,ASN1_IMP_FLAG_MASK,ASN1_IMP_FLAG_MASK}
+		}
+
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
+		}
+
+		let _ = self.set_tag(code[0] & ASN1_PRIMITIVE_TAG)?;
+
+
+		let mut retm = BytesMut::with_capacity(totallen);
+		for i in 0..totallen {
+			retm.put_u8(code[hdrlen + i]);
+		}
+		let a = retm.freeze();
+		self.val = String::from_utf8_lossy(&a).to_string();
+		self.data = Vec::new();
+		retv = hdrlen + totallen;
+		for i in 0..retv {
+			self.data.push(code[i]);
+		}
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let vcode = self.val.as_bytes();
+		let llen :u64 = (vcode.len() ) as u64;
+		let mut retv :Vec<u8>;
+
+		retv = asn1obj_format_header((ASN1_IMP_FLAG_MASK | self.tag) as u64,llen);
+
+		for i in 0..vcode.len() {
+			retv.push(vcode[i]);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {		
+		let s = asn1_format_line(tab,&(format!("{}: ASN1_IMP_STRING {} tag {}", name, self.val, self.tag)));
+		iowriter.write(s.as_bytes())?;
+		Ok(())
+	}
+}
