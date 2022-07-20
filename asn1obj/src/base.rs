@@ -1,7 +1,7 @@
 
 
 use std::error::Error;
-use crate::asn1impl::{Asn1Op};
+use crate::asn1impl::{Asn1Op,Asn1TagOp};
 use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_BOOLEAN_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5,ASN1_BIT_STRING_FLAG,ASN1_OCT_STRING_FLAG,ASN1_NULL_FLAG,ASN1_OBJECT_FLAG,ASN1_ENUMERATED_FLAG,ASN1_UTF8STRING_FLAG,ASN1_IMP_FLAG_MASK};
 use crate::strop::{asn1_format_line};
 use crate::{asn1obj_error_class,asn1obj_new_error};
@@ -1099,8 +1099,8 @@ pub struct Asn1ImpInteger {
 }
 
 
-impl Asn1ImpInteger {
-	pub fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
+impl Asn1TagOp for Asn1ImpInteger {
+	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
 		let oldtag :u8;
 		if (tag & ASN1_PRIMITIVE_TAG) != tag {
 			asn1obj_new_error!{Asn1ObjBaseError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
@@ -1110,7 +1110,7 @@ impl Asn1ImpInteger {
 		Ok(oldtag)
 	}
 
-	pub fn get_tag(&self) -> u8 {
+	fn get_tag(&self) -> u8 {
 		return self.tag;
 	}
 }
@@ -1281,8 +1281,8 @@ pub struct Asn1ImpObject {
 }
 
 
-impl Asn1ImpObject {
-	pub fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
+impl Asn1TagOp for Asn1ImpObject {
+	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
 		let oldtag :u8;
 		if (tag & ASN1_PRIMITIVE_TAG) != tag {
 			asn1obj_new_error!{Asn1ObjBaseError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
@@ -1292,7 +1292,7 @@ impl Asn1ImpObject {
 		Ok(oldtag)
 	}
 
-	pub fn get_tag(&self) -> u8 {
+	fn get_tag(&self) -> u8 {
 		return self.tag;
 	}
 }
@@ -1567,8 +1567,8 @@ pub struct Asn1ImpString {
 	data :Vec<u8>,
 }
 
-impl Asn1ImpString {
-	pub fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
+impl Asn1TagOp for Asn1ImpString {
+	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
 		let oldtag :u8;
 		if (tag & ASN1_PRIMITIVE_TAG) != tag {
 			asn1obj_new_error!{Asn1ObjBaseError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
@@ -1578,7 +1578,7 @@ impl Asn1ImpString {
 		Ok(oldtag)
 	}
 
-	pub fn get_tag(&self) -> u8 {
+	fn get_tag(&self) -> u8 {
 		return self.tag;
 	}
 }

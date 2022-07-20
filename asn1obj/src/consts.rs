@@ -13,6 +13,7 @@ pub const ASN1_UTF8STRING_FLAG :u8 = 0xc;
 pub const ASN1_IMP_FLAG_MASK :u8 = 0x80;
 pub const ASN1_SEQ_MASK :u8 = 0x30;
 pub const ASN1_SET_MASK :u8 = 0x31;
+pub const ASN1_IMP_SET_MASK :u8 = 0xa0;
 
 pub const ASN1_SET_OF_FLAG :u8 = 0xa0;
 

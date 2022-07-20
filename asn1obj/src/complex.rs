@@ -1,5 +1,5 @@
 
-use crate::asn1impl::{Asn1Op};
+use crate::asn1impl::{Asn1Op,Asn1TagOp};
 use std::io::{Write};
 use std::error::Error;
 
@@ -11,7 +11,7 @@ use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 use crate::strop::{asn1_format_line};
 use crate::base::{asn1obj_extract_header,asn1obj_format_header};
 
-use crate::consts::{ASN1_SET_OF_FLAG,ASN1_PRIMITIVE_TAG,ASN1_SEQ_MASK,ASN1_SET_MASK};
+use crate::consts::{ASN1_SET_OF_FLAG,ASN1_PRIMITIVE_TAG,ASN1_SEQ_MASK,ASN1_SET_MASK,ASN1_IMP_SET_MASK};
 
 asn1obj_error_class!{Asn1ComplexError}
 
@@ -78,8 +78,8 @@ pub struct Asn1SetOf<T : Asn1Op> {
 	data : Vec<u8>,
 }
 
-impl<T :Asn1Op> Asn1SetOf<T> {
-	pub fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
+impl<T :Asn1Op> Asn1TagOp for Asn1SetOf<T> {
+	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
 		let oldtag :u8;
 		if (tag & ASN1_PRIMITIVE_TAG) != tag {
 			asn1obj_new_error!{Asn1ComplexError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
@@ -89,7 +89,7 @@ impl<T :Asn1Op> Asn1SetOf<T> {
 		Ok(oldtag)
 	}
 
-	pub fn get_tag(&self) -> u8 {
+	fn get_tag(&self) -> u8 {
 		return self.tag;
 	}
 }
@@ -330,6 +330,107 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 	fn init_asn1() -> Self {
 		Asn1Set {
 			data : Vec::new(),
+			val : Vec::new(),
+		}
+	}
+}
+
+pub struct Asn1ImpSet<T : Asn1Op> {
+	pub val : Vec<T>,
+	tag : u8,
+	data : Vec<u8>,
+}
+
+
+impl<T: Asn1Op> Asn1TagOp for Asn1ImpSet<T> {
+	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
+		let oldtag :u8;
+		if (tag & ASN1_PRIMITIVE_TAG) != tag {
+			asn1obj_new_error!{Asn1ComplexError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
+		}
+		oldtag = self.tag;
+		self.tag = tag;
+		Ok(oldtag)
+	}
+
+	fn get_tag(&self) -> u8 {
+		return self.tag;
+	}	
+}
+
+impl<T: Asn1Op> Asn1Op for Asn1ImpSet<T> {
+	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let mut retv :usize = 0;
+		self.val = Vec::new();
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+		asn1obj_log_trace!("flag [0x{:x}]", flag);
+		if ((flag as u8) & ASN1_IMP_SET_MASK) != ASN1_IMP_SET_MASK {
+			/*we do have any type*/
+			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] & ASN1_IMP_SET_MASK[0x{:02x}] != ASN1_IMP_SET_MASK [0x{:02x}]", flag, ASN1_IMP_SET_MASK,ASN1_IMP_SET_MASK}
+		}
+
+		let _ = self.set_tag(code[0] & ASN1_PRIMITIVE_TAG)?;
+
+		retv += hdrlen;
+		while retv < (totallen + hdrlen) {
+			let mut v :T = T::init_asn1();
+			let c = v.decode_asn1(&(code[retv..(hdrlen+totallen)]))?;
+			retv += c;
+			self.val.push(v);
+		}
+
+		self.data = Vec::new();
+		for i in 0..retv {
+			self.data.push(code[i]);
+		}
+		asn1obj_log_trace!("retv [{}]",retv);
+
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let mut retv :Vec<u8>;
+		let mut encv :Vec<u8> = Vec::new();
+		let mut idx :usize = 0;
+		let flag :u64;
+
+
+		while idx < self.val.len() {
+			let code = self.val[idx].encode_asn1()?;
+			for i in 0..code.len() {
+				encv.push(code[i]);
+			}
+			idx += 1;
+		}
+
+		flag = (ASN1_IMP_SET_MASK | self.tag) as u64;
+
+		retv = asn1obj_format_header(flag,encv.len() as u64);
+		for i in 0..encv.len() {
+			retv.push(encv[i]);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		if self.val.len() == 0 {
+			let s = asn1_format_line(tab,&(format!("{} IMP_SET 0",name)));
+			iowriter.write(s.as_bytes())?;
+		} else {
+			let mut idx :usize = 0;
+			while idx < self.val.len() {
+				let s = format!("{}[{}]",name,idx);
+				let _ = self.val[idx].print_asn1(&s,tab,iowriter)?;
+				idx += 1;
+			}
+		}
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		Asn1ImpSet {
+			data : Vec::new(),
+			tag : 0,
 			val : Vec::new(),
 		}
 	}
