@@ -11,6 +11,7 @@ pub const ASN1_OBJECT_FLAG :u8 = 0x6;
 pub const ASN1_ENUMERATED_FLAG :u8 = 0xa;
 pub const ASN1_UTF8STRING_FLAG :u8 = 0xc;
 pub const ASN1_IMP_FLAG_MASK :u8 = 0x80;
+pub const ASN1_SEQ_MASK :u8 = 0x30;
 
 pub const ASN1_SET_OF_FLAG :u8 = 0xa0;
 
