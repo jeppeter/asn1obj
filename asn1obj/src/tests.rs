@@ -1,6 +1,6 @@
 
 use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null,Asn1Object,Asn1Enumerated,Asn1String,Asn1ImpInteger,Asn1ImpObject,Asn1ImpString};
-use crate::complex::{Asn1Opt,Asn1SetOf,Asn1Seq,Asn1Set,Asn1ImpEncap};
+use crate::complex::{Asn1Opt,Asn1SetOf,Asn1Seq,Asn1Set,Asn1ImpEncap,Asn1Ndef};
 use crate::{asn1obj_log_trace};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 use crate::asn1impl::{Asn1Op,Asn1TagOp};
@@ -1115,4 +1115,34 @@ fn test_a017() {
 	assert!(a1.val[0].val[0].val == -20);
 	assert!(a1.val[1].val[0].val == 30);
 	assert!(a1.val[2].val[0].val == 50);
+}
+
+#[test]
+fn test_a018() {
+	let mut a1 :Asn1Ndef<Asn1String> = Asn1Ndef::init_asn1();
+	let mut v1 :Vec<u8>;
+	let mut n1 :Asn1String = Asn1String::init_asn1();
+	let _ = a1.set_tag(0x4).unwrap();
+	v1 = vec![0xa4,0x2,0xc,0x0];
+	let c1 = a1.encode_asn1().unwrap();
+	assert!(check_equal_u8(&c1,&v1));
+	n1.val = "helloworldt".to_string();
+	a1.val = Some(n1.clone());
+	v1 = vec![0xa4,0xd,0xc,0xb,0x68,0x65,0x6c,0x6c,0x6f,0x77,0x6f,0x72,0x6c,0x64,0x74];
+	let c1 = a1.encode_asn1().unwrap();
+	assert!(check_equal_u8(&c1,&v1));
+
+	let mut a1 :Asn1Ndef<Asn1Integer> = Asn1Ndef::init_asn1();
+	let mut v1 :Vec<u8>;
+	let mut n1 :Asn1Integer = Asn1Integer::init_asn1();
+	let _ = a1.set_tag(0x4).unwrap();
+	v1 = vec![0xa4,0x3,0x2,0x1,0x0];
+	let c1 = a1.encode_asn1().unwrap();
+	assert!(check_equal_u8(&c1,&v1));
+	n1.val = 20;
+	a1.val = Some(n1.clone());
+	v1 = vec![0xa4,0x3,0x2,0x1,0x14];
+	let c1 = a1.encode_asn1().unwrap();
+	assert!(check_equal_u8(&c1,&v1));
+
 }

@@ -21,12 +21,13 @@ pub struct Asn1Opt<T : Asn1Op + Clone> {
 	data : Vec<u8>,
 }
 
+
 impl<T: Asn1Op + Clone> Asn1Op for Asn1Opt<T> {
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut v :T; 
 		let mut retv :usize = 0;
 		if self.val.is_some() {
- 			v = self.val.as_ref().unwrap().clone();
+			v = self.val.as_ref().unwrap().clone();
 		} else {
 			v = T::init_asn1();
 		}
@@ -432,6 +433,105 @@ impl<T: Asn1Op> Asn1Op for Asn1ImpEncap<T> {
 			data : Vec::new(),
 			tag : 0,
 			val : Vec::new(),
+		}
+	}
+}
+
+#[derive(Clone)]
+pub struct Asn1Ndef<T : Asn1Op + Clone> {
+	pub val :Option<T>,
+	tag : u8,
+	data : Vec<u8>,
+}
+
+
+impl<T: Asn1Op + Clone> Asn1TagOp for Asn1Ndef<T> {
+	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
+		let oldtag :u8;
+		if (tag & ASN1_PRIMITIVE_TAG) != tag {
+			asn1obj_new_error!{Asn1ComplexError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
+		}
+		oldtag = self.tag;
+		self.tag = tag;
+		Ok(oldtag)
+	}
+
+	fn get_tag(&self) -> u8 {
+		return self.tag;
+	}	
+}
+
+impl<T: Asn1Op + Clone> Asn1Op for Asn1Ndef<T> {
+	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let mut retv :usize = 0;
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+		asn1obj_log_trace!("flag [0x{:x}]", flag);
+		if ((flag as u8) & ASN1_IMP_SET_MASK) != ASN1_IMP_SET_MASK {
+			/*we do have any type*/
+			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] & ASN1_IMP_SET_MASK[0x{:02x}] != ASN1_IMP_SET_MASK [0x{:02x}]", flag, ASN1_IMP_SET_MASK,ASN1_IMP_SET_MASK}
+		}
+
+		let _ = self.set_tag(code[0] & ASN1_PRIMITIVE_TAG)?;
+		self.val = None;
+
+		if totallen > 0 {
+			let mut v :T = T::init_asn1();
+			let c = v.decode_asn1(&(code[retv..(hdrlen+totallen)]))?;
+			if c != totallen {
+				asn1obj_new_error!{Asn1ComplexError,"c [{}] != totallen [{}]", c, totallen}
+			}
+			self.val = Some(v.clone());			
+		}
+
+		self.data = Vec::new();
+		for i in 0..retv {
+			self.data.push(code[i]);
+		}
+		retv = totallen + hdrlen;
+		asn1obj_log_trace!("retv [{}]",retv);
+
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let mut retv :Vec<u8>;
+		let encv :Vec<u8>;
+		let flag :u64;
+
+		if self.val.is_some() {
+			let v = self.val.as_ref().unwrap().clone();
+			encv = v.encode_asn1()?;
+		} else {
+			let v = T::init_asn1();
+			encv = v.encode_asn1()?;
+		}
+
+
+		flag = (ASN1_IMP_SET_MASK | self.tag) as u64;
+
+		retv = asn1obj_format_header(flag,encv.len() as u64);
+		for i in 0..encv.len() {
+			retv.push(encv[i]);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		if self.val.is_none() {
+			let s = asn1_format_line(tab,&(format!("{} NDEF 0",name)));
+			iowriter.write(s.as_bytes())?;
+		} else {
+			let v = self.val.as_ref().unwrap().clone();
+			v.print_asn1(name,tab,iowriter)?
+		}
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		Asn1Ndef {
+			data : Vec::new(),
+			tag : 0,
+			val : None,
 		}
 	}
 }
