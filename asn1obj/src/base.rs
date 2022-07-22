@@ -151,6 +151,96 @@ pub fn asn1obj_format_header(tag :u64, length :u64) -> Vec<u8> {
 }
 
 #[derive(Clone)]
+pub struct Asn1Any {
+	pub content :Vec<u8>,
+	pub tag : u64,
+}
+
+impl Asn1Op for Asn1Any {
+	fn init_asn1() -> Self {
+		Asn1Any {
+			tag : 0,
+			content : Vec::new(),
+		}
+	}
+
+	fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let retv :usize;
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+
+		self.tag = flag ;
+
+
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
+		}
+
+		self.content = Vec::new();
+		for i in 0..totallen{
+			self.content.push(code[hdrlen+i]);
+		}
+		retv= hdrlen + totallen;
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let mut retv :Vec<u8>;
+		retv = asn1obj_format_header(self.tag , self.content.len() as u64);
+		for i in 0..self.content.len() {
+			retv.push(self.content[i]);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {		
+		let mut s = asn1_format_line(tab,&(format!("{}: ASN1_ANY {}", name, self.content.len())));
+		let mut idx :usize;
+		let mut lastidx :usize;
+		let mut curs :String;
+		idx = 0;
+		lastidx = 0;
+		curs = format!("0x{:08x}:",idx);
+		while idx < self.content.len() {
+			if (idx % 16) == 0 && idx > 0 {
+				curs.push_str(&format!("    "));
+				while lastidx < idx {
+					if (self.content[lastidx] >= 0x20) && (self.content[lastidx] <= 0x7e) {
+						curs.push(self.content[lastidx] as char);
+					} else {
+						curs.push_str(".");
+					}
+					lastidx += 1;
+				}
+				s.push_str(&asn1_format_line(tab + 1,&format!("{}",curs)));
+				curs = format!("0x{:08x}:",idx);
+			}
+			curs.push_str(&format!(" 0x{:02x}",self.content[idx]));
+			idx += 1;
+		}
+
+		if idx != lastidx {
+			while (idx % 16) != 0 {
+				curs.push_str("     ");
+				idx += 1;
+			}
+			curs.push_str("    ");
+			while lastidx != self.content.len() {
+				if self.content[lastidx] >= 0x20 && self.content[lastidx] <= 0x7e {
+					curs.push(self.content[lastidx] as char);
+				} else {
+					curs.push_str(".");
+				}
+				lastidx += 1;
+			}
+			s.push_str(&asn1_format_line(tab + 1, &(format!("{}",curs))));
+		}
+
+		iowriter.write(s.as_bytes())?;
+		Ok(())
+	}	
+}
+
+#[derive(Clone)]
 pub struct Asn1Integer {
 	pub val :i64,
 	data :Vec<u8>,
