@@ -1182,7 +1182,7 @@ impl Asn1Op for Asn1String {
 }
 
 #[derive(Clone)]
-pub struct Asn1ImpInteger<const TAG :u8> {
+pub struct Asn1ImpInteger<const TAG :u8=0> {
 	pub val :i64,
 	tag :u8,	
 	data :Vec<u8>,
@@ -1348,7 +1348,7 @@ impl<const TAG :u8> Asn1Op for Asn1ImpInteger<TAG> {
 
 
 #[derive(Clone)]
-pub struct Asn1ImpObject<const TAG :u8> {
+pub struct Asn1ImpObject<const TAG :u8=0> {
 	val :String,
 	tag : u8,
 	data :Vec<u8>,
@@ -1621,7 +1621,7 @@ impl<const TAG :u8> Asn1Op for Asn1ImpObject<TAG> {
 }
 
 #[derive(Clone)]
-pub struct Asn1ImpString<const TAG:u8> {
+pub struct Asn1ImpString<const TAG:u8=0> {
 	pub val :String,
 	tag : u8,
 	data :Vec<u8>,

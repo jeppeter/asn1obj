@@ -74,7 +74,7 @@ impl<T: Asn1Op + Clone> Asn1Op for Asn1Opt<T> {
 }
 
 #[derive(Clone)]
-pub struct Asn1SetOf<T : Asn1Op, const TAG:u8> {
+pub struct Asn1SetOf<T : Asn1Op, const TAG:u8=0> {
 	pub val : Vec<T>,
 	tag : u8,
 	data : Vec<u8>,
@@ -324,7 +324,7 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 }
 
 #[derive(Clone)]
-pub struct Asn1ImpEncap<T : Asn1Op,const TAG:u8> {
+pub struct Asn1ImpEncap<T : Asn1Op,const TAG:u8=0> {
 	pub val : Vec<T>,
 	tag : u8,
 	data : Vec<u8>,
@@ -413,7 +413,7 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpEncap<T,TAG> {
 }
 
 #[derive(Clone)]
-pub struct Asn1Ndef<T : Asn1Op + Clone, const TAG:u8> {
+pub struct Asn1Ndef<T : Asn1Op + Clone, const TAG:u8=0> {
 	pub val :Option<T>,
 	tag : u8,
 	data : Vec<u8>,
