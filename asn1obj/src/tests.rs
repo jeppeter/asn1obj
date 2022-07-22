@@ -3,7 +3,7 @@ use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null,A
 use crate::complex::{Asn1Opt,Asn1SetOf,Asn1Seq,Asn1Set,Asn1ImpEncap,Asn1Ndef};
 use crate::{asn1obj_log_trace};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
-use crate::asn1impl::{Asn1Op,Asn1TagOp};
+use crate::asn1impl::{Asn1Op};
 
 
 fn check_equal_u8(a :&[u8],b :&[u8]) -> bool {
@@ -685,10 +685,9 @@ fn test_a009() {
 
 #[test]
 fn test_a010() {
-	let mut a1 :Asn1SetOf<Asn1Integer> = Asn1SetOf::init_asn1();
+	let mut a1 :Asn1SetOf<Asn1Integer,3> = Asn1SetOf::init_asn1();
 	let mut v1 :Vec<u8>;
 	let mut n1 :Asn1Integer = Asn1Integer::init_asn1();
-	let _ = a1.set_tag(0x3).unwrap();
 	n1.val = -20;
 	a1.val.push(n1.clone());
 	n1.val = 30;
@@ -701,7 +700,6 @@ fn test_a010() {
 	v1 = vec![0xa3,0x9,0x2,0x1,0xec,0x2,0x1,0x1e,0x2,0x1,0x32];
 	let c = a1.decode_asn1(&v1).unwrap();
 	assert!(c == v1.len());
-	assert!(a1.get_tag() == 0x3);
 	assert!(a1.val.len() == 3);
 	assert!(a1.val[0].val == -20);
 	assert!(a1.val[1].val == 30);
@@ -710,28 +708,25 @@ fn test_a010() {
 
 #[test]
 fn test_a011() {
-	let mut a1 :Asn1ImpInteger = Asn1ImpInteger::init_asn1();
+	let mut a1 :Asn1ImpInteger<1> = Asn1ImpInteger::init_asn1();
 	let mut v1 :Vec<u8>;
 	a1.val = -2;
-	let _ = a1.set_tag(0x1).unwrap();
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x81,0x1,0xfe];
 	assert!(check_equal_u8(&c,&v1));
 
 	let s = a1.decode_asn1(&v1).unwrap();
 	assert!(a1.val == -2);
-	assert!(a1.get_tag() == 0x1);
 	assert!(s == 3);
 
+	let mut a1 :Asn1ImpInteger<2> = Asn1ImpInteger::init_asn1();
 	a1.val = -256;
-	let _ = a1.set_tag(0x2).unwrap();
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x82,0x2,0xff,0x00];
 	assert!(check_equal_u8(&c,&v1));
 
 	let s = a1.decode_asn1(&v1).unwrap();
 	assert!(a1.val == -256);
-	assert!(a1.get_tag() == 0x2);
 	assert!(s == 4);
 
 
@@ -944,10 +939,9 @@ fn test_a011() {
 
 #[test]
 fn test_a012() {
-	let mut a1 :Asn1ImpObject = Asn1ImpObject::init_asn1();
+	let mut a1 :Asn1ImpObject<2> = Asn1ImpObject::init_asn1();
 	let mut v1 :Vec<u8>;
 	let _ = a1.set_value("1.2.3.522.332").unwrap();
-	let _ = a1.set_tag(0x2).unwrap();
 	v1 = vec![0x82,0x06,0x2a,0x03,0x84,0x0a,0x82,0x4c];
 	let c = a1.encode_asn1().unwrap();
 	assert!(check_equal_u8(&v1,&c));
@@ -974,16 +968,14 @@ fn test_a012() {
 
 #[test]
 fn test_a013() {
-	let mut a1 :Asn1ImpString = Asn1ImpString::init_asn1();
+	let mut a1 :Asn1ImpString<4> = Asn1ImpString::init_asn1();
 	let mut v1 :Vec<u8>;
 	a1.val = "helloworldt".to_string();
-	let _ = a1.set_tag(0x4).unwrap();
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0x84,0x0b,0x68,0x65,0x6c,0x6c,0x6f,0x77,0x6f,0x72,0x6c,0x64,0x74];
 	assert!(check_equal_u8(&v1,&c));
 	let s = a1.decode_asn1(&v1).unwrap();
 	assert!(a1.val == "helloworldt");
-	assert!(a1.get_tag() == 0x4);
 	assert!(s == v1.len());
 
 	a1.val = "helloworlds".to_string();
@@ -1011,7 +1003,6 @@ fn test_a013() {
 	asn1obj_log_trace!("val [{}]",a1.val);
 	asn1obj_log_trace!("cv  [{}]",cv);
 	assert!(a1.val == cv);
-	assert!(a1.get_tag() == 0x4);
 	assert!(s == v1.len());
 }
 
@@ -1063,10 +1054,9 @@ fn test_a015() {
 
 #[test]
 fn test_a016() {
-	let mut a1 :Asn1ImpEncap<Asn1Integer> = Asn1ImpEncap::init_asn1();
+	let mut a1 :Asn1ImpEncap<Asn1Integer,4> = Asn1ImpEncap::init_asn1();
 	let mut v1 :Vec<u8>;
 	let mut n1 :Asn1Integer = Asn1Integer::init_asn1();
-	let _ = a1.set_tag(0x4).unwrap();
 	n1.val = -20;
 	a1.val.push(n1.clone());
 	n1.val = 30;
@@ -1079,7 +1069,6 @@ fn test_a016() {
 	v1 = vec![0xa4,0x9,0x2,0x1,0xec,0x2,0x1,0x1e,0x2,0x1,0x32];
 	let c = a1.decode_asn1(&v1).unwrap();
 	assert!(c == v1.len());
-	assert!(a1.get_tag() == 0x4);
 	assert!(a1.val.len() == 3);
 	assert!(a1.val[0].val == -20);
 	assert!(a1.val[1].val == 30);
@@ -1088,11 +1077,10 @@ fn test_a016() {
 
 #[test]
 fn test_a017() {
-	let mut a1 :Asn1ImpEncap<Asn1Set<Asn1Integer>> = Asn1ImpEncap::init_asn1();
+	let mut a1 :Asn1ImpEncap<Asn1Set<Asn1Integer>,4> = Asn1ImpEncap::init_asn1();
 	let mut v1 :Vec<u8>;
 	let mut n1 :Asn1Set<Asn1Integer> = Asn1Set::init_asn1();
 	let mut i1 :Asn1Integer = Asn1Integer::init_asn1();
-	let _ = a1.set_tag(0x4).unwrap();
 	i1.val = -20;
 	n1.val.push(i1.clone());
 	a1.val.push(n1.clone());
@@ -1111,7 +1099,6 @@ fn test_a017() {
 	let s = a1.decode_asn1(&v1).unwrap();
 	assert!(s == v1.len());
 	assert!(a1.val.len() == 3);
-	assert!(a1.get_tag() == 0x4);
 	assert!(a1.val[0].val[0].val == -20);
 	assert!(a1.val[1].val[0].val == 30);
 	assert!(a1.val[2].val[0].val == 50);
@@ -1119,10 +1106,9 @@ fn test_a017() {
 
 #[test]
 fn test_a018() {
-	let mut a1 :Asn1Ndef<Asn1String> = Asn1Ndef::init_asn1();
+	let mut a1 :Asn1Ndef<Asn1String,4> = Asn1Ndef::init_asn1();
 	let mut v1 :Vec<u8>;
 	let mut n1 :Asn1String = Asn1String::init_asn1();
-	let _ = a1.set_tag(0x4).unwrap();
 	v1 = vec![0xa4,0x2,0xc,0x0];
 	let c1 = a1.encode_asn1().unwrap();
 	assert!(check_equal_u8(&c1,&v1));
@@ -1132,10 +1118,9 @@ fn test_a018() {
 	let c1 = a1.encode_asn1().unwrap();
 	assert!(check_equal_u8(&c1,&v1));
 
-	let mut a1 :Asn1Ndef<Asn1Integer> = Asn1Ndef::init_asn1();
+	let mut a1 :Asn1Ndef<Asn1Integer,4> = Asn1Ndef::init_asn1();
 	let mut v1 :Vec<u8>;
 	let mut n1 :Asn1Integer = Asn1Integer::init_asn1();
-	let _ = a1.set_tag(0x4).unwrap();
 	v1 = vec![0xa4,0x3,0x2,0x1,0x0];
 	let c1 = a1.encode_asn1().unwrap();
 	assert!(check_equal_u8(&c1,&v1));

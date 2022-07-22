@@ -1,5 +1,5 @@
 
-use crate::asn1impl::{Asn1Op,Asn1TagOp};
+use crate::asn1impl::{Asn1Op};
 use std::io::{Write};
 use std::error::Error;
 
@@ -74,30 +74,15 @@ impl<T: Asn1Op + Clone> Asn1Op for Asn1Opt<T> {
 }
 
 #[derive(Clone)]
-pub struct Asn1SetOf<T : Asn1Op> {
+pub struct Asn1SetOf<T : Asn1Op, const TAG:u8> {
 	pub val : Vec<T>,
 	tag : u8,
 	data : Vec<u8>,
 }
 
-impl<T :Asn1Op> Asn1TagOp for Asn1SetOf<T> {
-	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
-		let oldtag :u8;
-		if (tag & ASN1_PRIMITIVE_TAG) != tag {
-			asn1obj_new_error!{Asn1ComplexError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
-		}
-		oldtag = self.tag;
-		self.tag = tag;
-		Ok(oldtag)
-	}
-
-	fn get_tag(&self) -> u8 {
-		return self.tag;
-	}
-}
 
 
-impl<T: Asn1Op> Asn1Op for Asn1SetOf<T> {
+impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1SetOf<T,TAG> {
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize = 0;
 		self.val = Vec::new();
@@ -108,7 +93,10 @@ impl<T: Asn1Op> Asn1Op for Asn1SetOf<T> {
 			return Ok(retv);
 		}
 
-		self.tag = (flag as u8) & ASN1_PRIMITIVE_TAG;
+		let ctag = (flag as u8) & ASN1_PRIMITIVE_TAG;
+		if ctag != self.tag {
+			asn1obj_new_error!(Asn1ComplexError,"tag [0x{:02x}] != self.tag [0x{:02x}]", ctag,self.tag)
+		}
 
 		retv += hdrlen;
 		while retv < (totallen + hdrlen) {
@@ -171,7 +159,7 @@ impl<T: Asn1Op> Asn1Op for Asn1SetOf<T> {
 	fn init_asn1() -> Self {
 		Asn1SetOf {
 			data : Vec::new(),
-			tag : 0,
+			tag : TAG,
 			val : Vec::new(),
 		}
 	}
@@ -336,30 +324,14 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 }
 
 #[derive(Clone)]
-pub struct Asn1ImpEncap<T : Asn1Op> {
+pub struct Asn1ImpEncap<T : Asn1Op,const TAG:u8> {
 	pub val : Vec<T>,
 	tag : u8,
 	data : Vec<u8>,
 }
 
 
-impl<T: Asn1Op> Asn1TagOp for Asn1ImpEncap<T> {
-	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
-		let oldtag :u8;
-		if (tag & ASN1_PRIMITIVE_TAG) != tag {
-			asn1obj_new_error!{Asn1ComplexError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
-		}
-		oldtag = self.tag;
-		self.tag = tag;
-		Ok(oldtag)
-	}
-
-	fn get_tag(&self) -> u8 {
-		return self.tag;
-	}	
-}
-
-impl<T: Asn1Op> Asn1Op for Asn1ImpEncap<T> {
+impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpEncap<T,TAG> {
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize = 0;
 		self.val = Vec::new();
@@ -370,7 +342,10 @@ impl<T: Asn1Op> Asn1Op for Asn1ImpEncap<T> {
 			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] & ASN1_IMP_SET_MASK[0x{:02x}] != ASN1_IMP_SET_MASK [0x{:02x}]", flag, ASN1_IMP_SET_MASK,ASN1_IMP_SET_MASK}
 		}
 
-		let _ = self.set_tag(code[0] & ASN1_PRIMITIVE_TAG)?;
+		let ctag = code[0] & ASN1_PRIMITIVE_TAG;
+		if ctag != self.tag {
+			asn1obj_new_error!{Asn1ComplexError,"tag [0x{:02x}] != self.tag [0x{:02x}]", ctag, self.tag}
+		}
 
 		retv += hdrlen;
 		while retv < (totallen + hdrlen) {
@@ -431,37 +406,22 @@ impl<T: Asn1Op> Asn1Op for Asn1ImpEncap<T> {
 	fn init_asn1() -> Self {
 		Asn1ImpEncap {
 			data : Vec::new(),
-			tag : 0,
+			tag : TAG,
 			val : Vec::new(),
 		}
 	}
 }
 
 #[derive(Clone)]
-pub struct Asn1Ndef<T : Asn1Op + Clone> {
+pub struct Asn1Ndef<T : Asn1Op + Clone, const TAG:u8> {
 	pub val :Option<T>,
 	tag : u8,
 	data : Vec<u8>,
 }
 
 
-impl<T: Asn1Op + Clone> Asn1TagOp for Asn1Ndef<T> {
-	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
-		let oldtag :u8;
-		if (tag & ASN1_PRIMITIVE_TAG) != tag {
-			asn1obj_new_error!{Asn1ComplexError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
-		}
-		oldtag = self.tag;
-		self.tag = tag;
-		Ok(oldtag)
-	}
 
-	fn get_tag(&self) -> u8 {
-		return self.tag;
-	}	
-}
-
-impl<T: Asn1Op + Clone> Asn1Op for Asn1Ndef<T> {
+impl<T: Asn1Op + Clone, const TAG:u8> Asn1Op for Asn1Ndef<T,TAG> {
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize = 0;
 		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
@@ -471,7 +431,10 @@ impl<T: Asn1Op + Clone> Asn1Op for Asn1Ndef<T> {
 			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] & ASN1_IMP_SET_MASK[0x{:02x}] != ASN1_IMP_SET_MASK [0x{:02x}]", flag, ASN1_IMP_SET_MASK,ASN1_IMP_SET_MASK}
 		}
 
-		let _ = self.set_tag(code[0] & ASN1_PRIMITIVE_TAG)?;
+		let ctag = code[0] & ASN1_PRIMITIVE_TAG;
+		if ctag != self.tag {
+			asn1obj_new_error!{Asn1ComplexError,"tag [0x{:02x}] != self.tag [0x{:02x}]",ctag,self.tag}
+		}
 		self.val = None;
 
 		if totallen > 0 {
@@ -530,7 +493,7 @@ impl<T: Asn1Op + Clone> Asn1Op for Asn1Ndef<T> {
 	fn init_asn1() -> Self {
 		Asn1Ndef {
 			data : Vec::new(),
-			tag : 0,
+			tag : TAG,
 			val : None,
 		}
 	}

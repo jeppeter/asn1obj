@@ -1,7 +1,7 @@
 
 
 use std::error::Error;
-use crate::asn1impl::{Asn1Op,Asn1TagOp};
+use crate::asn1impl::{Asn1Op};
 use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_BOOLEAN_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5,ASN1_BIT_STRING_FLAG,ASN1_OCT_STRING_FLAG,ASN1_NULL_FLAG,ASN1_OBJECT_FLAG,ASN1_ENUMERATED_FLAG,ASN1_UTF8STRING_FLAG,ASN1_IMP_FLAG_MASK};
 use crate::strop::{asn1_format_line};
 use crate::{asn1obj_error_class,asn1obj_new_error};
@@ -1182,35 +1182,18 @@ impl Asn1Op for Asn1String {
 }
 
 #[derive(Clone)]
-pub struct Asn1ImpInteger {
+pub struct Asn1ImpInteger<const TAG :u8> {
 	pub val :i64,
 	tag :u8,	
 	data :Vec<u8>,
 }
 
 
-impl Asn1TagOp for Asn1ImpInteger {
-	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
-		let oldtag :u8;
-		if (tag & ASN1_PRIMITIVE_TAG) != tag {
-			asn1obj_new_error!{Asn1ObjBaseError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
-		}
-		oldtag = self.tag;
-		self.tag = tag;
-		Ok(oldtag)
-	}
-
-	fn get_tag(&self) -> u8 {
-		return self.tag;
-	}
-}
-
-
-impl Asn1Op for Asn1ImpInteger {
+impl<const TAG :u8> Asn1Op for Asn1ImpInteger<TAG> {
 	fn init_asn1() -> Self {
 		Asn1ImpInteger {
 			val : 0,
-			tag : 0,
+			tag : TAG,
 			data : Vec::new(),
 		}
 	}
@@ -1232,7 +1215,10 @@ impl Asn1Op for Asn1ImpInteger {
 			asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
 		}
 
-		let _ = self.set_tag(code[0] & ASN1_PRIMITIVE_TAG)?;
+		if (code[0] & ASN1_PRIMITIVE_TAG) != self.tag {
+			asn1obj_new_error!{Asn1ObjBaseError,"tag [0x{:02x}] != self.tag [0x{:02x}] ", code[0] & ASN1_PRIMITIVE_TAG, self.tag}
+		}
+
 
 		if totallen < 1 {
 			asn1obj_new_error!{Asn1ObjBaseError,"need 1 length"}
@@ -1240,8 +1226,6 @@ impl Asn1Op for Asn1ImpInteger {
 		if (code[hdrlen] & 0x80) != 0 {
 			neg = true;
 		}
-
-
 
 		if neg {
 			let mut uval :u64;
@@ -1364,31 +1348,14 @@ impl Asn1Op for Asn1ImpInteger {
 
 
 #[derive(Clone)]
-pub struct Asn1ImpObject {
+pub struct Asn1ImpObject<const TAG :u8> {
 	val :String,
 	tag : u8,
 	data :Vec<u8>,
 }
 
 
-impl Asn1TagOp for Asn1ImpObject {
-	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
-		let oldtag :u8;
-		if (tag & ASN1_PRIMITIVE_TAG) != tag {
-			asn1obj_new_error!{Asn1ObjBaseError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
-		}
-		oldtag = self.tag;
-		self.tag = tag;
-		Ok(oldtag)
-	}
-
-	fn get_tag(&self) -> u8 {
-		return self.tag;
-	}
-}
-
-
-impl Asn1ImpObject {
+impl<const TAG :u8> Asn1ImpObject<TAG> {
 	pub fn set_value(&mut self,val :&str) -> Result<String,Box<dyn Error>> {
 		let restr = format!("^([0-9\\.]+)$");
 		let oldstr :String;
@@ -1595,11 +1562,11 @@ impl Asn1ImpObject {
 }
 
 
-impl Asn1Op for Asn1ImpObject {
+impl<const TAG :u8> Asn1Op for Asn1ImpObject<TAG> {
 	fn init_asn1() -> Self {
 		Asn1ImpObject {
 			val : "".to_string(),
-			tag : 0,
+			tag : TAG,
 			data : Vec::new(),
 		}
 	}
@@ -1619,7 +1586,10 @@ impl Asn1Op for Asn1ImpObject {
 			asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
 		}
 
-		let _ = self.set_tag(code[0] & ASN1_PRIMITIVE_TAG)?;
+		if (code[0] & ASN1_PRIMITIVE_TAG) != self.tag {
+			asn1obj_new_error!{Asn1ObjBaseError,"tag [0x{:02x}] != self.tag [0x{:02x}]", (code[0] & ASN1_PRIMITIVE_TAG), self.tag}
+		}
+
 		let s = self.decode_object(&code[hdrlen..(hdrlen+totallen)])?;
 		self.val = s;
 		self.data = Vec::new();
@@ -1651,34 +1621,19 @@ impl Asn1Op for Asn1ImpObject {
 }
 
 #[derive(Clone)]
-pub struct Asn1ImpString {
+pub struct Asn1ImpString<const TAG:u8> {
 	pub val :String,
 	tag : u8,
 	data :Vec<u8>,
 }
 
-impl Asn1TagOp for Asn1ImpString {
-	fn set_tag(&mut self, tag :u8) -> Result<u8,Box<dyn Error>> {
-		let oldtag :u8;
-		if (tag & ASN1_PRIMITIVE_TAG) != tag {
-			asn1obj_new_error!{Asn1ObjBaseError,"can not accept tag [0x{:02x}] in ASN1_PRIMITIVE_TAG [0x{:02x}]", tag,ASN1_PRIMITIVE_TAG}
-		}
-		oldtag = self.tag;
-		self.tag = tag;
-		Ok(oldtag)
-	}
-
-	fn get_tag(&self) -> u8 {
-		return self.tag;
-	}
-}
 
 
-impl Asn1Op for Asn1ImpString {
+impl<const TAG:u8> Asn1Op for Asn1ImpString<TAG> {
 	fn init_asn1() -> Self {
 		Asn1ImpString {
 			val : "".to_string(),
-			tag : 0,
+			tag : TAG,
 			data : Vec::new(),
 		}
 	}
@@ -1698,7 +1653,9 @@ impl Asn1Op for Asn1ImpString {
 			asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
 		}
 
-		let _ = self.set_tag(code[0] & ASN1_PRIMITIVE_TAG)?;
+		if (code[0] & ASN1_PRIMITIVE_TAG) != self.tag {
+			asn1obj_new_error!{Asn1ObjBaseError,"tag [0x{:02x}] != self.tag [0x{:02x}]", (code[0] & ASN1_PRIMITIVE_TAG), self.tag}
+		}
 
 
 		let mut retm = BytesMut::with_capacity(totallen);
