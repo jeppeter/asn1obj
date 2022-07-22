@@ -1,9 +1,9 @@
 
 use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null,Asn1Object,Asn1Enumerated,Asn1String,Asn1ImpInteger,Asn1ImpObject,Asn1ImpString,Asn1Any};
 use crate::complex::{Asn1Opt,Asn1SetOf,Asn1Seq,Asn1Set,Asn1ImpEncap,Asn1Ndef};
-use crate::{asn1obj_log_trace};
+use crate::{asn1obj_log_trace,asn1obj_error_class,asn1obj_new_error};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
-use crate::asn1impl::{Asn1Op};
+use crate::asn1impl::{Asn1Op,Asn1Selector};
 
 
 fn check_equal_u8(a :&[u8],b :&[u8]) -> bool {
@@ -1145,4 +1145,134 @@ fn test_a019() {
 
 	let v2 = a1.encode_asn1().unwrap();
 	assert!(check_equal_u8(&v2,&v1));
+}
+
+
+use std::error::Error;
+use std::io::Write;
+
+asn1obj_error_class!{Asn1SelectError}
+
+pub struct Asn1ObjectSelector {
+	pub selector :Asn1Object,	
+}
+
+
+impl Asn1Op for Asn1ObjectSelector {
+	fn init_asn1() -> Self {
+		Asn1ObjectSelector {
+			selector : Asn1Object::init_asn1(),
+		}
+	}
+
+	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let retv = self.selector.decode_asn1(code)?;
+		Ok(retv)
+	}
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		if self.selector.get_value().len() == 0 {
+			asn1obj_new_error!{Asn1SelectError,"not set selector"}			
+		}
+		let retv = self.selector.encode_asn1()?;
+		Ok(retv)
+	}
+	fn print_asn1<U :Write>(&self,_name :&str,_tab :i32, _iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		Ok(())
+	}
+}
+
+impl Asn1Selector for Asn1ObjectSelector {
+	fn decode_select(&self) -> Result<String,Box<dyn Error>> {
+		if self.selector.get_value() == "1.2.33" {
+			return Ok("ci".to_string());
+		} else if self.selector.get_value() == "1.2.35" {
+			return Ok("cs".to_string());
+		} else if self.selector.get_value() == "1.2.37" {
+			return Ok("co".to_string());
+		} 
+		asn1obj_new_error!{Asn1SelectError,"not support object [{}]", self.selector.get_value()}
+	}
+
+	fn encode_select(&self) -> Result<String,Box<dyn Error>> {
+		if self.selector.get_value() == "1.2.33" {
+			return Ok("ci".to_string());
+		} else if self.selector.get_value() == "1.2.35" {
+			return Ok("cs".to_string());
+		} else if self.selector.get_value() == "1.2.37" {
+			return Ok("co".to_string());
+		} 
+		asn1obj_new_error!{Asn1SelectError,"not support object [{}]", self.selector.get_value()}
+	}
+}
+
+
+pub struct Asn1ChoiceEx {
+	pub select :Asn1ObjectSelector,
+	pub ci :Asn1Integer,
+	pub cs :Asn1String,
+	pub co :Asn1Object,
+}
+
+impl Asn1Op for Asn1ChoiceEx {
+	fn init_asn1() -> Self {
+		Asn1ChoiceEx {
+			select : Asn1ObjectSelector::init_asn1(),
+			ci : Asn1Integer::init_asn1(),
+			cs : Asn1String::init_asn1(),
+			co : Asn1Object::init_asn1(),
+		}
+	}
+
+	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize, Box<dyn Error>> {
+		let mut retv :usize ;
+
+		retv = self.select.decode_asn1(code)?;
+		let key = self.select.decode_select()?;
+		if key == "ci" {
+			retv += self.ci.decode_asn1(&(code[retv..]))?;
+		} else if key == "cs" {
+			retv += self.cs.decode_asn1(&(code[retv..]))?;
+		} else if key == "co" {
+			retv += self.co.decode_asn1(&(code[retv..]))?;
+		} else {
+			asn1obj_new_error!{Asn1SelectError,"[{}] not support", key}
+		}
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let key = self.select.encode_select()?;
+		let mut retv :Vec<u8>;
+		let cob :Vec<u8>;
+		retv = self.select.encode_asn1()?;
+		if key == "cs" {
+			cob = self.cs.encode_asn1()?;
+		} else if key == "ci" {
+			cob = self.ci.encode_asn1()?;
+		} else if  key == "co" {
+			cob = self.co.encode_asn1()?;
+		} else {
+			asn1obj_new_error!{Asn1SelectError,"[{}] not support", key}
+		}
+		for i in 0..cob.len() {
+			retv.push(cob[i]);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,_name :&str,_tab :i32, _iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		let key = self.select.decode_select()?;
+		let newkey :String;
+		newkey = format!("{}.{}",_name,key);
+		if key == "cs" {			
+			self.cs.print_asn1(&newkey,_tab, _iowriter)?;
+		} else if key == "ci" {
+			self.ci.print_asn1(&newkey,_tab,_iowriter)?;
+		} else if key == "co" {
+			self.co.print_asn1(&newkey,_tab,_iowriter)?;
+		} else {
+			asn1obj_new_error!{Asn1SelectError,"not support [{}]", key}
+		}
+		Ok(())
+	}
 }

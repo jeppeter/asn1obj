@@ -9,3 +9,7 @@ pub trait Asn1Op {
 	fn init_asn1() -> Self;
 }
 
+pub trait Asn1Selector {
+	fn decode_select(&self) -> Result<String,Box<dyn Error>>;
+	fn encode_select(&self) -> Result<String,Box<dyn Error>>;
+}
