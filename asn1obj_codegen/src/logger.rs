@@ -73,7 +73,6 @@ fn asn1_gen_proc_log_init(prefix :&str) -> LogVar {
 	};
 }
 
-
 lazy_static! {
 	static ref ASN1_GEN_LOG_LEVEL : LogVar = {
 		asn1_gen_proc_log_init("ASN1_GEN")

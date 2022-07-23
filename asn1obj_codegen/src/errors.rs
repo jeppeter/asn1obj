@@ -1,7 +1,3 @@
-use std::env;
-
-
-
 
 macro_rules! asn1_gen_error_class {
 	($type:ident) => {

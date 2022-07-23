@@ -104,13 +104,25 @@ fn get_name_type(n : syn::Field) -> Result<(String,String), Box<dyn Error>> {
 	Ok((name,typename))
 }
 
+macro_rules!  format_tab_line {
+	($tab:expr,$($a:tt)+) => {
+		let _maxtab : usize = ($tab) as usize;
+		let mut _c :String = "".to_string();
+		for _i in 0.._maxtab{
+			_c.push_str("    ");
+		}
+		_c.push_str(&format!($($arg)+));
+		_c
+	}
+}
+
+
 #[proc_macro_attribute]
-pub fn asn1_selector(attr :TokenStream,item :TokenStream) -> TokenStream {
+pub fn asn1_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
 	asn1_gen_log_trace!("item\n{}",item.to_string());
 	let co :syn::DeriveInput;
 	let sname :String;
 	let mut names :HashMap<String,String> = HashMap::new();
-	let mut structnames :Vec<String> = Vec::new();
 
 	match syn::parse::<syn::DeriveInput>(item.clone()) {
 		Ok(v) => {
@@ -135,20 +147,9 @@ pub fn asn1_selector(attr :TokenStream,item :TokenStream) -> TokenStream {
     						asn1_syn_error_fmt!("{:?}",res.err().unwrap());
     					}
     					let (n,tn) = res.unwrap();
-    					if tn.contains(KEYWORD_LEFT_ARROW) && tn != KEYWORD_VEC_STRING {
-    						asn1_syn_error_fmt!("tn [{}] not valid",tn);
-    					}
     					if names.get(&n).is_some() {
     						asn1_syn_error_fmt!("n [{}] has already in",n);
     					}
-
-    					if !check_in_array(ARGSET_KEYWORDS.clone(),&tn) {
-    						if !check_in_array(structnames.clone(), &tn) {
-	    						asn1_gen_log_trace!("input typename [{}]",tn);
-	    						structnames.push(format!("{}",tn));    							
-    						}
-    					}
-
     					names.insert(format!("{}",n),format!("{}",tn));
     				}
     			},
@@ -169,14 +170,116 @@ pub fn asn1_selector(attr :TokenStream,item :TokenStream) -> TokenStream {
     cc.parse().unwrap()
 }
 
+struct ChoiceSyn {
+	sname : String,
+	selname :String,
+	errname :String,
+	parsenames :Vec<String>,	
+}
+
+asn1_gen_error_class!{ChoiceSynError}
+
+impl ChoiceSyn {
+
+	pub fn new() -> Self {
+		ChoiceSyn{
+			sname : "".to_string(),
+			selname : "".to_string(),
+			errname : "".to_string(),
+			parsenames : Vec::new(),
+		}
+	}
+
+	pub fn set_attr_name(&mut self, k :&str, v :&str) -> Result<(),Box<dyn Error>> {
+		if k == "error" {
+			self.errname = format!("{}",v);
+		} else if k == "selector" {
+			self.selname = format!("{}",v);
+		} else {
+			asn1_gen_new_error!{ChoiceSynError,"not valid [{}] only accept error or selector", k}
+		}
+		Ok(())
+	}
+
+	pub fn set_struct_name(&mut self, k :&str) {
+		self.sname = format!("{}",k);
+		return;
+	}
+
+	pub fn set_name(&mut self,_k :&str,_v :&str) {
+		return;
+	}
+
+	pub fn format_asn1_code(&self) -> Result<String, Box<dyn Error>> {
+		let rets = "".to_string();
+		Ok(rets)
+	}
+}
+
+
+impl syn::parse::Parse for ChoiceSyn {
+	fn parse(input :syn::parse::ParseStream) -> syn::parse::Result<Self> {
+		let mut retv = ChoiceSyn::new();
+		let mut k :String = "".to_string();
+		let mut v :String = "".to_string();
+		loop {
+			if input.peek(syn::Ident) {
+				let c :syn::Ident = input.parse()?;
+				asn1_gen_log_trace!("token [{}]",c);
+				if k.len() == 0 {
+					k = format!("{}",c);
+				} else if v.len() == 0 {
+					v = format!("{}",c);
+				} else {
+					let e = format!("only accept k=v format");
+					return Err(syn::Error::new(input.span(),&e));
+				}
+			} else if input.peek(syn::Token![=]) {
+				let _c : syn::token::Eq = input.parse()?;
+				asn1_gen_log_trace!("=");
+			} else if input.peek(syn::Token![,]) {
+				let _c : syn::token::Comma = input.parse()?;
+				if k.len() == 0 || v.len() == 0 {
+					let c = format!("need set k=v format");
+					return Err(syn::Error::new(input.span(),&c));
+				}
+				let ov = retv.set_attr_name(&k,&v);
+				if ov.is_err() {
+					let e = ov.err().unwrap();
+					let c = format!("{:?}", e);
+					return Err(syn::Error::new(input.span(),&c));
+				}
+			} else {
+				if input.is_empty() {
+					if k.len() != 0 && v.len() != 0 {
+						let ov = retv.set_attr_name(&k,&v);
+						if ov.is_err() {
+							let e = ov.err().unwrap();
+							let c = format!("{:?}", e);
+							return Err(syn::Error::new(input.span(),&c));
+						}
+					} else if v.len() == 0 && k.len() != 0 {
+						let c = format!("need value in [{}]",k);
+						return Err(syn::Error::new(input.span(),&c));
+					}
+					break;
+				}
+				let c = format!("not valid token [{}]",input.to_string());
+				return Err(syn::Error::new(input.span(),&c));				
+			}
+		}
+		Ok(retv)
+	}
+}
+
 
 #[proc_macro_attribute]
-pub fn asn1_choice(attr :TokenStream,item :TokenStream) -> TokenStream {
+pub fn asn1_choice(_attr :TokenStream,item :TokenStream) -> TokenStream {
 	asn1_gen_log_trace!("item\n{}",item.to_string());
 	let co :syn::DeriveInput;
+	let nargs = _attr.clone();
 	let sname :String;
-	let mut names :HashMap<String,String> = HashMap::new();
-	let mut structnames :Vec<String> = Vec::new();
+	let mut cs :ChoiceSyn = syn::parse_macro_input!(nargs as ChoiceSyn);
 
 	match syn::parse::<syn::DeriveInput>(item.clone()) {
 		Ok(v) => {
@@ -189,6 +292,7 @@ pub fn asn1_choice(attr :TokenStream,item :TokenStream) -> TokenStream {
 
     sname = format!("{}",co.ident);
     asn1_gen_log_trace!("sname [{}]",sname);
+    cs.set_struct_name(&sname);
 
 
     match co.data {
@@ -201,21 +305,7 @@ pub fn asn1_choice(attr :TokenStream,item :TokenStream) -> TokenStream {
     						asn1_syn_error_fmt!("{:?}",res.err().unwrap());
     					}
     					let (n,tn) = res.unwrap();
-    					if tn.contains(KEYWORD_LEFT_ARROW) && tn != KEYWORD_VEC_STRING {
-    						asn1_syn_error_fmt!("tn [{}] not valid",tn);
-    					}
-    					if names.get(&n).is_some() {
-    						asn1_syn_error_fmt!("n [{}] has already in",n);
-    					}
-
-    					if !check_in_array(ARGSET_KEYWORDS.clone(),&tn) {
-    						if !check_in_array(structnames.clone(), &tn) {
-	    						asn1_gen_log_trace!("input typename [{}]",tn);
-	    						structnames.push(format!("{}",tn));    							
-    						}
-    					}
-
-    					names.insert(format!("{}",n),format!("{}",tn));
+    					cs.set_name(&n,&tn);
     				}
     			},
     			_ => {
@@ -230,8 +320,8 @@ pub fn asn1_choice(attr :TokenStream,item :TokenStream) -> TokenStream {
 
     /*now to compile ok*/
     //let cc = format_code(&sname,names.clone(),structnames.clone());
-    let cc = item.to_string();
-
+    let mut cc = item.to_string();
+    cc.push_str(&(cs.format_asn1_code().unwrap()));
     cc.parse().unwrap()
 }
 
