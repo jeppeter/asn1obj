@@ -16,7 +16,10 @@ mod errors;
 #[macro_use]
 mod logger;
 
+mod randv;
+
 use logger::{asn1_gen_debug_out};
+use randv::{get_random_bytes};
 
 asn1_gen_error_class!{TypeError}
 
@@ -174,7 +177,8 @@ struct ChoiceSyn {
 	sname : String,
 	selname :String,
 	errname :String,
-	parsenames :Vec<String>,	
+	parsenames :Vec<String>,
+	typemap :HashMap<String,String>,
 }
 
 asn1_gen_error_class!{ChoiceSynError}
@@ -187,6 +191,7 @@ impl ChoiceSyn {
 			selname : "".to_string(),
 			errname : "".to_string(),
 			parsenames : Vec::new(),
+			typemap : HashMap::new(),
 		}
 	}
 
@@ -207,11 +212,33 @@ impl ChoiceSyn {
 	}
 
 	pub fn set_name(&mut self,_k :&str,_v :&str) {
+		if _k == "selector"  {
+			if self.selname.len() == 0 {
+				self.selname = format!("{}",_k);
+			}
+		} else {
+			self.parsenames.push(format!("{}", _k));
+			self.typemap.insert(format!("{}",_k),format!("{}",_v));
+		}
 		return;
 	}
 
-	pub fn format_asn1_code(&self) -> Result<String, Box<dyn Error>> {
+	pub fn format_asn1_code(&mut self) -> Result<String, Box<dyn Error>> {
 		let rets = "".to_string();
+		if self.sname.len() == 0 {
+			asn1_gen_new_error!{ChoiceSynError,"need sname set"}
+		} else if self.selname.len() == 0 {
+			asn1_gen_new_error!{ChoiceSynError,"need selector name"}
+		}
+
+		if self.errname.len() == 0 {
+			self.errname = format!("{}Error", self.sname);
+			self.errname.push_str("_");
+			self.errname.push_str(&get_random_bytes(20));
+			asn1_gen_log_trace!("errname [{}]",self.errname);
+		}
+
+
 		Ok(rets)
 	}
 }
