@@ -107,17 +107,16 @@ fn get_name_type(n : syn::Field) -> Result<(String,String), Box<dyn Error>> {
 	Ok((name,typename))
 }
 
-macro_rules!  format_tab_line {
-	($tab:expr,$($a:tt)+) => {
-		let _maxtab : usize = ($tab) as usize;
-		let mut _c :String = "".to_string();
-		for _i in 0.._maxtab{
-			_c.push_str("    ");
-		}
-		_c.push_str(&format!($($arg)+));
-		_c
+fn format_tab_line(tabs :i32, c :&str) -> String {
+	let mut rets :String = "".to_string();
+	for _i in 0..tabs{
+		rets.push_str("    ");
 	}
+	rets.push_str(c);
+	rets.push_str("\n");
+	rets
 }
+
 
 
 #[proc_macro_attribute]
@@ -133,40 +132,40 @@ pub fn asn1_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
 		},
 		Err(_e) => {
 			asn1_syn_error_fmt!("not parse \n{}",item.to_string());
-        }
-    }
+		}
+	}
 
-    sname = format!("{}",co.ident);
-    asn1_gen_log_trace!("sname [{}]",sname);
+	sname = format!("{}",co.ident);
+	asn1_gen_log_trace!("sname [{}]",sname);
 
 
-    match co.data {
-    	syn::Data::Struct(ref _vv) => {
-    		match _vv.fields {
-    			syn::Fields::Named(ref _n) => {
-    				for _v in _n.named.iter() {
-    					let res = get_name_type(_v.clone());
-    					if res.is_err() {
-    						asn1_syn_error_fmt!("{:?}",res.err().unwrap());
-    					}
-    					let (n,tn) = res.unwrap();
-    					if names.get(&n).is_some() {
-    						asn1_syn_error_fmt!("n [{}] has already in",n);
-    					}
-    					names.insert(format!("{}",n),format!("{}",tn));
-    				}
-    			},
-    			_ => {
-    				asn1_syn_error_fmt!("not Named structure\n{}",item.to_string());
-    			}
-    		}
-    	},
-    	_ => {
-    		asn1_syn_error_fmt!("not struct format\n{}",item.to_string());
-    	}
-    }
+	match co.data {
+		syn::Data::Struct(ref _vv) => {
+			match _vv.fields {
+				syn::Fields::Named(ref _n) => {
+					for _v in _n.named.iter() {
+						let res = get_name_type(_v.clone());
+						if res.is_err() {
+							asn1_syn_error_fmt!("{:?}",res.err().unwrap());
+						}
+						let (n,tn) = res.unwrap();
+						if names.get(&n).is_some() {
+							asn1_syn_error_fmt!("n [{}] has already in",n);
+						}
+						names.insert(format!("{}",n),format!("{}",tn));
+					}
+				},
+				_ => {
+					asn1_syn_error_fmt!("not Named structure\n{}",item.to_string());
+				}
+			}
+		},
+		_ => {
+			asn1_syn_error_fmt!("not struct format\n{}",item.to_string());
+		}
+	}
 
-    /*now to compile ok*/
+	/*now to compile ok*/
     //let cc = format_code(&sname,names.clone(),structnames.clone());
     let cc = item.to_string();
 
@@ -216,15 +215,147 @@ impl ChoiceSyn {
 			if self.selname.len() == 0 {
 				self.selname = format!("{}",_k);
 			}
-		} else {
-			self.parsenames.push(format!("{}", _k));
-			self.typemap.insert(format!("{}",_k),format!("{}",_v));
-		}
+		} 
+		self.parsenames.push(format!("{}", _k));
+		self.typemap.insert(format!("{}",_k),format!("{}",_v));		
 		return;
 	}
 
+	fn foramt_init_asn1(&self,tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		rets.push_str(&format_tab_line(tab,"fn init_asn1() -> Self {"));
+		rets.push_str(&format_tab_line(tab + 1,&format!("{} {{",self.sname)));
+		for k in self.parsenames.iter() {
+			let v = self.typemap.get(k).unwrap();
+			rets.push_str(&format_tab_line(tab + 2,&format!("{} : {}::init_asn1(),", k,v)));
+		}
+		rets.push_str(&format_tab_line(tab + 1,"}"));
+		rets.push_str(&format_tab_line(tab,"}"));
+		return rets;
+	}
+
+	fn format_decode_asn1(&self, tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		let mut sidx :usize;
+		let mut idx :usize;
+
+		rets.push_str(&format_tab_line(tab,"fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {"));
+		rets.push_str(&format_tab_line(tab + 1,"let mut retv :usize = 0;"));
+		rets.push_str(&format_tab_line(tab + 1,""));
+		rets.push_str(&format_tab_line(tab + 1,&format!("retv += self.{}.decode_asn1(code)?;",self.selname)));
+		rets.push_str(&format_tab_line(tab + 1,""));
+		rets.push_str(&format_tab_line(tab + 1,&format!("let k = self.{}.decode_select()?;", self.selname)));
+
+		idx = 0;
+		sidx = 0;
+
+		rets.push_str(&format_tab_line(tab + 1,""));
+		while idx < self.parsenames.len() {
+			if self.parsenames[idx] != self.selname {
+				if sidx == 0 {
+					rets.push_str(&format_tab_line(tab + 1,&format!("if k == \"{}\" {{", self.parsenames[idx])));								
+				} else {
+					rets.push_str(&format_tab_line(tab + 1,&format!("}} else if k == \"{}\" {{", self.parsenames[idx])));
+				}
+				rets.push_str(&format_tab_line(tab + 2,&format!("retv += self.{}.decode_asn1(&code[retv..])?;", self.parsenames[idx])));
+				sidx += 1;
+			}
+			idx += 1;
+		}
+
+		if sidx > 0 {
+			rets.push_str(&format_tab_line(tab + 1,"} else {"));
+			rets.push_str(&format_tab_line(tab + 2,&format!("asn1obj_new_error!{{ {}, \"can not find [{{}}] selector\", k}}", self.errname)));
+			rets.push_str(&format_tab_line(tab + 1,"}"));
+		} else {
+			rets.push_str(&format_tab_line(tab + 1,&format!("asn1obj_new_error!{{ {}, \"can not find [{{}}] selector\", k}}", self.errname)));
+		}
+		rets.push_str(&format_tab_line(tab + 1,""));
+
+		rets.push_str(&format_tab_line(tab + 1,"Ok(retv)"));
+		rets.push_str(&format_tab_line(tab,"}"));
+		return rets;
+	}
+
+	fn format_encode_asn1(&self, tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		let mut sidx :usize;
+		let mut idx :usize;
+		rets.push_str(&format_tab_line(tab,"fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {"));
+		rets.push_str(&format_tab_line(tab + 1,"let mut retv : Vec<u8>;"));
+		rets.push_str(&format_tab_line(tab + 1,""));
+		rets.push_str(&format_tab_line(tab + 1,&format!("retv = self.{}.encode_asn1()?;", self.selname)));
+		rets.push_str(&format_tab_line(tab + 1,""));
+		rets.push_str(&format_tab_line(tab + 1 ,&format!("let k = self.{}.encode_select()?;",self.selname)));
+		sidx = 0;
+		idx = 0;
+		while idx < self.parsenames.len() {
+			if self.parsenames[idx] != self.selname {
+				if sidx == 0 {
+					rets.push_str(&format_tab_line(tab + 1, &format!("if k == \"{}\" {{", self.parsenames[idx])));
+				} else {
+					rets.push_str(&format_tab_line(tab + 1, &format!("}} else if k == \"{}\" {{", self.parsenames[idx])));
+				}
+				rets.push_str(&format_tab_line(tab + 2, &format!("let vk = self.{}.encode_asn1()?;", self.parsenames[idx])));
+				rets.push_str(&format_tab_line(tab + 2, "for i in 0..vk.len() {"));
+				rets.push_str(&format_tab_line(tab + 3, "retv.push(vk[i]);"));
+				rets.push_str(&format_tab_line(tab + 2, "}"));
+				sidx += 1;
+			}
+			idx += 1;
+		}
+
+		if sidx > 0 {
+			rets.push_str(&format_tab_line(tab + 1, "} else {"));
+			rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{ {}, \"can not support [{{}}]\", k }}", self.errname)));
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj_new_error!{{ {}, \"can not support [{{}}]\", k }}", self.errname)));
+		}
+
+		rets.push_str(&format_tab_line(tab + 1,""));
+		rets.push_str(&format_tab_line(tab + 1,"Ok(retv)"));
+		rets.push_str(&format_tab_line(tab,"}"));
+		return rets;
+	}
+
+	fn format_print_asn1(&self, tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		let mut sidx :usize;
+		let mut idx :usize;
+		rets.push_str(&format_tab_line(tab,"fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {"));
+		rets.push_str(&format_tab_line(tab + 1,&format!("let k = self.{}.encode_select()?;",self.selname)));
+		sidx = 0;
+		idx = 0;
+		while idx < self.parsenames.len() {
+			if self.parsenames[idx] != self.selname {
+				if sidx == 0 {
+					rets.push_str(&format_tab_line(tab + 1,&format!("if k == \"{}\" {{", self.parsenames[idx])));
+				} else {
+					rets.push_str(&format_tab_line(tab + 1,&format!("}} else if k == \"{}\" {{", self.parsenames[idx])));
+				}
+				rets.push_str(&format_tab_line(tab + 2, &format!("let nname = format!(\"{{}}.{}\", name);", self.parsenames[idx])));
+				rets.push_str(&format_tab_line(tab + 2, &format!("let _ = self.{}.print_asn1(&nname,tab, iowriter)?;",self.parsenames[idx])));
+
+				sidx += 1;
+			}
+			idx += 1;
+		}
+		if sidx > 0 {
+			rets.push_str(&format_tab_line(tab + 1, "} else {"));
+			rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{ {}, \"can not support [{{}}]\", k }}", self.errname)));
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj_new_error!{{ {}, \"can not support [{{}}]\", k }}", self.errname)));
+		}
+
+		rets.push_str(&format_tab_line(tab + 1,"Ok(())"));
+		rets.push_str(&format_tab_line(tab,"}"));
+		return rets;
+	}
+
 	pub fn format_asn1_code(&mut self) -> Result<String, Box<dyn Error>> {
-		let rets = "".to_string();
+		let mut rets = "".to_string();
 		if self.sname.len() == 0 {
 			asn1_gen_new_error!{ChoiceSynError,"need sname set"}
 		} else if self.selname.len() == 0 {
@@ -236,8 +367,28 @@ impl ChoiceSyn {
 			self.errname.push_str("_");
 			self.errname.push_str(&get_random_bytes(20));
 			asn1_gen_log_trace!("errname [{}]",self.errname);
+
+			rets.push_str(&format_tab_line(0,&format!("asn1obj_error_class!{{ {} }}", self.errname)));
+			rets.push_str(&format_tab_line(0,""));
 		}
 
+
+
+		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
+
+		/**/
+		rets.push_str(&self.foramt_init_asn1(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_decode_asn1(1));
+		rets.push_str(&format_tab_line(1,""));		
+		rets.push_str(&self.format_encode_asn1(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_print_asn1(1));
+		rets.push_str(&format_tab_line(1,""));
+
+		rets.push_str(&format_tab_line(0,"}"));
+
+		asn1_gen_log_trace!("code\n{}",rets);
 
 		Ok(rets)
 	}
@@ -314,38 +465,38 @@ pub fn asn1_choice(_attr :TokenStream,item :TokenStream) -> TokenStream {
 		},
 		Err(_e) => {
 			asn1_syn_error_fmt!("not parse \n{}",item.to_string());
-        }
-    }
+		}
+	}
 
-    sname = format!("{}",co.ident);
-    asn1_gen_log_trace!("sname [{}]",sname);
-    cs.set_struct_name(&sname);
+	sname = format!("{}",co.ident);
+	asn1_gen_log_trace!("sname [{}]",sname);
+	cs.set_struct_name(&sname);
 
 
-    match co.data {
-    	syn::Data::Struct(ref _vv) => {
-    		match _vv.fields {
-    			syn::Fields::Named(ref _n) => {
-    				for _v in _n.named.iter() {
-    					let res = get_name_type(_v.clone());
-    					if res.is_err() {
-    						asn1_syn_error_fmt!("{:?}",res.err().unwrap());
-    					}
-    					let (n,tn) = res.unwrap();
-    					cs.set_name(&n,&tn);
-    				}
-    			},
-    			_ => {
-    				asn1_syn_error_fmt!("not Named structure\n{}",item.to_string());
-    			}
-    		}
-    	},
-    	_ => {
-    		asn1_syn_error_fmt!("not struct format\n{}",item.to_string());
-    	}
-    }
+	match co.data {
+		syn::Data::Struct(ref _vv) => {
+			match _vv.fields {
+				syn::Fields::Named(ref _n) => {
+					for _v in _n.named.iter() {
+						let res = get_name_type(_v.clone());
+						if res.is_err() {
+							asn1_syn_error_fmt!("{:?}",res.err().unwrap());
+						}
+						let (n,tn) = res.unwrap();
+						cs.set_name(&n,&tn);
+					}
+				},
+				_ => {
+					asn1_syn_error_fmt!("not Named structure\n{}",item.to_string());
+				}
+			}
+		},
+		_ => {
+			asn1_syn_error_fmt!("not struct format\n{}",item.to_string());
+		}
+	}
 
-    /*now to compile ok*/
+	/*now to compile ok*/
     //let cc = format_code(&sname,names.clone(),structnames.clone());
     let mut cc = item.to_string();
     cc.push_str(&(cs.format_asn1_code().unwrap()));
