@@ -117,15 +117,204 @@ fn format_tab_line(tabs :i32, c :&str) -> String {
 	rets
 }
 
+asn1_gen_error_class!{SelectorSynError}
+
+struct ObjSelectorSyn {
+	errname :String,
+	sname :String,
+	selname : String,
+	selmap :HashMap<String,String>,
+	kmap :HashMap<String,String>,
+}
+
+#[allow(unused_variables)]
+#[allow(unused_mut)]
+impl ObjSelectorSyn {
+	pub fn new() -> Self {
+		ObjSelectorSyn {
+			sname : "".to_string(),
+			errname : "".to_string(),
+			selname : "".to_string(),
+			selmap : HashMap::new(),
+			kmap : HashMap::new(),
+		}
+	}
+
+	pub fn set_selector(&mut self,k :&str,v :&str) -> Result<(),Box<dyn Error>> {
+		self.selname = format!("{}",k);
+		self.selmap.insert(format!("{}",k),format!("{}",v));
+		Ok(())
+	}
+
+	pub fn set_matches(&mut self, k :&str, v :&str) -> Result<(),Box<dyn Error>> {
+		self.kmap.insert(format!("{}",k),format!("{}",v));
+		Ok(())
+	}
+
+	pub fn set_sname(&mut self, k:&str) {
+		self.sname = format!("{}",k);
+		return;
+	}
+
+	fn format_init_asn1(&self, tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		return rets;
+	}
+
+	fn format_decode_asn1(&self, tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		return rets;
+	}
+
+	fn format_encode_asn1(&self, tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		return rets;
+	}
+
+	fn format_print_asn1(&self, tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		return rets;
+	}
+
+	fn format_encode_selector(&self, tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		return rets;
+	}
+
+	fn format_decode_selector(&self, tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		return rets;
+	}
+
+
+	pub fn format_asn1_code(&mut self) -> Result<String,Box<dyn Error>> {
+		let mut rets :String = "".to_string();
+		if self.sname.len() == 0 {
+			asn1_gen_new_error!{SelectorSynError,"need set sname"}
+		}
+
+		if self.selname.len() == 0 {
+			asn1_gen_new_error!{SelectorSynError,"need selname"}
+		}
+
+		if self.errname.len() == 0 {
+			self.errname = format!("{}Error",self.sname);
+			self.errname.push_str("_");
+			self.errname.push_str(&get_random_bytes(20));
+			rets.push_str(&format_tab_line(0,&format!("asn1obj_error_class!{{ {} }}", self.errname)));
+			rets.push_str(&format_tab_line(0,""));
+		}
+
+		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_init_asn1(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_decode_asn1(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_encode_asn1(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_print_asn1(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&format_tab_line(0,"}"));
+
+		rets.push_str(&format_tab_line(0,""));
+
+		rets.push_str(&format_tab_line(0,&format!("impl Asn1Selector for {} {{", self.sname)));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_encode_selector(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_decode_selector(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&format_tab_line(0,"}"));
+
+		asn1_gen_log_trace!("code\n{}",rets);
+		Ok(rets)
+	}
+}
+
+impl syn::parse::Parse for ObjSelectorSyn {
+	fn parse(input :syn::parse::ParseStream) -> syn::parse::Result<Self> {
+		let mut retv = ObjSelectorSyn::new();
+		let mut k :String = "".to_string();
+		let mut v :String = "".to_string();
+		let mut iskey :bool = true;
+		loop {
+			if input.peek(syn::Ident) {
+				let c :syn::Ident = input.parse()?;
+				asn1_gen_log_trace!("token [{}]",c);
+				if k.len() == 0 {
+					k = format!("{}",c);
+				} else if v.len() == 0 {
+					v = format!("{}",c);
+				} else {
+					let e = format!("only accept k=v format");
+					asn1_gen_log_error!("{}",c);
+					return Err(syn::Error::new(input.span(),&e));
+				}
+			} else if input.peek(syn::Token![=]) {
+				let _c : syn::token::Eq = input.parse()?;
+				asn1_gen_log_trace!("=");
+				iskey = false;
+			} else if input.peek(syn::Token![,]) {
+				let _c : syn::token::Comma = input.parse()?;
+				if k.len() == 0 || v.len() == 0 {
+					let c = format!("need set k=v format");
+					asn1_gen_log_error!("{}",c);
+					return Err(syn::Error::new(input.span(),&c));
+				}
+				let ov = retv.set_matches(&k,&v);
+				if ov.is_err() {
+					let e = ov.err().unwrap();
+					let c = format!("{:?}", e);
+					asn1_gen_log_error!("{}",c);
+					return Err(syn::Error::new(input.span(),&c));
+				}
+				iskey = true;
+				k = "".to_string();
+				v = "".to_string();
+			} else if input.peek(syn::Token![.]) {
+				let _c : syn::token::Dot = input.parse()?;
+				if iskey {
+					k.push_str(".");
+				} else {
+					v.push_str(".");
+				}
+			} else {
+				if input.is_empty() {
+					if k.len() != 0 && v.len() != 0 {
+						let ov = retv.set_matches(&k,&v);
+						if ov.is_err() {
+							let e = ov.err().unwrap();
+							let c = format!("{:?}", e);
+							return Err(syn::Error::new(input.span(),&c));
+						}
+					} else if v.len() == 0 && k.len() != 0 {
+						let c = format!("need value in [{}]",k);
+						asn1_gen_log_error!("{}",c);
+						return Err(syn::Error::new(input.span(),&c));
+					}
+					break;
+				}
+				let c = format!("not valid token [{}]",input.to_string());
+				asn1_gen_log_error!("{}",c);
+				return Err(syn::Error::new(input.span(),&c));				
+			}
+		}
+		Ok(retv)
+	}
+}
 
 
 #[proc_macro_attribute]
 pub fn asn1_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
 	asn1_gen_log_trace!("item\n{}",item.to_string());
+	let nargs = _attr.clone();
 	let co :syn::DeriveInput;
 	let sname :String;
-	let mut names :HashMap<String,String> = HashMap::new();
+	asn1_gen_log_trace!(" ");
+	let mut selcs :ObjSelectorSyn = syn::parse_macro_input!(nargs as ObjSelectorSyn);
 
+	asn1_gen_log_trace!(" ");
 	match syn::parse::<syn::DeriveInput>(item.clone()) {
 		Ok(v) => {
 			co = v.clone();
@@ -137,6 +326,7 @@ pub fn asn1_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
 
 	sname = format!("{}",co.ident);
 	asn1_gen_log_trace!("sname [{}]",sname);
+	selcs.set_sname(&sname);
 
 
 	match co.data {
@@ -149,10 +339,10 @@ pub fn asn1_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
 							asn1_syn_error_fmt!("{:?}",res.err().unwrap());
 						}
 						let (n,tn) = res.unwrap();
-						if names.get(&n).is_some() {
-							asn1_syn_error_fmt!("n [{}] has already in",n);
+						let res = selcs.set_selector(&n,&tn);
+						if res.is_err() {
+							asn1_syn_error_fmt!("{:?}",res.err().unwrap());
 						}
-						names.insert(format!("{}",n),format!("{}",tn));
 					}
 				},
 				_ => {
@@ -167,8 +357,9 @@ pub fn asn1_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
 
 	/*now to compile ok*/
     //let cc = format_code(&sname,names.clone(),structnames.clone());
-    let cc = item.to_string();
-
+    let mut cc = item.to_string();
+	
+	cc.push_str(&(selcs.format_asn1_code().unwrap()));
     cc.parse().unwrap()
 }
 
