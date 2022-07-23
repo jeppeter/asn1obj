@@ -120,11 +120,12 @@ fn format_tab_line(tabs :i32, c :&str) -> String {
 asn1_gen_error_class!{SelectorSynError}
 
 struct ObjSelectorSyn {
+	defname :String,
 	errname :String,
 	sname :String,
 	selname : String,
 	selmap :HashMap<String,String>,
-	kmap :HashMap<String,String>,
+	kmap :HashMap<String,Vec<String>>,
 }
 
 #[allow(unused_variables)]
@@ -132,6 +133,7 @@ struct ObjSelectorSyn {
 impl ObjSelectorSyn {
 	pub fn new() -> Self {
 		ObjSelectorSyn {
+			defname :"".to_string(),
 			sname : "".to_string(),
 			errname : "".to_string(),
 			selname : "".to_string(),
@@ -148,7 +150,20 @@ impl ObjSelectorSyn {
 
 	pub fn set_matches(&mut self, k :&str, v :&str) -> Result<(),Box<dyn Error>> {
 		asn1_gen_log_trace!("k [{}] v [{}]",k,v);
-		self.kmap.insert(format!("{}",k),format!("{}",v));
+		if v == "default" {
+			self.defname = format!("{}",k);
+		} else {
+			let ov = self.kmap.get(k);
+			let mut insertv :Vec<String>;
+			if ov.is_some() {
+				insertv = ov.unwrap().clone();
+			} else {
+				insertv = Vec::new();
+			}
+			insertv.push(format!("{}",v));
+			self.kmap.insert(format!("{}",k),insertv);
+		}
+		
 		Ok(())
 	}
 
@@ -197,22 +212,32 @@ impl ObjSelectorSyn {
 		return rets;
 	}
 
-	fn format_encode_selector(&self, tab :i32) -> String {
+	fn foramt_select_func(&self,tab :i32) -> String {
 		let mut rets :String = "".to_string();
 		let mut sidx :usize = 0;
 		let mut idx :usize = 0;
-		rets.push_str(&format_tab_line(tab,"fn encode_select(&self) -> Result<String,Box<dyn Error>> {"));
 		rets.push_str(&format_tab_line(tab+1,&format!("let k = format!(\"{{}}\",self.{}.get_value());",self.selname)));
 		rets.push_str(&format_tab_line(tab + 1, "let retv :String;"));
 		rets.push_str(&format_tab_line(tab + 1, ""));
 		for (k,v) in self.kmap.iter() {
 			if !self.selname.eq(k)  {
+				let mut c :String = "".to_string();
+				let mut didx :usize ;
 				if sidx == 0 {
-					rets.push_str(&format_tab_line(tab + 1, &format!("if k == \"{}\" {{",v)));
+					c.push_str("if ");
 				} else {
-					rets.push_str(&format_tab_line(tab + 1, &format!("}} else if k == \"{}\" {{",v)));
+					c.push_str("} else if ");
 				}
-
+				didx = 0;
+				for vs in v.iter() {
+					if didx > 0 {
+						c.push_str(" || ");
+					}
+					c.push_str(&format!("k == \"{}\"", vs));
+					didx += 1;
+				}
+				c.push_str(" {");
+				rets.push_str(&format_tab_line(tab + 1, &c));
 				rets.push_str(&format_tab_line(tab + 2, &format!("retv = format!(\"{}\");",k)));
 				sidx += 1;
 			}
@@ -221,13 +246,29 @@ impl ObjSelectorSyn {
 
 		if sidx > 0 {
 			rets.push_str(&format_tab_line(tab + 1, "} else {"));
-			rets.push_str(&format_tab_line(tab + 2,&format!("asn1obj_new_error!{{ {} , \"not support [{{}}]\",k}}",self.errname)));
+			if self.defname.len() == 0 {
+				rets.push_str(&format_tab_line(tab + 2,&format!("asn1obj_new_error!{{ {} , \"not support [{{}}]\",k}}",self.errname)));
+			} else {
+				rets.push_str(&format_tab_line(tab + 2,&(format!("retv = format!(\"{}\");",self.defname))));
+			}
 			rets.push_str(&format_tab_line(tab + 1, "}"));
+
 		} else {
-			rets.push_str(&format_tab_line(tab + 1,&format!("asn1obj_new_error!{{ {} , \"not support [{{}}]\",k}}",self.errname)));
+			if self.defname.len() == 0 {
+				rets.push_str(&format_tab_line(tab + 1,&format!("asn1obj_new_error!{{ {} , \"not support [{{}}]\",k}}",self.errname)));	
+			} else {
+				rets.push_str(&format_tab_line(tab + 2,&(format!("retv = format!(\"{}\");",self.defname))));
+			}
+			
 		}
 		rets.push_str(&format_tab_line(tab + 1, "Ok(retv)"));
+		return rets;
+	}
 
+	fn format_encode_selector(&self, tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		rets.push_str(&format_tab_line(tab,"fn encode_select(&self) -> Result<String,Box<dyn Error>> {"));
+		rets.push_str(&self.foramt_select_func(tab));
 		rets.push_str(&format_tab_line(tab,"}"));
 
 		return rets;
@@ -235,35 +276,8 @@ impl ObjSelectorSyn {
 
 	fn format_decode_selector(&self, tab :i32) -> String {
 		let mut rets :String = "".to_string();
-		let mut sidx :usize = 0;
-		let mut idx :usize = 0;
 		rets.push_str(&format_tab_line(tab,"fn decode_select(&self) -> Result<String,Box<dyn Error>> {"));
-		rets.push_str(&format_tab_line(tab+1,&format!("let k = format!(\"{{}}\",self.{}.get_value());",self.selname)));
-		rets.push_str(&format_tab_line(tab + 1, "let retv :String;"));
-		rets.push_str(&format_tab_line(tab + 1, ""));
-		for (k,v) in self.kmap.iter() {
-			if !self.selname.eq(k)  {
-				if sidx == 0 {
-					rets.push_str(&format_tab_line(tab + 1, &format!("if k == \"{}\" {{",v)));
-				} else {
-					rets.push_str(&format_tab_line(tab + 1, &format!("}} else if k == \"{}\" {{",v)));
-				}
-
-				rets.push_str(&format_tab_line(tab + 2, &format!("retv = format!(\"{}\");",k)));
-				sidx += 1;
-			}
-			idx += 1;
-		}
-
-		if sidx > 0 {
-			rets.push_str(&format_tab_line(tab + 1, "} else {"));
-			rets.push_str(&format_tab_line(tab + 2,&format!("asn1obj_new_error!{{ {} , \"not support [{{}}]\",k}}",self.errname)));
-			rets.push_str(&format_tab_line(tab + 1, "}"));
-		} else {
-			rets.push_str(&format_tab_line(tab + 1,&format!("asn1obj_new_error!{{ {} , \"not support [{{}}]\",k}}",self.errname)));
-		}
-		rets.push_str(&format_tab_line(tab + 1, "Ok(retv)"));
-
+		rets.push_str(&self.foramt_select_func(tab));
 		rets.push_str(&format_tab_line(tab,"}"));
 
 		return rets;
@@ -442,8 +456,8 @@ pub fn asn1_obj_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
 	/*now to compile ok*/
     //let cc = format_code(&sname,names.clone(),structnames.clone());
     let mut cc = item.to_string();
-	
-	cc.push_str(&(selcs.format_asn1_code().unwrap()));
+
+    cc.push_str(&(selcs.format_asn1_code().unwrap()));
     cc.parse().unwrap()
 }
 
