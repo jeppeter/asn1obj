@@ -740,6 +740,7 @@ impl syn::parse::Parse for ChoiceSyn {
 }
 
 
+
 #[proc_macro_attribute]
 pub fn asn1_choice(_attr :TokenStream,item :TokenStream) -> TokenStream {
 	asn1_gen_log_trace!("item\n{}",item.to_string());
@@ -792,3 +793,99 @@ pub fn asn1_choice(_attr :TokenStream,item :TokenStream) -> TokenStream {
     cc.parse().unwrap()
 }
 
+asn1_gen_error_class!{SequenceSynError}
+
+struct SequenceSyn {
+	sname :String,
+	errname :String,
+}
+
+impl SequenceSyn {
+	pub fn new() -> Self {
+		SequenceSyn{
+			sname : "".to_string(),
+			errname : "".to_string(),
+		}
+	}
+
+	pub fn set_struct_name(&mut self, n :&str) {
+		self.sname = format!("{}",n);
+		return;
+	}
+
+	pub fn set_name(&mut self, k :&str,n :&str) {
+		return;
+	}
+
+	pub fn format_asn1_code(&mut self) -> Result<String,Box<dyn Error>> {
+		let mut rets :String = "".to_string();
+		Ok(rets)
+	}
+}
+
+impl syn::parse::Parse for SequenceSyn {
+	fn parse(input :syn::parse::ParseStream) -> syn::parse::Result<Self> {
+		let mut retv = SequenceSyn::new();
+		loop {
+			if input.is_empty() {
+				break;
+			}
+			let c = format!("not valid token [{}]",input.to_string());
+			return Err(syn::Error::new(input.span(),&c));
+
+		}
+		Ok(retv)
+	}
+}
+
+#[proc_macro_attribute]
+pub fn asn1_sequence(_attr :TokenStream,item :TokenStream) -> TokenStream {
+	asn1_gen_log_trace!("item\n{}",item.to_string());
+	let co :syn::DeriveInput;
+	let nargs = _attr.clone();
+	let sname :String;
+	let mut cs :SequenceSyn = syn::parse_macro_input!(nargs as SequenceSyn);
+
+	match syn::parse::<syn::DeriveInput>(item.clone()) {
+		Ok(v) => {
+			co = v.clone();
+		},
+		Err(_e) => {
+			asn1_syn_error_fmt!("not parse \n{}",item.to_string());
+		}
+	}
+
+	sname = format!("{}",co.ident);
+	asn1_gen_log_trace!("sname [{}]",sname);
+	cs.set_struct_name(&sname);
+
+
+	match co.data {
+		syn::Data::Struct(ref _vv) => {
+			match _vv.fields {
+				syn::Fields::Named(ref _n) => {
+					for _v in _n.named.iter() {
+						let res = get_name_type(_v.clone());
+						if res.is_err() {
+							asn1_syn_error_fmt!("{:?}",res.err().unwrap());
+						}
+						let (n,tn) = res.unwrap();
+						cs.set_name(&n,&tn);
+					}
+				},
+				_ => {
+					asn1_syn_error_fmt!("not Named structure\n{}",item.to_string());
+				}
+			}
+		},
+		_ => {
+			asn1_syn_error_fmt!("not struct format\n{}",item.to_string());
+		}
+	}
+
+	/*now to compile ok*/
+    //let cc = format_code(&sname,names.clone(),structnames.clone());
+    let mut cc = item.to_string();
+    cc.push_str(&(cs.format_asn1_code().unwrap()));
+    cc.parse().unwrap()
+}
