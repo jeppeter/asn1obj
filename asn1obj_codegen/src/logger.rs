@@ -80,10 +80,15 @@ lazy_static! {
 	};
 }
 
+fn asn1_gen_log_get_timestamp() -> String {
+	let now = Local::now();
+	return format!("{}/{}/{} {}:{}:{}",now.year(),now.month(),now.day(),now.hour(),now.minute(),now.second());
+}
 
-pub (crate)  fn asn1_gen_debug_out(level :i32, outs :String) {
+
+pub (crate)  fn asn1_gen_debug_out(level :i32, lvstr :&str, outs :String) {
 	if ASN1_GEN_LOG_LEVEL.level >= level {
-		let c = format!("{}\n",outs);
+		let c = format!("{} {} {}\n",lvstr, asn1_gen_log_get_timestamp(),outs);
 		if !ASN1_GEN_LOG_LEVEL.nostderr {
 			let _ = std::io::stderr().write_all(c.as_bytes());
 		}
@@ -97,27 +102,23 @@ pub (crate)  fn asn1_gen_debug_out(level :i32, outs :String) {
 }
 
 
-fn asn1_gen_log_get_timestamp() -> String {
-	let now = Local::now();
-	return format!("{}/{}/{} {}:{}:{}",now.year(),now.month(),now.day(),now.hour(),now.minute(),now.second());
-}
 
 
 #[allow(unused_macros)]
 macro_rules! asn1_gen_log_error {
 	($($arg:tt)+) => {
-		let mut c :String= format!("<ERROR>{}[{}:{}]  ",asn1_gen_log_get_timestamp(),file!(),line!());
+		let mut c :String= format!("[{}:{}]  ",file!(),line!());
 		c.push_str(&(format!($($arg)+)[..]));
-		asn1_gen_debug_out(0, c);
+		asn1_gen_debug_out(0, "<ERROR>",c);
 	}
 }
 
 #[allow(unused_macros)]
 macro_rules! asn1_gen_log_warn {
 	($($arg:tt)+) => {
-		let mut c :String= format!("<WARN>{}[{}:{}]  ",asn1_gen_log_get_timestamp(),file!(),line!());
+		let mut c :String= format!("[{}:{}]  ",file!(),line!());
 		c.push_str(&(format!($($arg)+)[..]));
-		asn1_gen_debug_out(10, c);
+		asn1_gen_debug_out(10,"<WARN>", c);
 	}
 }
 
@@ -125,18 +126,18 @@ macro_rules! asn1_gen_log_warn {
 #[allow(unused_macros)]
 macro_rules! asn1_gen_log_info {
 	($($arg:tt)+) => {
-		let mut c :String= format!("<INFO>{}[{}:{}]  ",asn1_gen_log_get_timestamp(),file!(),line!());
+		let mut c :String= format!("[{}:{}]  ",file!(),line!());
 		c.push_str(&(format!($($arg)+)[..]));
-		asn1_gen_debug_out(20, c);
+		asn1_gen_debug_out(20,"<INFO>", c);
 	}
 }
 
 #[allow(unused_macros)]
 macro_rules! asn1_gen_log_trace {
 	($($arg:tt)+) => {
-		let mut _c :String= format!("<TRACE>{}[{}:{}]  ",asn1_gen_log_get_timestamp(),file!(),line!());
+		let mut _c :String= format!("[{}:{}]  ",file!(),line!());
 		_c.push_str(&(format!($($arg)+)[..]));
-		asn1_gen_debug_out(40, _c);
+		asn1_gen_debug_out(40,"<TRACE>", _c);
 	}
 }
 
