@@ -711,7 +711,7 @@ impl Asn1Object {
 		if sarr.len() < 1 {
 			asn1obj_new_error!{Asn1ObjBaseError,"need at least 1 number"}
 		}
-		if sarr[0] != "1" && sarr[0] != "1" {
+		if sarr[0] != "1" && sarr[0] != "2" {
 			asn1obj_new_error!{Asn1ObjBaseError,"must start 1. or 2. not [{}.]",sarr[0]}
 		}
 
