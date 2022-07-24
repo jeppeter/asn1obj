@@ -36,6 +36,18 @@ macro_rules! asn1_syn_error_fmt {
     }
 }
 
+fn extract_type_name(n :&str) -> String {
+	let mut rets :String;
+	rets = format!("{}",n);
+
+	let ov = rets.find('<');
+	if ov.is_some() {
+		let n = ov.unwrap();
+		rets = rets[0..n].to_string();
+	}
+	return rets;
+}
+
 fn get_name_type(n : syn::Field) -> Result<(String,String), Box<dyn Error>> {
 	let name :String ;
 	let mut typename :String = "".to_string();
@@ -48,62 +60,10 @@ fn get_name_type(n : syn::Field) -> Result<(String,String), Box<dyn Error>> {
 		}
 	}
 
-	match n.ty {
-		syn::Type::Path(ref _p) => {
-			let mut pidx :i32 = 0;
-			if _p.path.leading_colon.is_some() {
-				typename.push_str("::");
-			}
-			for _s in _p.path.segments.iter() {
-				if pidx > 0 {
-					typename.push_str("::");
-				}
-				typename.push_str(&(format!("{}",_s.ident)));
-				//asn1_gen_log_trace!("f [{}]",typename);
-				match _s.arguments {
-					syn::PathArguments::None => {},
-					syn::PathArguments::AngleBracketed(ref _an) => {
-						typename.push_str("<");
-						let mut idx :i32 = 0;
-						for _ii in _an.args.iter() {
-							match _ii {
-								syn::GenericArgument::Type(ref _pi) => {
-									match _pi {
-										syn::Type::Path(ref _pt) => {
-											let mut jdx : i32 = 0;
-											if idx > 0 {
-												typename.push_str(",");
-											}
-											for _tt in _pt.path.segments.iter() {
-												if jdx > 0 {
-													typename.push_str("::");
-												}
-												typename.push_str(&(format!("{}", _tt.ident)));
-												jdx += 1;
-											}
-										},
-										_ => { asn1_gen_new_error!{TypeError, "not "}}
-									}
-								},
-								_ => {
-									asn1_gen_new_error!{TypeError,"no args type"}
-								}
-							}
-							idx += 1;
-						}
-						typename.push_str(">");
-					},
-					syn::PathArguments::Parenthesized(ref _pn) => {
-						asn1_gen_new_error!{TypeError,"Parenthesized"}
-					}
-				}
-				pidx += 1;
-			}
-		},
-		_ => {
-			asn1_gen_new_error!{TypeError,"ty not support for"}
-		}
-	}
+	let mut ttks :proc_macro2::TokenStream = proc_macro2::TokenStream::new();
+	n.ty.to_tokens(&mut ttks);
+	typename = format!("{}",ttks.to_string());
+
 	asn1_gen_log_trace!("name [{}] typename [{}]",name,typename);
 	Ok((name,typename))
 }
@@ -178,7 +138,7 @@ impl ObjSelectorSyn {
 		rets.push_str(&format_tab_line(tab,"fn init_asn1() -> Self {"));
 		rets.push_str(&format_tab_line(tab + 1, &format!("{} {{",self.sname)));
 		let seltype = self.selmap.get(&self.selname).unwrap();
-		rets.push_str(&format_tab_line(tab + 2, &format!("{} : {}::init_asn1(),", self.selname,seltype)));
+		rets.push_str(&format_tab_line(tab + 2, &format!("{} : {}::init_asn1(),", self.selname,extract_type_name(seltype))));
 		rets.push_str(&format_tab_line(tab+1,"}"));
 		rets.push_str(&format_tab_line(tab,"}"));
 		return rets;
@@ -585,7 +545,7 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1,&format!("{} {{",self.sname)));
 		for k in self.parsenames.iter() {
 			let v = self.typemap.get(k).unwrap();
-			rets.push_str(&format_tab_line(tab + 2,&format!("{} : {}::init_asn1(),", k,v)));
+			rets.push_str(&format_tab_line(tab + 2,&format!("{} : {}::init_asn1(),", k,extract_type_name(v))));
 		}
 		rets.push_str(&format_tab_line(tab + 1,"}"));
 		rets.push_str(&format_tab_line(tab,"}"));
