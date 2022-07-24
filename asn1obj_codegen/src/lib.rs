@@ -50,7 +50,7 @@ fn extract_type_name(n :&str) -> String {
 
 fn get_name_type(n : syn::Field) -> Result<(String,String), Box<dyn Error>> {
 	let name :String ;
-	let mut typename :String = "".to_string();
+	let typename :String ;
 	match n.ident {
 		Some(ref _i) => {
 			name = format!("{}",_i);
@@ -827,6 +827,8 @@ asn1_gen_error_class!{SequenceSynError}
 struct SequenceSyn {
 	sname :String,
 	errname :String,
+	parsenames :Vec<String>,
+	kmap :HashMap<String,String>,
 }
 
 impl SequenceSyn {
@@ -834,6 +836,8 @@ impl SequenceSyn {
 		SequenceSyn{
 			sname : "".to_string(),
 			errname : "".to_string(),
+			parsenames : Vec::new(),
+			kmap : HashMap::new(),
 		}
 	}
 
@@ -843,18 +847,124 @@ impl SequenceSyn {
 	}
 
 	pub fn set_name(&mut self, k :&str,n :&str) {
+		if k == "error" {
+			self.errname = format!("{}",n);
+		} else {
+			self.parsenames.push(format!("{}",k));
+			self.kmap.insert(format!("{}",k),format!("{}",n));
+		}
 		return;
+	}
+
+	fn format_init_asn1(&self,tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		rets.push_str(&format_tab_line(tab , "fn init_asn1() -> Self {"));
+		rets.push_str(&format_tab_line(tab + 1, &format!("{} {{",self.sname)));
+		for k in self.parsenames.iter() {
+			let v = self.kmap.get(k).unwrap();
+			rets.push_str(&format_tab_line(tab + 2, &format!("{} : {}::init_asn1(),", k,extract_type_name(v))));
+		}
+		rets.push_str(&format_tab_line(tab + 1,"}"));
+		rets.push_str(&format_tab_line(tab,"}"));
+		return rets;
+	}
+
+	fn format_decode_asn1(&self,tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		rets.push_str(&format_tab_line(tab , "fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {"));
+		rets.push_str(&format_tab_line(tab + 1, "let mut retv :usize = 0;"));
+		rets.push_str(&format_tab_line(tab + 1, ""));
+		for k in self.parsenames.iter() {
+			rets.push_str(&format_tab_line(tab + 1, &format!("retv += self.{}.decode_asn1(&code[retv..])?;",k)));
+		}
+
+		rets.push_str(&format_tab_line(tab + 1, "Ok(retv)"));
+		rets.push_str(&format_tab_line(tab + 1, ""));
+		rets.push_str(&format_tab_line(tab,"}"));
+		return rets;		
+	}
+
+	fn format_encode_asn1(&self,tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		rets.push_str(&format_tab_line(tab , "fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {"));
+		rets.push_str(&format_tab_line(tab + 1, "let mut retv :Vec<u8> = Vec::new();"));
+		if self.parsenames.len() > 1 {
+			rets.push_str(&format_tab_line(tab + 1, "let mut encv :Vec<u8>;"));	
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, "let encv :Vec<u8>;"));
+		}
+		
+		rets.push_str(&format_tab_line(tab + 1, ""));
+		for k in self.parsenames.iter() {
+			rets.push_str(&format_tab_line(tab + 1, &format!("encv = self.{}.encode_asn1()?;",k)));
+			rets.push_str(&format_tab_line(tab + 1, "for i in 0..encv.len() {"));
+			rets.push_str(&format_tab_line(tab + 2, "retv.push(encv[i]);"));
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+		}
+
+		rets.push_str(&format_tab_line(tab + 1, ""));
+		rets.push_str(&format_tab_line(tab + 1, "Ok(retv)"));
+		rets.push_str(&format_tab_line(tab + 1, ""));
+		rets.push_str(&format_tab_line(tab,"}"));
+		return rets;
+	}
+
+	fn format_print_asn1(&self,tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		rets.push_str(&format_tab_line(tab , "fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {"));
+		if self.parsenames.len() == 0 {
+			rets.push_str(&format_tab_line(tab + 1, "let s :String;"));
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, "let mut s :String;"));
+		}
+		rets.push_str(&format_tab_line(tab + 1, &format!("s = asn1_format_line(tab,&format!(\"{{}} {}\", name));", self.sname)));
+		rets.push_str(&format_tab_line(tab + 1, "iowriter.write(s.as_bytes())?;"));
+		
+		rets.push_str(&format_tab_line(tab + 1, ""));
+		for k in self.parsenames.iter() {
+			rets.push_str(&format_tab_line(tab + 1, &format!("s = format!(\"{{}}.{}\",name);", k)));
+			rets.push_str(&format_tab_line(tab + 1, &format!("self.{}.print_asn1(&s,tab + 1, iowriter)?;",k)));
+			rets.push_str(&format_tab_line(tab + 1, ""));
+		}
+
+		rets.push_str(&format_tab_line(tab + 1, "Ok(())"));
+		rets.push_str(&format_tab_line(tab + 1, ""));
+		rets.push_str(&format_tab_line(tab,"}"));
+		return rets;
 	}
 
 	pub fn format_asn1_code(&mut self) -> Result<String,Box<dyn Error>> {
 		let mut rets :String = "".to_string();
+		if self.sname.len() == 0 {
+			asn1_gen_new_error!{SequenceSynError,"need sname "}
+		}
+
+		if self.errname.len() == 0 {
+			self.errname = format!("{}Error",self.sname);
+			self.errname.push_str(&get_random_bytes(20));
+			rets.push_str(&format_tab_line(0,&format!("asn1obj_error_class!{{{}}}", self.errname)));
+			rets.push_str(&format_tab_line(0,""));
+		}
+
+		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_init_asn1(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_decode_asn1(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_encode_asn1(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_print_asn1(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&format_tab_line(0,"}"));
+		asn1_gen_log_trace!("code\n{}",rets);
 		Ok(rets)
 	}
 }
 
 impl syn::parse::Parse for SequenceSyn {
 	fn parse(input :syn::parse::ParseStream) -> syn::parse::Result<Self> {
-		let mut retv = SequenceSyn::new();
+		let retv = SequenceSyn::new();
 		loop {
 			if input.is_empty() {
 				break;
@@ -911,6 +1021,8 @@ pub fn asn1_sequence(_attr :TokenStream,item :TokenStream) -> TokenStream {
 			asn1_syn_error_fmt!("not struct format\n{}",item.to_string());
 		}
 	}
+
+	asn1_gen_log_trace!(" ");
 
 	/*now to compile ok*/
     //let cc = format_code(&sname,names.clone(),structnames.clone());
