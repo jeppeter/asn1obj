@@ -61,7 +61,7 @@ fn asn1_gen_proc_log_init(prefix :&str) -> LogVar {
 		let fo = fs::File::create(&getv);
 		if fo.is_err() {
 			eprintln!("can not open [{}]", getv);
-		} else {
+			} else {
 			coptfile = Some(fo.unwrap());
 		}
 	}

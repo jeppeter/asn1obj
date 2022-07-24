@@ -1,6 +1,7 @@
 
 use proc_macro::TokenStream;
-
+use proc_macro2;
+use quote::{ToTokens};
 
 use std::fmt::{Debug};
 use std::fmt;
@@ -341,16 +342,91 @@ impl syn::parse::Parse for ObjSelectorSyn {
 				if iskey {
 					k.push_str(&format!("{}",c));
 				} else {
-					v.push_str(&format!("{}",c));
+					v = format!("{}",c);
+					let ov = retv.set_matches(&k,&v);
+					if ov.is_err() {
+						let e = ov.err().unwrap();
+						let c = format!("{:?}", e);
+						asn1_gen_log_error!("{}",c);
+						return Err(syn::Error::new(input.span(),&c));
+					}
 				}
 			} else if input.peek(syn::LitStr) {
 				let c :syn::LitStr = input.parse()?;
 				if iskey {
 					k.push_str(&format!("{}",c.value()));
 				} else {
-					v.push_str(&format!("{}",c.value()));
+					v = format!("{}",c.value());
+					let ov = retv.set_matches(&k,&v);
+					if ov.is_err() {
+						let e = ov.err().unwrap();
+						let c = format!("{:?}", e);
+						asn1_gen_log_error!("{}",c);
+						return Err(syn::Error::new(input.span(),&c));
+					}
 				}
 
+			} else if input.peek(syn::token::Bracket) {
+				let con ;
+				if iskey {
+					let c = format!("need must set after =");
+					asn1_gen_log_error!("{}",c);
+					return Err(syn::Error::new(input.span(),&c));					
+				}
+
+				let _c = syn::bracketed!(con in input);
+				asn1_gen_log_trace!("con [{}]",con.to_string());
+				while !con.is_empty() {
+					let ex : syn::Expr = con.parse()?;
+					match ex {
+						syn::Expr::Lit(_v) => { 
+							asn1_gen_log_trace!("Lit"); 
+							match _v.lit {
+								syn::Lit::Str(_vv) => {
+									v = format!("{}",_vv.value());
+									let ov = retv.set_matches(&k,&v);
+									if ov.is_err() {
+										let e = ov.err().unwrap();
+										let c = format!("{:?}",e);
+										asn1_gen_log_error!("{}",c);
+										return Err(syn::Error::new(input.span(),&c));							
+									}
+								},
+								_ => {
+									let c = format!("not litstr or ");
+									asn1_gen_log_error!("{}",c);
+									return Err(syn::Error::new(input.span(),&c));
+								},
+							}
+						},	
+						syn::Expr::Path(_v) => { 
+							let mut ttks : proc_macro2::TokenStream = proc_macro2::TokenStream::new();
+							_v.to_tokens(&mut ttks);
+							asn1_gen_log_trace!("Path"); 
+							v = format!("{}",ttks.to_string());
+							let ov = retv.set_matches(&k,&v);
+							if ov.is_err() {
+								let e = ov.err().unwrap();
+								let c = format!("{:?}",e);
+								asn1_gen_log_error!("{}",c);
+								return Err(syn::Error::new(input.span(),&c));							
+							}
+						},
+						_ => {
+							let c = format!("not litstr or ");
+							asn1_gen_log_error!("{}",c);
+							return Err(syn::Error::new(input.span(),&c));							
+						}
+					}
+					if ! con.is_empty() {
+						if !con.peek(syn::token::Comma) {
+							let c = format!("not comma");
+							asn1_gen_log_error!("{}",c);
+							return Err(syn::Error::new(input.span(),&c));							
+						}
+						let _c : syn::token::Comma = con.parse()?;
+					}
+				}
 			} else if input.peek(syn::Token![=]) {
 				let _c : syn::token::Eq = input.parse()?;
 				iskey = false;
@@ -358,13 +434,6 @@ impl syn::parse::Parse for ObjSelectorSyn {
 				let _c : syn::token::Comma = input.parse()?;
 				if k.len() == 0 || v.len() == 0 {
 					let c = format!("need set k=v format");
-					asn1_gen_log_error!("{}",c);
-					return Err(syn::Error::new(input.span(),&c));
-				}
-				let ov = retv.set_matches(&k,&v);
-				if ov.is_err() {
-					let e = ov.err().unwrap();
-					let c = format!("{:?}", e);
 					asn1_gen_log_error!("{}",c);
 					return Err(syn::Error::new(input.span(),&c));
 				}
