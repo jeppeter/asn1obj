@@ -498,3 +498,67 @@ impl<T: Asn1Op + Clone, const TAG:u8> Asn1Op for Asn1Ndef<T,TAG> {
 		}
 	}
 }
+
+#[derive(Clone)]
+pub struct Asn1NdefSeq<T : Asn1Op + Clone> {
+	pub val : T,
+	data :Vec<u8>,
+}
+
+impl<T: Asn1Op + Clone> Asn1Op for Asn1NdefSeq<T> {
+	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let mut retv :usize;
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+		asn1obj_log_trace!("flag [0x{:x}]", flag);
+		if flag as u8 != ASN1_SET_OF_FLAG {
+			/*we do have any type*/
+			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] != ASN1_SET_OF_FLAG [0x{:02x}]", flag, ASN1_SET_OF_FLAG}
+		}
+
+		retv = hdrlen;
+		if totallen > 0 {
+			let mut v :T = T::init_asn1();
+			let c = v.decode_asn1(&(code[retv..(hdrlen+totallen)]))?;
+			if c != totallen {
+				asn1obj_new_error!{Asn1ComplexError,"c [{}] != totallen [{}]", c, totallen}
+			}
+			self.val = v;			
+		}
+
+		retv = totallen + hdrlen;
+
+		self.data = Vec::new();
+		for i in 0..retv {
+			self.data.push(code[i]);
+		}
+		asn1obj_log_trace!("retv [{}]",retv);
+
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let mut retv :Vec<u8>;
+		let encv :Vec<u8>;
+		let flag :u64;
+
+		encv = self.val.encode_asn1()?;
+		flag = ASN1_SET_OF_FLAG as u64;
+		retv = asn1obj_format_header(flag,encv.len() as u64);
+		for i in 0..encv.len() {
+			retv.push(encv[i]);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		self.val.print_asn1(name,tab,iowriter)?;
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		Asn1NdefSeq {
+			data : Vec::new(),
+			val : T::init_asn1(),
+		}
+	}
+}
