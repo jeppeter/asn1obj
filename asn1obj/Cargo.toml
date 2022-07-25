@@ -12,3 +12,4 @@ bytes = "^0.5.3"
 regex = "1"
 num-bigint = "^0.4.3"
 num-traits = "^0.2.5"
+asn1obj_codegen = { path = "../asn1obj_codegen" }

@@ -513,7 +513,7 @@ impl ChoiceSyn {
 	}
 
 	pub fn set_attr_name(&mut self, k :&str, v :&str) -> Result<(),Box<dyn Error>> {
-		if k == "error" {
+		if k == "errorhandler" {
 			self.errname = format!("{}",v);
 		} else if k == "selector" {
 			self.selname = format!("{}",v);

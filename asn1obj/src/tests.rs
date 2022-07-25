@@ -1,4 +1,6 @@
 
+use asn1obj_codegen::{asn1_sequence};
+
 use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null,Asn1Object,Asn1Enumerated,Asn1String,Asn1ImpInteger,Asn1ImpObject,Asn1ImpString,Asn1Any};
 use crate::complex::{Asn1Opt,Asn1SetOf,Asn1Seq,Asn1Set,Asn1ImpEncap,Asn1Ndef};
 use crate::{asn1obj_log_trace,asn1obj_error_class,asn1obj_new_error};
@@ -1276,3 +1278,4 @@ impl Asn1Op for Asn1ChoiceEx {
 		Ok(())
 	}
 }
+
