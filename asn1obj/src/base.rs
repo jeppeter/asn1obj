@@ -1,6 +1,8 @@
 
 
 use std::error::Error;
+use chrono::{Utc,DateTime,Datelike,Timelike};
+use chrono::prelude::*;
 use crate::asn1impl::{Asn1Op};
 use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_BOOLEAN_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5,ASN1_BIT_STRING_FLAG,ASN1_OCT_STRING_FLAG,ASN1_NULL_FLAG,ASN1_OBJECT_FLAG,ASN1_ENUMERATED_FLAG,ASN1_UTF8STRING_FLAG,ASN1_IMP_FLAG_MASK,ASN1_PRINTABLE_FLAG,ASN1_TIME_FLAG,ASN1_TIME_DEFAULT_STR};
 use crate::strop::{asn1_format_line};
@@ -1885,18 +1887,28 @@ impl Asn1Time {
 		Ok(())
 	}
 
-	pub fn set_value(&mut self, s :&str) -> Result<(),Box<dyn Error>> {
+	pub fn set_value_str(&mut self, s :&str) -> Result<(),Box<dyn Error>> {
 		let (year,mon,mday,hour,min) = self.extract_date_value(s)?;
 		let _ = self.check_data_valid(year,mon,mday,hour,min)?;
 		self.val = format!("{:04}-{:02}-{:02} {:02}:{:02}", year,mon,mday,hour,min);
 		Ok(())
 	}
 
-	pub fn get_value(&self) -> String {
-		if self.val.len() == 0 {
-			return ASN1_TIME_DEFAULT_STR.to_string();
-		}
+	pub fn get_value_str(&self) -> String {
 		return format!("{}",self.val);
+	}
+
+	pub fn set_value_time(&mut self,dt :&DateTime<Utc>) -> Result<(),Box<dyn Error>> {
+		let (year,mon,mday,hour,min) = (dt.year(),dt.month(),dt.day(),dt.hour(),dt.minute());
+		let _ = self.check_data_valid(year as i64,mon as i64,mday as i64,hour as i64,min as i64)?;
+		self.val = format!("{:04}-{:02}-{:02} {:02}:{:02}", year,mon,mday,hour,min);
+		Ok(())
+	}
+
+	pub fn get_value_time(&self) -> Result<DateTime<Utc>,Box<dyn Error>> {
+		let (year,mon,mday,hour,min) = self.extract_date_value(&self.val)?;
+		let dt :DateTime<Utc> = Utc.ymd(year as i32,mon as u32,mday as u32).and_hms_milli(hour as u32,min as u32,0,0);
+		Ok(dt)
 	}
 }
 
@@ -1904,7 +1916,7 @@ impl Asn1Time {
 impl Asn1Op for Asn1Time {
 	fn init_asn1() -> Self {
 		Asn1Time {
-			val : "".to_string(),
+			val : ASN1_TIME_DEFAULT_STR.to_string(),
 			data : Vec::new(),
 		}
 	}
@@ -2007,15 +2019,9 @@ impl Asn1Op for Asn1Time {
 		let llen :u64;
 		let mut retv :Vec<u8>;
 		let vcode :Vec<u8>;
-		let fmts :String;
 
-		if self.val.len() == 0 {
-			fmts = ASN1_TIME_DEFAULT_STR.to_string();
-		} else {
-			fmts = format!("{}",self.val);
-		}
 
-		let (year,mon,mday,hour,min) = self.extract_date_value(&fmts)?;
+		let (year,mon,mday,hour,min) = self.extract_date_value(&self.val)?;
 		let s = format!("{:04}{:02}{:02}{:02}{:02}Z",year,mon,mday,hour,min);
 		vcode = s.as_bytes().to_vec();
 		llen = vcode.len() as u64;
@@ -2030,11 +2036,7 @@ impl Asn1Op for Asn1Time {
 
 	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {		
 		let s :String;
-		if self.val.len() == 0 {
-			s = asn1_format_line(tab,&(format!("{}: ASN1_TIME {}", name, ASN1_TIME_DEFAULT_STR)));
-		} else {
-			s = asn1_format_line(tab,&(format!("{}: ASN1_TIME {}", name, self.val)));
-		}
+		s = asn1_format_line(tab,&(format!("{}: ASN1_TIME {}", name, self.val)));
 		iowriter.write(s.as_bytes())?;
 		Ok(())
 	}

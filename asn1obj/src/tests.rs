@@ -7,6 +7,9 @@ use crate::complex::{Asn1Opt,Asn1SetOf,Asn1Seq,Asn1Set,Asn1ImpEncap,Asn1Ndef,Asn
 use crate::{asn1obj_log_trace,asn1obj_error_class,asn1obj_new_error};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 use crate::asn1impl::{Asn1Op};
+use chrono::{Utc,DateTime,Datelike,Timelike};
+use chrono::prelude::*;
+
 
 
 fn check_equal_u8(a :&[u8],b :&[u8]) -> bool {
@@ -1209,7 +1212,7 @@ fn test_a021() {
 #[test]
 fn test_a022() {
 	let mut a1 :Asn1Time = Asn1Time::init_asn1();
-	let _ = a1.set_value("2022-02-02 01:20").unwrap();
+	let _ = a1.set_value_str("2022-02-02 01:20").unwrap();
 	let c1 = a1.encode_asn1().unwrap();
 	let mut v1 :Vec<u8>;
 	v1 = vec![0x17,0xd,0x32,0x30,0x32,0x32,0x30,0x32,0x30,0x32,0x30,0x31,0x32,0x30,0x5a];
@@ -1217,9 +1220,20 @@ fn test_a022() {
 	v1 = vec![0x17,0xd,0x32,0x30,0x32,0x32,0x30,0x32,0x30,0x32,0x30,0x31,0x32,0x32,0x5a];
 	let c = a1.decode_asn1(&v1).unwrap();
 	assert!(c == v1.len());
-	assert!(a1.get_value() == "2022-02-02 01:22");
+	assert!(a1.get_value_str() == "2022-02-02 01:22");
 	v1 = vec![0x17,0xd,0x32,0x30,0x32,0x32,0x30,0x32,0x32,0x39,0x30,0x31,0x32,0x32,0x5a];
 	let c1 = a1.decode_asn1(&v1);
 	assert!(c1.is_err());
-	assert!(a1.get_value() == "2022-02-02 01:22");
+	assert!(a1.get_value_str() == "2022-02-02 01:22");
+	let dt : DateTime<Utc> = a1.get_value_time().unwrap();
+	assert!(dt.year() == 2022);
+	assert!(dt.month() == 2);
+	assert!(dt.day() == 2);
+	assert!(dt.hour() == 1);
+	assert!(dt.minute() == 22);
+	assert!(dt.second() == 0);
+	let dt : DateTime<Utc> = Utc.ymd(2021,7,8).and_hms(22,21,0);
+	let _ = a1.set_value_time(&dt).unwrap();
+	assert!(a1.get_value_str() == "2021-07-08 22:21");
+	return;
 }
