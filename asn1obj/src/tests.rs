@@ -1,7 +1,7 @@
 
 //use asn1obj_codegen::{asn1_sequence};
 
-use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null,Asn1Object,Asn1Enumerated,Asn1String,Asn1ImpInteger,Asn1ImpObject,Asn1ImpString,Asn1Any,Asn1PrintableString,Asn1Time};
+use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null,Asn1Object,Asn1Enumerated,Asn1String,Asn1ImpInteger,Asn1ImpObject,Asn1ImpString,Asn1Any,Asn1PrintableString,Asn1Time,Asn1BigNum};
 use crate::complex::{Asn1Opt,Asn1SetOf,Asn1Seq,Asn1Set,Asn1ImpEncap,Asn1Ndef,Asn1NdefSeq};
 #[allow(unused_imports)]
 use crate::{asn1obj_log_trace,asn1obj_error_class,asn1obj_new_error};
@@ -10,6 +10,8 @@ use crate::asn1impl::{Asn1Op};
 use chrono::{Utc,DateTime,Datelike,Timelike};
 use chrono::prelude::*;
 
+use num_bigint::{BigUint};
+use num_traits::Num;
 
 
 fn check_equal_u8(a :&[u8],b :&[u8]) -> bool {
@@ -1236,4 +1238,22 @@ fn test_a022() {
 	let _ = a1.set_value_time(&dt).unwrap();
 	assert!(a1.get_value_str() == "2021-07-08 22:21");
 	return;
+}
+
+#[test]
+fn test_a023() {
+	let mut a1 :Asn1BigNum = Asn1BigNum::init_asn1();
+	a1.val = BigUint::from_str_radix("11223344556677889900aabbccddeeff",16).unwrap();
+	let mut v1 :Vec<u8>;
+	v1 = vec![0x2,0x10,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0x00,0xaa,0xbb,0xcc,0xdd,0xee,0xff];
+	let c1 = a1.encode_asn1().unwrap();
+	assert!(check_equal_u8(&c1,&v1));
+	let cb = a1.val.to_bytes_be();
+	assert!(check_equal_u8(&cb,&v1[2..]));
+	a1.val = BigUint::from_str_radix("ff223344556677889900aabbccddeeff",16).unwrap();
+	v1 = vec![0x2,0x11,0x00,0xff,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0x00,0xaa,0xbb,0xcc,0xdd,0xee,0xff];
+	let c1 = a1.encode_asn1().unwrap();
+	assert!(check_equal_u8(&c1,&v1));
+	let cb = a1.val.to_bytes_be();
+	assert!(check_equal_u8(&cb,&v1[3..]));
 }

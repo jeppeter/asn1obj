@@ -2041,3 +2041,103 @@ impl Asn1Op for Asn1Time {
 		Ok(())
 	}
 }
+
+
+#[derive(Clone)]
+pub struct Asn1BigNum {
+	pub val :BigUint,
+	data :Vec<u8>,
+}
+
+
+impl Asn1Op for Asn1BigNum {
+	fn init_asn1() -> Self {
+		Asn1BigNum {
+			val : Zero::zero(),
+			data : Vec::new(),
+		}
+	}
+
+	fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let retv :usize;
+		if code.len() < 2 {
+			asn1obj_new_error!{Asn1ObjBaseError,"len [{}] < 2", code.len()}
+		}
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+
+		if flag != ASN1_INTEGER_FLAG as u64 {
+			asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != ASN1_INTEGER_FLAG [0x{:02x}]", flag,ASN1_INTEGER_FLAG}
+		}
+
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
+		}
+
+		if totallen < 1 {
+			asn1obj_new_error!{Asn1ObjBaseError,"need 1 length"}
+		}
+
+		self.val = BigUint::from_bytes_be(&code[hdrlen..(hdrlen+totallen)]);
+		self.data = Vec::new();
+		for i in 0..(hdrlen + totallen) {
+			self.data.push(code[i]);
+		}
+		retv= hdrlen + totallen;
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let mut retv :Vec<u8> ;
+		let v8 :Vec<u8>;
+		let mut clen :usize ;
+		v8 = self.val.to_bytes_be();
+		clen = v8.len();
+		if v8.len() > 0 && (v8[0] & 0x80) != 0x0 {
+			clen = v8.len() + 1;
+		}
+		retv = asn1obj_format_header(ASN1_INTEGER_FLAG as u64, clen as u64);
+		if clen != v8.len() {
+			retv.push(0x0);
+		}
+		for v in v8.iter() {
+			retv.push(*v);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {	
+		let v8 = self.val.to_bytes_be();
+		let mut s :String;
+		if v8.len() < 8 {
+			let mut val :u64 = 0;			
+			for i in 0..v8.len() {
+				val |= (v8[i] as u64) << ((7 - i) * 8);
+			}
+			s = asn1_format_line(tab, &(format!("{}: ASN1_BIGNUM 0x{:08x}", name, val)));
+		} else {
+			let mut c :String = "".to_string();
+			let mut i :usize=0;
+			let mut lasti :usize = 0;
+			s = asn1_format_line(tab, &(format!("{}: ASN1_BIGNUM", name)));
+			while i < v8.len() {
+				if (i %16) == 0 {
+					if i > 0 {
+						s.push_str(&asn1_format_line(tab + 1, &format!( "{}",c)));
+						c = "".to_string();
+					}
+					lasti = i;
+				}
+				if lasti != i {
+					c.push_str(":");
+				}				
+				c.push_str(&format!("{:02x}",v8[i]));
+				i += 1;
+			}
+			if c.len() > 0 {
+				s.push_str(&asn1_format_line(tab + 1, &format!("{}",c)));
+			}
+		}
+		iowriter.write(s.as_bytes())?;
+		Ok(())
+	}
+}
