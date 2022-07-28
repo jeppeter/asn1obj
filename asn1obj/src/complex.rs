@@ -324,14 +324,14 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 }
 
 #[derive(Clone)]
-pub struct Asn1ImpEncap<T : Asn1Op,const TAG:u8=0> {
+pub struct Asn1ImpVec<T : Asn1Op,const TAG:u8=0> {
 	pub val : Vec<T>,
 	tag : u8,
 	data : Vec<u8>,
 }
 
 
-impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpEncap<T,TAG> {
+impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpVec<T,TAG> {
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize = 0;
 		self.val = Vec::new();
@@ -404,7 +404,7 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpEncap<T,TAG> {
 	}
 
 	fn init_asn1() -> Self {
-		Asn1ImpEncap {
+		Asn1ImpVec {
 			data : Vec::new(),
 			tag : TAG,
 			val : Vec::new(),

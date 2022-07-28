@@ -2,7 +2,7 @@
 //use asn1obj_codegen::{asn1_sequence};
 
 use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null,Asn1Object,Asn1Enumerated,Asn1String,Asn1Any,Asn1PrintableString,Asn1Time,Asn1BigNum};
-use crate::complex::{Asn1Opt,Asn1SetOf,Asn1Seq,Asn1Set,Asn1ImpEncap,Asn1Ndef,Asn1NdefSeq,Asn1Imp};
+use crate::complex::{Asn1Opt,Asn1SetOf,Asn1Seq,Asn1Set,Asn1ImpVec,Asn1Ndef,Asn1NdefSeq,Asn1Imp};
 #[allow(unused_imports)]
 use crate::{asn1obj_log_trace,asn1obj_error_class,asn1obj_new_error};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
@@ -1062,7 +1062,7 @@ fn test_a015() {
 
 #[test]
 fn test_a016() {
-	let mut a1 :Asn1ImpEncap<Asn1Integer,4> = Asn1ImpEncap::init_asn1();
+	let mut a1 :Asn1ImpVec<Asn1Integer,4> = Asn1ImpVec::init_asn1();
 	let mut v1 :Vec<u8>;
 	let mut n1 :Asn1Integer = Asn1Integer::init_asn1();
 	n1.val = -20;
@@ -1085,7 +1085,7 @@ fn test_a016() {
 
 #[test]
 fn test_a017() {
-	let mut a1 :Asn1ImpEncap<Asn1Set<Asn1Integer>,4> = Asn1ImpEncap::init_asn1();
+	let mut a1 :Asn1ImpVec<Asn1Set<Asn1Integer>,4> = Asn1ImpVec::init_asn1();
 	let mut v1 :Vec<u8>;
 	let mut n1 :Asn1Set<Asn1Integer> = Asn1Set::init_asn1();
 	let mut i1 :Asn1Integer = Asn1Integer::init_asn1();
