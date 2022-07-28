@@ -11,7 +11,7 @@ use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 use crate::strop::{asn1_format_line};
 use crate::base::{asn1obj_extract_header,asn1obj_format_header};
 
-use crate::consts::{ASN1_SET_OF_FLAG,ASN1_PRIMITIVE_TAG,ASN1_SEQ_MASK,ASN1_SET_MASK,ASN1_IMP_SET_MASK};
+use crate::consts::{ASN1_SET_OF_FLAG,ASN1_PRIMITIVE_TAG,ASN1_SEQ_MASK,ASN1_SET_MASK,ASN1_IMP_SET_MASK,ASN1_IMP_FLAG_MASK};
 
 asn1obj_error_class!{Asn1ComplexError}
 
@@ -411,6 +411,83 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpEncap<T,TAG> {
 		}
 	}
 }
+
+#[derive(Clone)]
+pub struct Asn1Imp<T : Asn1Op,const TAG:u8=0> {
+	pub val : T,
+	tag : u8,
+	data : Vec<u8>,
+}
+
+
+impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1Imp<T,TAG> {
+	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let mut retv :usize = 0;
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+		let  mut parsevec : Vec<u8>;
+		let encv :Vec<u8>;
+		asn1obj_log_trace!("flag [0x{:x}]", flag);
+		if ((flag as u8) & ASN1_IMP_FLAG_MASK) != ASN1_IMP_FLAG_MASK {
+			/*we do have any type*/
+			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] & ASN1_IMP_FLAG_MASK[0x{:02x}] != ASN1_IMP_FLAG_MASK [0x{:02x}]", flag, ASN1_IMP_FLAG_MASK,ASN1_IMP_FLAG_MASK}
+		}
+
+		let ctag = code[0] & ASN1_PRIMITIVE_TAG;
+		if ctag != self.tag {
+			asn1obj_new_error!{Asn1ComplexError,"tag [0x{:02x}] != self.tag [0x{:02x}]", ctag, self.tag}
+		}
+
+		retv += hdrlen;
+		encv = self.val.encode_asn1()?;
+		if encv.len() < 1 {
+			asn1obj_new_error!{Asn1ComplexError,"{} < 1",encv.len()}
+		}
+		parsevec = Vec::new();
+		/*to make first tag*/
+		parsevec.push(encv[0]);
+		for i in 1..(totallen+hdrlen) {
+			parsevec.push(code[i]);
+		}
+
+		let _ = self.val.decode_asn1(&parsevec)?;
+		retv += totallen;
+		self.data = Vec::new();
+		for i in 0..retv {
+			self.data.push(code[i]);
+		}
+		asn1obj_log_trace!("retv [{}]",retv);
+
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let mut retv :Vec<u8>;
+
+		retv = self.val.encode_asn1()?;
+		if retv.len() < 1 {
+			asn1obj_new_error!{Asn1ComplexError,"{} < 1",retv.len()}
+		}
+
+		retv[0] = self.tag | ASN1_IMP_FLAG_MASK;
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		let s = asn1_format_line(tab,&format!("{} IMP", name));
+		let _ = iowriter.write(s.as_bytes())?;
+		let _ = self.val.print_asn1(name,tab,iowriter)?;
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		Asn1Imp {
+			data : Vec::new(),
+			tag : TAG,
+			val : T::init_asn1(),
+		}
+	}
+}
+
 
 #[derive(Clone)]
 pub struct Asn1Ndef<T : Asn1Op + Clone, const TAG:u8=0> {

@@ -18,6 +18,7 @@ pub const ASN1_SET_MASK :u8 = 0x31;
 pub const ASN1_IMP_SET_MASK :u8 = 0xa0;
 
 pub const ASN1_TIME_DEFAULT_STR :&str = "1970-01-01 00:00";
+pub const ASN1_OBJECT_DEFAULT_STR :&str = "1.1.1";
 
 pub const ASN1_SET_OF_FLAG :u8 = 0xa0;
 
