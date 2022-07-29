@@ -64,7 +64,7 @@ fn get_name_type(n : syn::Field) -> Result<(String,String), Box<dyn Error>> {
 	n.ty.to_tokens(&mut ttks);
 	typename = format!("{}",ttks.to_string());
 
-	asn1_gen_log_trace!("name [{}] typename [{}]",name,typename);
+	//asn1_gen_log_trace!("name [{}] typename [{}]",name,typename);
 	Ok((name,typename))
 }
 
@@ -110,7 +110,7 @@ impl ObjSelectorSyn {
 	}
 
 	pub fn set_matches(&mut self, k :&str, v :&str) -> Result<(),Box<dyn Error>> {
-		asn1_gen_log_trace!("k [{}] v [{}]",k,v);
+		//asn1_gen_log_trace!("k [{}] v [{}]",k,v);
 		if v == "default" {
 			self.defname = format!("{}",k);
 		} else {
@@ -285,7 +285,7 @@ impl ObjSelectorSyn {
 		rets.push_str(&format_tab_line(0,"}"));
 
 
-		asn1_gen_log_trace!("code\n{}",rets);
+		//asn1_gen_log_trace!("code\n{}",rets);
 		Ok(rets)
 	}
 }
@@ -436,7 +436,7 @@ impl syn::parse::Parse for ObjSelectorSyn {
 
 #[proc_macro_attribute]
 pub fn asn1_obj_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
-	asn1_gen_log_trace!("item\n{}",item.to_string());
+	//asn1_gen_log_trace!("item\n{}",item.to_string());
 	let nargs = _attr.clone();
 	let co :syn::DeriveInput;
 	let sname :String;
@@ -452,7 +452,7 @@ pub fn asn1_obj_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
 	}
 
 	sname = format!("{}",co.ident);
-	asn1_gen_log_trace!("sname [{}]",sname);
+	//asn1_gen_log_trace!("sname [{}]",sname);
 	selcs.set_sname(&sname);
 
 
@@ -485,8 +485,9 @@ pub fn asn1_obj_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
 	/*now to compile ok*/
     //let cc = format_code(&sname,names.clone(),structnames.clone());
     let mut cc = item.to_string();
-
+    cc.push_str("\n");
     cc.push_str(&(selcs.format_asn1_code().unwrap()));
+    asn1_gen_log_trace!("CODE\n{}",cc);
     cc.parse().unwrap()
 }
 
@@ -748,7 +749,7 @@ impl ChoiceSyn {
 		if self.errname.len() == 0 {
 			self.errname = format!("{}Error", self.sname);
 			self.errname.push_str(&get_random_bytes(20));
-			asn1_gen_log_trace!("errname [{}]",self.errname);
+			//asn1_gen_log_trace!("errname [{}]",self.errname);
 
 			rets.push_str(&format_tab_line(0,&format!("asn1obj_error_class!{{ {} }}", self.errname)));
 			rets.push_str(&format_tab_line(0,""));
@@ -770,7 +771,7 @@ impl ChoiceSyn {
 
 		rets.push_str(&format_tab_line(0,"}"));
 
-		asn1_gen_log_trace!("code\n{}",rets);
+		//asn1_gen_log_trace!("code\n{}",rets);
 
 		Ok(rets)
 	}
@@ -785,7 +786,7 @@ impl syn::parse::Parse for ChoiceSyn {
 		loop {
 			if input.peek(syn::Ident) {
 				let c :syn::Ident = input.parse()?;
-				asn1_gen_log_trace!("token [{}]",c);
+				//asn1_gen_log_trace!("token [{}]",c);
 				if k.len() == 0 {
 					k = format!("{}",c);
 				} else if v.len() == 0 {
@@ -796,7 +797,7 @@ impl syn::parse::Parse for ChoiceSyn {
 				}
 			} else if input.peek(syn::Token![=]) {
 				let _c : syn::token::Eq = input.parse()?;
-				asn1_gen_log_trace!("=");
+				//asn1_gen_log_trace!("=");
 			} else if input.peek(syn::Token![,]) {
 				let _c : syn::token::Comma = input.parse()?;
 				if k.len() == 0 || v.len() == 0 {
@@ -838,7 +839,7 @@ impl syn::parse::Parse for ChoiceSyn {
 
 #[proc_macro_attribute]
 pub fn asn1_choice(_attr :TokenStream,item :TokenStream) -> TokenStream {
-	asn1_gen_log_trace!("item\n{}",item.to_string());
+	//asn1_gen_log_trace!("item\n{}",item.to_string());
 	let co :syn::DeriveInput;
 	let nargs = _attr.clone();
 	let sname :String;
@@ -854,7 +855,7 @@ pub fn asn1_choice(_attr :TokenStream,item :TokenStream) -> TokenStream {
 	}
 
 	sname = format!("{}",co.ident);
-	asn1_gen_log_trace!("sname [{}]",sname);
+	//asn1_gen_log_trace!("sname [{}]",sname);
 	cs.set_struct_name(&sname);
 
 
@@ -884,7 +885,9 @@ pub fn asn1_choice(_attr :TokenStream,item :TokenStream) -> TokenStream {
 	/*now to compile ok*/
     //let cc = format_code(&sname,names.clone(),structnames.clone());
     let mut cc = item.to_string();
+    cc.push_str("\n");
     cc.push_str(&(cs.format_asn1_code().unwrap()));
+    asn1_gen_log_trace!("CODE\n{}",cc);
     cc.parse().unwrap()
 }
 
@@ -923,7 +926,7 @@ impl SequenceSyn {
 			} else {
 				self.seqenable = false;
 			}
-			asn1_gen_log_trace!("seqenable [{}]",self.seqenable);
+			//asn1_gen_log_trace!("seqenable [{}]",self.seqenable);
 		} else if k == "debug" && (v == "enable" || v == "disable") {
 			if v == "enable" {
 				self.debugenable = true;
@@ -967,6 +970,9 @@ impl SequenceSyn {
 		if self.debugenable {
 			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stdout();"));
 			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _lastv :usize = 0;"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _i :usize;"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _lasti :usize;"));
 		}
 		if self.seqenable {
 			rets.push_str(&format_tab_line(tab + 1, ""));
@@ -981,12 +987,68 @@ impl SequenceSyn {
 			rets.push_str(&format_tab_line(tab + 1, "retv = hdrlen;"));
 			rets.push_str(&format_tab_line(tab + 1, "_endsize = hdrlen + totallen;"));
 		}
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1, "_lastv = retv;"));
+		}
 		for k in self.parsenames.iter() {			
 			rets.push_str(&format_tab_line(tab + 1, ""));
-			rets.push_str(&format_tab_line(tab + 1, &format!("retv += self.{}.decode_asn1(&code[retv.._endsize])?;",k)));
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"decode {} retv {{}}\\n\",retv);",k)));
+				rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"decode {}.{} will decode at {{}}\\n\",retv);",self.sname,k)));
+				rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+			}
+			rets.push_str(&format_tab_line(tab + 1, &format!("let ro = self.{}.decode_asn1(&code[retv.._endsize]);",k)));
+			rets.push_str(&format_tab_line(tab + 1, "if ro.is_err() {"));
+			rets.push_str(&format_tab_line(tab + 2, &format!("let e = ro.err().unwrap();")));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 2, &format!("_outs = format!(\"decode {}.{} error {{:?}}\",e);",self.sname,k)));
+				rets.push_str(&format_tab_line(tab + 2,"let _ = _outf.write(_outs.as_bytes())?;"));
+			}
+			rets.push_str(&format_tab_line(tab + 2, "return Err(e);"));
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1, &format!("_lastv = retv;")));	
+			}
+			rets.push_str(&format_tab_line(tab + 1, &format!("retv += ro.unwrap();")));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"decode {}.{} retv {{}}\",retv - _lastv);",self.sname,k)));
+				rets.push_str(&format_tab_line(tab + 1,"_i = 0;"));
+				rets.push_str(&format_tab_line(tab + 1,"_lasti = 0;"));
+				rets.push_str(&format_tab_line(tab + 1,"while _i < (retv - _lastv) {"));
+				rets.push_str(&format_tab_line(tab + 2,"if (_i % 16) == 0 {"));
+				rets.push_str(&format_tab_line(tab + 3,"if _i > 0 {"));
+				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\"    \");"));
+				rets.push_str(&format_tab_line(tab + 4,"while _lasti != _i {"));
+				rets.push_str(&format_tab_line(tab + 5,"if code[(_lastv + _lasti)] >= 0x20 && code[(_lastv + _lasti)] <= 0x7e {"));
+				rets.push_str(&format_tab_line(tab + 6,"_outs.push(code[(_lastv+_lasti)] as char);"));
+				rets.push_str(&format_tab_line(tab + 5,"} else {"));
+				rets.push_str(&format_tab_line(tab + 6,"_outs.push_str(\".\");"));
+				rets.push_str(&format_tab_line(tab + 5,"}"));
+				rets.push_str(&format_tab_line(tab + 5,"_lasti += 1;"));
+				rets.push_str(&format_tab_line(tab + 4,"}"));
+				rets.push_str(&format_tab_line(tab + 3,"}"));
+				rets.push_str(&format_tab_line(tab + 3,"_outs.push_str(&format!(\"\\n0x{:08x}:\",_i));"));
+				rets.push_str(&format_tab_line(tab + 2,"}"));
+				rets.push_str(&format_tab_line(tab + 2,"_outs.push_str(&format!(\" 0x{:02x}\", code[_lastv + _i]));"));
+				rets.push_str(&format_tab_line(tab + 2,"_i += 1;"));
+				rets.push_str(&format_tab_line(tab + 1,"}"));
+				rets.push_str(&format_tab_line(tab + 1,"if _lasti != _i {"));
+				rets.push_str(&format_tab_line(tab + 2,"while (_i % 16) != 0 {"));
+				rets.push_str(&format_tab_line(tab + 3,"_outs.push_str(\"     \");"));
+				rets.push_str(&format_tab_line(tab + 3,"_i += 1;"));
+				rets.push_str(&format_tab_line(tab + 2,"}"));
+				rets.push_str(&format_tab_line(tab + 2,"_outs.push_str(\"    \");"));
+				rets.push_str(&format_tab_line(tab + 2,"while _lasti < (retv - _lastv) {"));
+				rets.push_str(&format_tab_line(tab + 3,"if code[(_lastv + _lasti)] >= 0x20 && code[(_lastv + _lasti)] <= 0x7e {"));
+				rets.push_str(&format_tab_line(tab + 4,"_outs.push(code[(_lastv+_lasti)] as char);"));
+				rets.push_str(&format_tab_line(tab + 3,"} else {"));
+				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\".\");"));
+				rets.push_str(&format_tab_line(tab + 3,"}"));
+				rets.push_str(&format_tab_line(tab + 3,"_lasti += 1;"));
+				rets.push_str(&format_tab_line(tab + 2,"}"));
+				rets.push_str(&format_tab_line(tab + 2,"_outs.push_str(\"\\n\");"));
+				rets.push_str(&format_tab_line(tab + 1,"}"));
 				rets.push_str(&format_tab_line(tab + 1,"let _ = _outf.write(_outs.as_bytes())?;"));
+
 			}
 		}
 
@@ -1022,7 +1084,7 @@ impl SequenceSyn {
 			rets.push_str(&format_tab_line(tab + 1, "}"));
 			if self.debugenable {
 				rets.push_str(&format_tab_line(tab + 1,""));
-				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"format {} {{:?}}\\n\",encv);", k)));
+				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"format {}.{} {{:?}}\\n\",encv);", self.sname, k)));
 				rets.push_str(&format_tab_line(tab + 1,"_outf.write(_outs.as_bytes())?;"));
 			}
 		}
@@ -1094,7 +1156,7 @@ impl SequenceSyn {
 		rets.push_str(&self.format_print_asn1(1));
 		rets.push_str(&format_tab_line(1,""));
 		rets.push_str(&format_tab_line(0,"}"));
-		asn1_gen_log_trace!("code\n{}",rets);
+		//asn1_gen_log_trace!("code\n{}",rets);
 		Ok(rets)
 	}
 }
@@ -1107,7 +1169,7 @@ impl syn::parse::Parse for SequenceSyn {
 		loop {
 			if input.peek(syn::Ident) {
 				let c :syn::Ident = input.parse()?;
-				asn1_gen_log_trace!("token [{}]",c);
+				//asn1_gen_log_trace!("token [{}]",c);
 				if k.len() == 0 {
 					k = format!("{}",c);
 				} else if v.len() == 0 {
@@ -1118,10 +1180,10 @@ impl syn::parse::Parse for SequenceSyn {
 				}
 			} else if input.peek(syn::Token![=]) {
 				let _c : syn::token::Eq = input.parse()?;
-				asn1_gen_log_trace!("=");
+				//asn1_gen_log_trace!("=");
 			} else if input.peek(syn::Token![,]) {
 				let _c : syn::token::Comma = input.parse()?;
-				asn1_gen_log_trace!("parse ,");
+				//asn1_gen_log_trace!("parse ,");
 				if k.len() == 0 || v.len() == 0 {
 					let c = format!("need set k=v format");
 					return Err(syn::Error::new(input.span(),&c));
@@ -1132,7 +1194,7 @@ impl syn::parse::Parse for SequenceSyn {
 					let c = format!("{:?}", e);
 					return Err(syn::Error::new(input.span(),&c));
 				}
-				asn1_gen_log_trace!("parse [{}]=[{}]",k,v);
+				//asn1_gen_log_trace!("parse [{}]=[{}]",k,v);
 				k = "".to_string();
 				v = "".to_string();
 			} else {
@@ -1160,7 +1222,7 @@ impl syn::parse::Parse for SequenceSyn {
 
 #[proc_macro_attribute]
 pub fn asn1_sequence(_attr :TokenStream,item :TokenStream) -> TokenStream {
-	asn1_gen_log_trace!("item\n{}",item.to_string());
+	//asn1_gen_log_trace!("item\n{}\n_attr\n{}",item.to_string(),_attr.to_string());
 	let co :syn::DeriveInput;
 	let nargs = _attr.clone();
 	let sname :String;
@@ -1176,7 +1238,7 @@ pub fn asn1_sequence(_attr :TokenStream,item :TokenStream) -> TokenStream {
 	}
 
 	sname = format!("{}",co.ident);
-	asn1_gen_log_trace!("sname [{}]",sname);
+	//asn1_gen_log_trace!("sname [{}]",sname);
 	cs.set_struct_name(&sname);
 
 
@@ -1203,11 +1265,13 @@ pub fn asn1_sequence(_attr :TokenStream,item :TokenStream) -> TokenStream {
 		}
 	}
 
-	asn1_gen_log_trace!(" ");
+	//asn1_gen_log_trace!(" ");
 
 	/*now to compile ok*/
     //let cc = format_code(&sname,names.clone(),structnames.clone());
     let mut cc = item.to_string();
+    cc.push_str("\n");
     cc.push_str(&(cs.format_asn1_code().unwrap()));
+    asn1_gen_log_trace!("CODE\n{}",cc);
     cc.parse().unwrap()
 }
