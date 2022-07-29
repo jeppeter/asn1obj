@@ -592,7 +592,7 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1,""));
 		rets.push_str(&format_tab_line(tab + 1,&format!("retv += self.{}.decode_asn1(&code[retv.._endsize])?;",self.selname)));
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"decode {} retv [{{}}]\",retv);",self.selname)));
+			rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"decode {} retv [{{}}]\\n\",retv);",self.selname)));
 			rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
 		}
 		rets.push_str(&format_tab_line(tab + 1,""));
@@ -611,7 +611,7 @@ impl ChoiceSyn {
 				}
 				rets.push_str(&format_tab_line(tab + 2,&format!("retv += self.{}.decode_asn1(&code[retv.._endsize])?;", self.parsenames[idx])));
 				if self.debugenable {
-					rets.push_str(&format_tab_line(tab + 2, &format!("_outs = format!(\"decode {} retv [{{}}]\",retv);",self.parsenames[idx])));
+					rets.push_str(&format_tab_line(tab + 2, &format!("_outs = format!(\"decode {} retv [{{}}]\\n\",retv);",self.parsenames[idx])));
 					rets.push_str(&format_tab_line(tab + 2, "let _ = _outf.write(_outs.as_bytes())?;"));
 				}
 				sidx += 1;
@@ -659,7 +659,7 @@ impl ChoiceSyn {
 				}
 				rets.push_str(&format_tab_line(tab + 2, &format!("let vk = self.{}.encode_asn1()?;", self.parsenames[idx])));
 				if self.debugenable {
-					rets.push_str(&format_tab_line(tab + 2, &(format!("_outs = format!(\"format {} output {{:?}}\",vk);", self.parsenames[idx]))));
+					rets.push_str(&format_tab_line(tab + 2, &(format!("_outs = format!(\"format {} output {{:?}}\\n\",vk);", self.parsenames[idx]))));
 					rets.push_str(&format_tab_line(tab + 2, "let _ = _outf.write(_outs.as_bytes())?;"));
 				}
 				rets.push_str(&format_tab_line(tab + 2, "for i in 0..vk.len() {"));
@@ -994,6 +994,10 @@ impl SequenceSyn {
 		rets.push_str(&format_tab_line(tab , "fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {"));
 		rets.push_str(&format_tab_line(tab + 1, "let mut retv :Vec<u8>;"));
 		rets.push_str(&format_tab_line(tab + 1, "let mut _v8 :Vec<u8> = Vec::new();"));
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stdout();"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+		}
 		if self.parsenames.len() > 1 {
 			rets.push_str(&format_tab_line(tab + 1, "let mut encv :Vec<u8>;"));	
 		} else {
@@ -1008,6 +1012,11 @@ impl SequenceSyn {
 			rets.push_str(&format_tab_line(tab + 1, "for i in 0..encv.len() {"));
 			rets.push_str(&format_tab_line(tab + 2, "_v8.push(encv[i]);"));
 			rets.push_str(&format_tab_line(tab + 1, "}"));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1,""));
+				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"format {} {{:?}}\\n\",encv);", k)));
+				rets.push_str(&format_tab_line(tab + 1,"_outf.write(_outs.as_bytes())?;"));
+			}
 		}
 
 		if self.seqenable {
