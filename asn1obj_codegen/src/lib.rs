@@ -491,6 +491,8 @@ pub fn asn1_obj_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
 }
 
 struct ChoiceSyn {
+	seqenable : bool,
+	debugenable : bool,
 	sname : String,
 	selname :String,
 	errname :String,
@@ -504,6 +506,8 @@ impl ChoiceSyn {
 
 	pub fn new() -> Self {
 		ChoiceSyn{
+			seqenable : false,
+			debugenable : false,
 			sname : "".to_string(),
 			selname : "".to_string(),
 			errname : "".to_string(),
@@ -517,6 +521,18 @@ impl ChoiceSyn {
 			self.errname = format!("{}",v);
 		} else if k == "selector" {
 			self.selname = format!("{}",v);
+		} else if k == "asn1seq" && (v == "enable" || v == "disable") {
+			if v== "enable" {
+				self.seqenable = true;
+			} else {
+				self.seqenable = false;
+			}
+		} else if k == "debug" && (v == "enable" || v == "disable") {
+			if v == "enable" {
+				self.debugenable = true;
+			} else {
+				self.debugenable = false;
+			}
 		} else {
 			asn1_gen_new_error!{ChoiceSynError,"not valid [{}] only accept error or selector", k}
 		}
@@ -559,8 +575,26 @@ impl ChoiceSyn {
 
 		rets.push_str(&format_tab_line(tab,"fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {"));
 		rets.push_str(&format_tab_line(tab + 1,"let mut retv :usize = 0;"));
+		rets.push_str(&format_tab_line(tab + 1,"let mut _endsize :usize = code.len();"));
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stdout();"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+		}
+		if self.seqenable {
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			rets.push_str(&format_tab_line(tab + 1, "let (flag, hdrlen,totallen) = asn1obj_extract_header(code)?;"));
+			rets.push_str(&format_tab_line(tab + 1, "if (flag as u8) != ASN1_SEQ_MASK {"));
+			rets.push_str(&format_tab_line(tab + 2, &(format!("asn1obj_new_error!{{{},\"flag [0x{{:02x}}] != ASN1_SEQ_MASK [0x{{:02x}}]\", flag, ASN1_SEQ_MASK}}",self.errname))));
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+			rets.push_str(&format_tab_line(tab + 1, "retv += hdrlen;"));
+			rets.push_str(&format_tab_line(tab + 1, "_endsize = hdrlen + totallen;"));
+		}
 		rets.push_str(&format_tab_line(tab + 1,""));
-		rets.push_str(&format_tab_line(tab + 1,&format!("retv += self.{}.decode_asn1(code)?;",self.selname)));
+		rets.push_str(&format_tab_line(tab + 1,&format!("retv += self.{}.decode_asn1(&code[retv.._endsize])?;",self.selname)));
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"decode {} retv [{{}}]\",retv);",self.selname)));
+			rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+		}
 		rets.push_str(&format_tab_line(tab + 1,""));
 		rets.push_str(&format_tab_line(tab + 1,&format!("let k = self.{}.decode_select()?;", self.selname)));
 
@@ -575,7 +609,11 @@ impl ChoiceSyn {
 				} else {
 					rets.push_str(&format_tab_line(tab + 1,&format!("}} else if k == \"{}\" {{", self.parsenames[idx])));
 				}
-				rets.push_str(&format_tab_line(tab + 2,&format!("retv += self.{}.decode_asn1(&code[retv..])?;", self.parsenames[idx])));
+				rets.push_str(&format_tab_line(tab + 2,&format!("retv += self.{}.decode_asn1(&code[retv.._endsize])?;", self.parsenames[idx])));
+				if self.debugenable {
+					rets.push_str(&format_tab_line(tab + 2, &format!("_outs = format!(\"decode {} retv [{{}}]\",retv);",self.parsenames[idx])));
+					rets.push_str(&format_tab_line(tab + 2, "let _ = _outf.write(_outs.as_bytes())?;"));
+				}
 				sidx += 1;
 			}
 			idx += 1;
@@ -601,8 +639,13 @@ impl ChoiceSyn {
 		let mut idx :usize;
 		rets.push_str(&format_tab_line(tab,"fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {"));
 		rets.push_str(&format_tab_line(tab + 1,"let mut retv : Vec<u8>;"));
+		rets.push_str(&format_tab_line(tab + 1,"let mut _encv : Vec<u8>;"));
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stdout();"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+		}
 		rets.push_str(&format_tab_line(tab + 1,""));
-		rets.push_str(&format_tab_line(tab + 1,&format!("retv = self.{}.encode_asn1()?;", self.selname)));
+		rets.push_str(&format_tab_line(tab + 1,&format!("_encv = self.{}.encode_asn1()?;", self.selname)));
 		rets.push_str(&format_tab_line(tab + 1,""));
 		rets.push_str(&format_tab_line(tab + 1 ,&format!("let k = self.{}.encode_select()?;",self.selname)));
 		sidx = 0;
@@ -615,8 +658,12 @@ impl ChoiceSyn {
 					rets.push_str(&format_tab_line(tab + 1, &format!("}} else if k == \"{}\" {{", self.parsenames[idx])));
 				}
 				rets.push_str(&format_tab_line(tab + 2, &format!("let vk = self.{}.encode_asn1()?;", self.parsenames[idx])));
+				if self.debugenable {
+					rets.push_str(&format_tab_line(tab + 2, &(format!("_outs = format!(\"format {} output {{:?}}\",vk);", self.parsenames[idx]))));
+					rets.push_str(&format_tab_line(tab + 2, "let _ = _outf.write(_outs.as_bytes())?;"));
+				}
 				rets.push_str(&format_tab_line(tab + 2, "for i in 0..vk.len() {"));
-				rets.push_str(&format_tab_line(tab + 3, "retv.push(vk[i]);"));
+				rets.push_str(&format_tab_line(tab + 3, "_encv.push(vk[i]);"));
 				rets.push_str(&format_tab_line(tab + 2, "}"));
 				sidx += 1;
 			}
@@ -631,6 +678,16 @@ impl ChoiceSyn {
 			rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj_new_error!{{ {}, \"can not support [{{}}]\", k }}", self.errname)));
 		}
 
+		if self.seqenable {
+			rets.push_str(&format_tab_line(tab + 1, "retv = asn1obj_format_header(ASN1_SEQ_MASK as u64, _encv.len() as u64);"));
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, "retv = Vec::new();"));
+		}
+
+		rets.push_str(&format_tab_line(tab + 1, "for i in 0.._encv.len() {"));
+		rets.push_str(&format_tab_line(tab + 2, "retv.push(_encv[i]);"));
+		rets.push_str(&format_tab_line(tab + 1, "}"));
+
 		rets.push_str(&format_tab_line(tab + 1,""));
 		rets.push_str(&format_tab_line(tab + 1,"Ok(retv)"));
 		rets.push_str(&format_tab_line(tab,"}"));
@@ -643,6 +700,10 @@ impl ChoiceSyn {
 		let mut idx :usize;
 		rets.push_str(&format_tab_line(tab,"fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {"));
 		rets.push_str(&format_tab_line(tab + 1,&format!("let k = self.{}.encode_select()?;",self.selname)));
+		rets.push_str(&format_tab_line(tab + 1,"let _outs :String;"));
+		rets.push_str(&format_tab_line(tab + 1,""));
+		rets.push_str(&format_tab_line(tab + 1,&format!("_outs = asn1_format_line(tab,&format!(\"{{}} ASN1_CHOICE {}\",name));",self.sname)));
+		rets.push_str(&format_tab_line(tab + 1,"let _ = iowriter.write(_outs.as_bytes())?;"));
 		sidx = 0;
 		idx = 0;
 		while idx < self.parsenames.len() {
@@ -652,8 +713,8 @@ impl ChoiceSyn {
 				} else {
 					rets.push_str(&format_tab_line(tab + 1,&format!("}} else if k == \"{}\" {{", self.parsenames[idx])));
 				}
-				rets.push_str(&format_tab_line(tab + 2, &format!("let nname = format!(\"{{}}.{}\", name);", self.parsenames[idx])));
-				rets.push_str(&format_tab_line(tab + 2, &format!("let _ = self.{}.print_asn1(&nname,tab, iowriter)?;",self.parsenames[idx])));
+				rets.push_str(&format_tab_line(tab + 2, &format!("let nname = format!(\"{}\");", self.parsenames[idx])));
+				rets.push_str(&format_tab_line(tab + 2, &format!("let _ = self.{}.print_asn1(&nname,tab+1, iowriter)?;",self.parsenames[idx])));
 
 				sidx += 1;
 			}
@@ -682,7 +743,6 @@ impl ChoiceSyn {
 
 		if self.errname.len() == 0 {
 			self.errname = format!("{}Error", self.sname);
-			self.errname.push_str("_");
 			self.errname.push_str(&get_random_bytes(20));
 			asn1_gen_log_trace!("errname [{}]",self.errname);
 
@@ -745,6 +805,8 @@ impl syn::parse::Parse for ChoiceSyn {
 					let c = format!("{:?}", e);
 					return Err(syn::Error::new(input.span(),&c));
 				}
+				k = "".to_string();
+				v = "".to_string();
 			} else {
 				if input.is_empty() {
 					if k.len() != 0 && v.len() != 0 {
@@ -825,6 +887,8 @@ pub fn asn1_choice(_attr :TokenStream,item :TokenStream) -> TokenStream {
 asn1_gen_error_class!{SequenceSynError}
 
 struct SequenceSyn {
+	debugenable : bool,
+	seqenable : bool,
 	sname :String,
 	errname :String,
 	parsenames :Vec<String>,
@@ -834,6 +898,8 @@ struct SequenceSyn {
 impl SequenceSyn {
 	pub fn new() -> Self {
 		SequenceSyn{
+			debugenable : false,
+			seqenable : false,
 			sname : "".to_string(),
 			errname : "".to_string(),
 			parsenames : Vec::new(),
@@ -844,6 +910,26 @@ impl SequenceSyn {
 	pub fn set_struct_name(&mut self, n :&str) {
 		self.sname = format!("{}",n);
 		return;
+	}
+
+	pub fn set_attr(&mut self, k :&str, v :&str) -> Result<(),Box<dyn Error>> {
+		if k == "asn1seq" && ( v== "enable" || v == "disable") {
+			if v == "enable" {
+				self.seqenable = true;
+			} else {
+				self.seqenable = false;
+			}
+			asn1_gen_log_trace!("seqenable [{}]",self.seqenable);
+		} else if k == "debug" && (v == "enable" || v == "disable") {
+			if v == "enable" {
+				self.debugenable = true;
+			} else {
+				self.debugenable = false;
+			}
+		} else {
+			asn1_gen_new_error!{SequenceSynError,"can not accept k[{}] v [{}]",k,v}
+		}
+		Ok(())
 	}
 
 	pub fn set_name(&mut self, k :&str,n :&str) {
@@ -873,11 +959,30 @@ impl SequenceSyn {
 		let mut rets :String = "".to_string();
 		rets.push_str(&format_tab_line(tab , "fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {"));
 		rets.push_str(&format_tab_line(tab + 1, "let mut retv :usize = 0;"));
-		rets.push_str(&format_tab_line(tab + 1, ""));
-		for k in self.parsenames.iter() {
-			rets.push_str(&format_tab_line(tab + 1, &format!("retv += self.{}.decode_asn1(&code[retv..])?;",k)));
+		rets.push_str(&format_tab_line(tab + 1, "let mut _endsize :usize = code.len();"));
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stdout();"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+		}
+		if self.seqenable {
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			rets.push_str(&format_tab_line(tab + 1, "let (flag , hdrlen,totallen) = asn1obj_extract_header(code)?;"));
+			rets.push_str(&format_tab_line(tab + 1, "if (flag as u8) != ASN1_SEQ_MASK {"));
+			rets.push_str(&format_tab_line(tab + 2, &(format!("asn1obj_new_error!{{{},\"flag [0x{{:02x}}] != ASN1_SEQ_MASK [0x{{:02x}}]\", flag, ASN1_SEQ_MASK}}",self.errname))));
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+			rets.push_str(&format_tab_line(tab + 1, "retv = hdrlen;"));
+			rets.push_str(&format_tab_line(tab + 1, "_endsize = hdrlen + totallen;"));
+		}
+		for k in self.parsenames.iter() {			
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			rets.push_str(&format_tab_line(tab + 1, &format!("retv += self.{}.decode_asn1(&code[retv.._endsize])?;",k)));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"decode {} retv {{}}\",retv);",k)));
+				rets.push_str(&format_tab_line(tab + 1,"let _ = _outf.write(_outs.as_bytes())?;"));
+			}
 		}
 
+		rets.push_str(&format_tab_line(tab + 1, ""));
 		rets.push_str(&format_tab_line(tab + 1, "Ok(retv)"));
 		rets.push_str(&format_tab_line(tab + 1, ""));
 		rets.push_str(&format_tab_line(tab,"}"));
@@ -887,19 +992,34 @@ impl SequenceSyn {
 	fn format_encode_asn1(&self,tab :i32) -> String {
 		let mut rets :String = "".to_string();
 		rets.push_str(&format_tab_line(tab , "fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {"));
-		rets.push_str(&format_tab_line(tab + 1, "let mut retv :Vec<u8> = Vec::new();"));
+		rets.push_str(&format_tab_line(tab + 1, "let mut retv :Vec<u8>;"));
+		rets.push_str(&format_tab_line(tab + 1, "let mut _v8 :Vec<u8> = Vec::new();"));
 		if self.parsenames.len() > 1 {
 			rets.push_str(&format_tab_line(tab + 1, "let mut encv :Vec<u8>;"));	
 		} else {
 			rets.push_str(&format_tab_line(tab + 1, "let encv :Vec<u8>;"));
 		}
+
+
 		
-		rets.push_str(&format_tab_line(tab + 1, ""));
 		for k in self.parsenames.iter() {
+			rets.push_str(&format_tab_line(tab + 1, ""));
 			rets.push_str(&format_tab_line(tab + 1, &format!("encv = self.{}.encode_asn1()?;",k)));
 			rets.push_str(&format_tab_line(tab + 1, "for i in 0..encv.len() {"));
-			rets.push_str(&format_tab_line(tab + 2, "retv.push(encv[i]);"));
+			rets.push_str(&format_tab_line(tab + 2, "_v8.push(encv[i]);"));
 			rets.push_str(&format_tab_line(tab + 1, "}"));
+		}
+
+		if self.seqenable {
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			rets.push_str(&format_tab_line(tab + 1, "retv = asn1obj_format_header(ASN1_SEQ_MASK as u64, _v8.len() as u64);"));
+			rets.push_str(&format_tab_line(tab + 1, "for i in 0.._v8.len() {"));
+			rets.push_str(&format_tab_line(tab + 2, "retv.push(_v8[i]);"));
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			rets.push_str(&format_tab_line(tab + 1, "retv = _v8.clone();"));
 		}
 
 		rets.push_str(&format_tab_line(tab + 1, ""));
@@ -922,7 +1042,7 @@ impl SequenceSyn {
 		
 		rets.push_str(&format_tab_line(tab + 1, ""));
 		for k in self.parsenames.iter() {
-			rets.push_str(&format_tab_line(tab + 1, &format!("s = format!(\"{{}}.{}\",name);", k)));
+			rets.push_str(&format_tab_line(tab + 1, &format!("s = format!(\"{}\");", k)));
 			rets.push_str(&format_tab_line(tab + 1, &format!("self.{}.print_asn1(&s,tab + 1, iowriter)?;",k)));
 			rets.push_str(&format_tab_line(tab + 1, ""));
 		}
@@ -964,14 +1084,58 @@ impl SequenceSyn {
 
 impl syn::parse::Parse for SequenceSyn {
 	fn parse(input :syn::parse::ParseStream) -> syn::parse::Result<Self> {
-		let retv = SequenceSyn::new();
+		let mut retv = SequenceSyn::new();
+		let mut k :String = "".to_string();
+		let mut v :String = "".to_string();
 		loop {
-			if input.is_empty() {
-				break;
+			if input.peek(syn::Ident) {
+				let c :syn::Ident = input.parse()?;
+				asn1_gen_log_trace!("token [{}]",c);
+				if k.len() == 0 {
+					k = format!("{}",c);
+				} else if v.len() == 0 {
+					v = format!("{}",c);
+				} else {
+					let e = format!("only accept k=v format");
+					return Err(syn::Error::new(input.span(),&e));
+				}
+			} else if input.peek(syn::Token![=]) {
+				let _c : syn::token::Eq = input.parse()?;
+				asn1_gen_log_trace!("=");
+			} else if input.peek(syn::Token![,]) {
+				let _c : syn::token::Comma = input.parse()?;
+				asn1_gen_log_trace!("parse ,");
+				if k.len() == 0 || v.len() == 0 {
+					let c = format!("need set k=v format");
+					return Err(syn::Error::new(input.span(),&c));
+				}
+				let ov = retv.set_attr(&k,&v);
+				if ov.is_err() {
+					let e = ov.err().unwrap();
+					let c = format!("{:?}", e);
+					return Err(syn::Error::new(input.span(),&c));
+				}
+				asn1_gen_log_trace!("parse [{}]=[{}]",k,v);
+				k = "".to_string();
+				v = "".to_string();
+			} else {
+				if input.is_empty() {
+					if k.len() != 0 && v.len() != 0 {
+						let ov = retv.set_attr(&k,&v);
+						if ov.is_err() {
+							let e = ov.err().unwrap();
+							let c = format!("{:?}", e);
+							return Err(syn::Error::new(input.span(),&c));
+						}
+					} else if v.len() == 0 && k.len() != 0 {
+						let c = format!("need value in [{}]",k);
+						return Err(syn::Error::new(input.span(),&c));
+					}
+					break;
+				}
+				let c = format!("not valid token [{}]",input.to_string());
+				return Err(syn::Error::new(input.span(),&c));
 			}
-			let c = format!("not valid token [{}]",input.to_string());
-			return Err(syn::Error::new(input.span(),&c));
-
 		}
 		Ok(retv)
 	}
