@@ -500,7 +500,7 @@ pub struct Asn1Ndef<T : Asn1Op + Clone, const TAG:u8=0> {
 
 impl<T: Asn1Op + Clone, const TAG:u8> Asn1Op for Asn1Ndef<T,TAG> {
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
-		let mut retv :usize = 0;
+		let mut retv :usize;
 		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
 		asn1obj_log_trace!("flag [0x{:x}]", flag);
 		if ((flag as u8) & ASN1_IMP_SET_MASK) != ASN1_IMP_SET_MASK {
@@ -513,13 +513,14 @@ impl<T: Asn1Op + Clone, const TAG:u8> Asn1Op for Asn1Ndef<T,TAG> {
 			asn1obj_new_error!{Asn1ComplexError,"tag [0x{:02x}] != self.tag [0x{:02x}]",ctag,self.tag}
 		}
 		self.val = None;
-
+		retv = hdrlen;
 		if totallen > 0 {
 			let mut v :T = T::init_asn1();
 			let c = v.decode_asn1(&(code[retv..(hdrlen+totallen)]))?;
 			if c != totallen {
 				asn1obj_new_error!{Asn1ComplexError,"c [{}] != totallen [{}]", c, totallen}
 			}
+			retv += totallen;
 			self.val = Some(v.clone());			
 		}
 
@@ -527,7 +528,6 @@ impl<T: Asn1Op + Clone, const TAG:u8> Asn1Op for Asn1Ndef<T,TAG> {
 		for i in 0..retv {
 			self.data.push(code[i]);
 		}
-		retv = totallen + hdrlen;
 		asn1obj_log_trace!("retv [{}]",retv);
 
 		Ok(retv)

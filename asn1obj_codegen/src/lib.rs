@@ -599,7 +599,7 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1,&format!("let k = self.{}.decode_select()?;", self.selname)));
 
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"select {{}}\",k);")));
+			rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"select {{}}\\n\",k);")));
 			rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
 		}
 		idx = 0;
@@ -971,6 +971,10 @@ impl SequenceSyn {
 		if self.seqenable {
 			rets.push_str(&format_tab_line(tab + 1, ""));
 			rets.push_str(&format_tab_line(tab + 1, "let (flag , hdrlen,totallen) = asn1obj_extract_header(code)?;"));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"{} flag 0x{{:02x}}\\n\",flag);",self.sname)));
+				rets.push_str(&format_tab_line(tab + 1,"let _ = _outf.write(_outs.as_bytes())?;"));				
+			}
 			rets.push_str(&format_tab_line(tab + 1, "if (flag as u8) != ASN1_SEQ_MASK {"));
 			rets.push_str(&format_tab_line(tab + 2, &(format!("asn1obj_new_error!{{{},\"flag [0x{{:02x}}] != ASN1_SEQ_MASK [0x{{:02x}}]\", flag, ASN1_SEQ_MASK}}",self.errname))));
 			rets.push_str(&format_tab_line(tab + 1, "}"));
@@ -981,7 +985,7 @@ impl SequenceSyn {
 			rets.push_str(&format_tab_line(tab + 1, ""));
 			rets.push_str(&format_tab_line(tab + 1, &format!("retv += self.{}.decode_asn1(&code[retv.._endsize])?;",k)));
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"decode {} retv {{}}\",retv);",k)));
+				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"decode {} retv {{}}\\n\",retv);",k)));
 				rets.push_str(&format_tab_line(tab + 1,"let _ = _outf.write(_outs.as_bytes())?;"));
 			}
 		}
