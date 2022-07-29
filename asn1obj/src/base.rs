@@ -317,11 +317,11 @@ impl Asn1Op for Asn1Integer {
 			}
 		}
 		self.val = ival;
-		asn1obj_log_trace!("ASN1_INTEGER {}", self.val);
 		self.data = Vec::new();
 		for i in 0..(hdrlen + totallen) {
 			self.data.push(code[i]);
 		}
+		asn1obj_debug_buffer_trace!(self.data.as_ptr(),self.data.len(),"Asn1Integer {}", self.val);
 		retv= hdrlen + totallen;
 		Ok(retv)
 	}

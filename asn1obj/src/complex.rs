@@ -266,6 +266,12 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 		asn1obj_log_trace!("flag [0x{:x}]", flag);
 		if (flag as u8) != ASN1_SET_MASK {
 			/*we do have any type*/
+			if code.len() > 32 {
+				asn1obj_debug_buffer_trace!(code.as_ptr(),32,"not match len [{}:0x{:x}]",code.len(),code.len());
+			} else {
+				asn1obj_debug_buffer_trace!(code.as_ptr(),code.len(),"not match len");	
+			}
+			
 			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] != ASN1_SET_MASK [0x{:02x}]", flag, ASN1_SET_MASK}
 		}
 

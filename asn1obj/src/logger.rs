@@ -209,7 +209,7 @@ macro_rules! asn1obj_format_buffer_log {
 				}
 				_lasti += 1;
 			}
-			c.push_str("\n");
+			//c.push_str("\n");
 		}
 		asn1obj_debug_out($iv,&c);
 	}
