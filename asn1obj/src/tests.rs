@@ -2,7 +2,7 @@
 //use asn1obj_codegen::{asn1_sequence};
 
 use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null,Asn1Object,Asn1Enumerated,Asn1String,Asn1Any,Asn1PrintableString,Asn1Time,Asn1BigNum};
-use crate::complex::{Asn1Opt,Asn1SetOf,Asn1Seq,Asn1Set,Asn1ImpVec,Asn1Ndef,Asn1NdefSeq,Asn1Imp};
+use crate::complex::{Asn1Opt,Asn1ImpSet,Asn1Seq,Asn1Set,Asn1ImpVec,Asn1Ndef,Asn1Imp};
 #[allow(unused_imports)]
 use crate::{asn1obj_log_trace,asn1obj_error_class,asn1obj_new_error};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
@@ -693,7 +693,7 @@ fn test_a009() {
 
 #[test]
 fn test_a010() {
-	let mut a1 :Asn1SetOf<Asn1Integer,3> = Asn1SetOf::init_asn1();
+	let mut a1 :Asn1ImpSet<Asn1Integer,3> = Asn1ImpSet::init_asn1();
 	let mut v1 :Vec<u8>;
 	let mut n1 :Asn1Integer = Asn1Integer::init_asn1();
 	n1.val = -20;
@@ -1155,21 +1155,6 @@ fn test_a019() {
 	assert!(check_equal_u8(&v2,&v1));
 }
 
-#[test]
-fn test_a020() {
-	let mut a1 :Asn1NdefSeq<Asn1SetOf<Asn1Integer,5>> = Asn1NdefSeq::init_asn1();
-	let mut n1 :Asn1Integer = Asn1Integer::init_asn1();
-	let mut v1 :Vec<u8>;
-	n1.val = -10;
-	a1.val.val.push(n1.clone());
-	let c1 = a1.encode_asn1().unwrap();
-	v1 = vec![0xa0,0x5,0xa5,0x3,0x2,0x1,0xf6];
-	assert!(check_equal_u8(&v1,&c1));
-	v1 = vec![0xa0,0x5,0xa5,0x3,0x2,0x1,0xf6];
-	let s = a1.decode_asn1(&v1).unwrap();
-	assert!(s == v1.len());
-	assert!(a1.val.val[0].val == -10);
-}
 
 #[test]
 fn test_a021() {

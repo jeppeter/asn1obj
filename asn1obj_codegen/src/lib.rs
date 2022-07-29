@@ -598,6 +598,10 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1,""));
 		rets.push_str(&format_tab_line(tab + 1,&format!("let k = self.{}.decode_select()?;", self.selname)));
 
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"select {{}}\",k);")));
+			rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+		}
 		idx = 0;
 		sidx = 0;
 
@@ -899,7 +903,7 @@ impl SequenceSyn {
 	pub fn new() -> Self {
 		SequenceSyn{
 			debugenable : false,
-			seqenable : false,
+			seqenable : true,
 			sname : "".to_string(),
 			errname : "".to_string(),
 			parsenames : Vec::new(),
