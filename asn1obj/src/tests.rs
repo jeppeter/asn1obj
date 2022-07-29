@@ -4,7 +4,7 @@
 use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null,Asn1Object,Asn1Enumerated,Asn1String,Asn1Any,Asn1PrintableString,Asn1Time,Asn1BigNum};
 use crate::complex::{Asn1Opt,Asn1ImpSet,Asn1Seq,Asn1Set,Asn1ImpVec,Asn1Ndef,Asn1Imp};
 #[allow(unused_imports)]
-use crate::{asn1obj_log_trace,asn1obj_error_class,asn1obj_new_error};
+use crate::{asn1obj_log_trace,asn1obj_error_class,asn1obj_new_error,asn1obj_debug_buffer_trace,asn1obj_format_buffer_log};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 use crate::asn1impl::{Asn1Op};
 use chrono::{Utc,DateTime,Datelike,Timelike};
@@ -1241,6 +1241,9 @@ fn test_a023() {
 	assert!(check_equal_u8(&c1,&v1));
 	let cb = a1.val.to_bytes_be();
 	assert!(check_equal_u8(&cb,&v1[3..]));
+	let _ = a1.decode_asn1(&v1).unwrap();
+	let cb :BigUint = BigUint::from_str_radix("ff223344556677889900aabbccddeeff",16).unwrap();
+	assert!(cb == a1.val);
 }
 
 #[test]
