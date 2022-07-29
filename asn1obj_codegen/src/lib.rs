@@ -1010,7 +1010,7 @@ impl SequenceSyn {
 			}
 			rets.push_str(&format_tab_line(tab + 1, &format!("retv += ro.unwrap();")));
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"decode {}.{} retv {{}}\",retv - _lastv);",self.sname,k)));
+				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"decode {}.{} retv {{}} _lastv {{}}\",retv,_lastv);",self.sname,k)));
 				rets.push_str(&format_tab_line(tab + 1,"_i = 0;"));
 				rets.push_str(&format_tab_line(tab + 1,"_lasti = 0;"));
 				rets.push_str(&format_tab_line(tab + 1,"while _i < (retv - _lastv) {"));
