@@ -10,7 +10,7 @@ use crate::{asn1obj_error_class,asn1obj_new_error};
 
 use std::io::{Write};
 
-use crate::{asn1obj_log_trace};
+use crate::{asn1obj_log_trace,asn1obj_debug_buffer_trace,asn1obj_format_buffer_log};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 
 use bytes::{BytesMut,BufMut};
@@ -181,6 +181,7 @@ impl Asn1Op for Asn1Any {
 		for i in 0..totallen{
 			self.content.push(code[hdrlen+i]);
 		}
+		asn1obj_debug_buffer_trace!(code.as_ptr(), code.len(), "deocde any");
 		retv= hdrlen + totallen;
 		Ok(retv)
 	}
@@ -316,6 +317,7 @@ impl Asn1Op for Asn1Integer {
 			}
 		}
 		self.val = ival;
+		asn1obj_log_trace!("ASN1_INTEGER {}", self.val);
 		self.data = Vec::new();
 		for i in 0..(hdrlen + totallen) {
 			self.data.push(code[i]);
@@ -441,6 +443,8 @@ impl Asn1Op for Asn1Boolean {
 			self.val = false;
 		}
 
+		asn1obj_log_trace!("Asn1Boolean {}",self.val);
+
 		retv = hdrlen + totallen;
 		self.data = Vec::new();
 		for i in 0..retv {
@@ -508,6 +512,7 @@ impl Asn1Op for Asn1BitString {
 		}
 		let a = retm.freeze();
 		self.val = String::from_utf8_lossy(&a).to_string();
+		asn1obj_log_trace!("Asn1BitString [{}]",self.val);
 		self.data = Vec::new();
 		retv = hdrlen + totallen;
 		for i in 0..retv {
@@ -605,6 +610,7 @@ impl Asn1Op for Asn1OctString {
 		}
 		let a = retm.freeze();
 		self.val = String::from_utf8_lossy(&a).to_string();
+		asn1obj_log_trace!("Asn1OctString [{}]",self.val);
 		self.data = Vec::new();
 		retv = hdrlen + totallen;
 		for i in 0..retv {
@@ -665,6 +671,7 @@ impl Asn1Op for Asn1Null {
 			asn1obj_new_error!{Asn1ObjBaseError,"totallen [{}] != 0",totallen}
 		}
 
+		asn1obj_log_trace!("Asn1Null");
 		self.data = Vec::new();
 		retv = hdrlen + totallen;
 		for i in 0..retv {
@@ -928,6 +935,7 @@ impl Asn1Op for Asn1Object {
 
 		let s = self.decode_object(&code[hdrlen..(hdrlen+totallen)])?;
 		self.val = s;
+		asn1obj_log_trace!("Asn1Object [{}]",self.val);
 		self.data = Vec::new();
 		retv = hdrlen + totallen;
 		for i in 0..retv {
@@ -1031,6 +1039,7 @@ impl Asn1Op for Asn1Enumerated {
 			}
 		}
 		self.val = ival;
+		asn1obj_log_trace!("Asn1Enumerated {}",self.val);
 		self.data = Vec::new();
 		for i in 0..(hdrlen + totallen) {
 			self.data.push(code[i]);
@@ -1155,6 +1164,7 @@ impl Asn1Op for Asn1String {
 		}
 		let a = retm.freeze();
 		self.val = String::from_utf8_lossy(&a).to_string();
+		asn1obj_log_trace!("Asn1String [{}]",self.val);
 		self.data = Vec::new();
 		retv = hdrlen + totallen;
 		for i in 0..retv {
@@ -1220,6 +1230,7 @@ impl Asn1Op for Asn1PrintableString {
 		}
 		let a = retm.freeze();
 		self.val = String::from_utf8_lossy(&a).to_string();
+		asn1obj_log_trace!("Asn1PrintableString [{}]",self.val);
 		self.data = Vec::new();
 		retv = hdrlen + totallen;
 		for i in 0..retv {
@@ -1493,6 +1504,7 @@ impl Asn1Op for Asn1Time {
 
 		let _ = self.check_data_valid(year,mon,mday,hour,min)?;
 		self.val = fmts;
+		asn1obj_log_trace!("Asn1Time {}",self.val);
 		self.data = Vec::new();
 		retv = hdrlen + totallen;
 		for i in 0..retv {
@@ -1564,6 +1576,7 @@ impl Asn1Op for Asn1BigNum {
 		}
 
 		self.val = BigUint::from_bytes_be(&code[hdrlen..(hdrlen+totallen)]);
+		asn1obj_debug_buffer_trace!(self.val.to_bytes_be().as_ptr(), self.val.to_bytes_be().len(),"Asn1BigNum");
 		self.data = Vec::new();
 		for i in 0..(hdrlen + totallen) {
 			self.data.push(code[i]);

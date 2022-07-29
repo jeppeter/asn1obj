@@ -578,7 +578,7 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1,"let mut retv :usize = 0;"));
 		rets.push_str(&format_tab_line(tab + 1,"let mut _endsize :usize = code.len();"));
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stdout();"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
 			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
 		}
 		if self.seqenable {
@@ -646,7 +646,7 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1,"let mut retv : Vec<u8>;"));
 		rets.push_str(&format_tab_line(tab + 1,"let mut _encv : Vec<u8>;"));
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stdout();"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
 			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
 		}
 		rets.push_str(&format_tab_line(tab + 1,""));
@@ -968,7 +968,7 @@ impl SequenceSyn {
 		rets.push_str(&format_tab_line(tab + 1, "let mut retv :usize = 0;"));
 		rets.push_str(&format_tab_line(tab + 1, "let mut _endsize :usize = code.len();"));
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stdout();"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
 			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
 			rets.push_str(&format_tab_line(tab + 1, "let mut _lastv :usize = 0;"));
 			rets.push_str(&format_tab_line(tab + 1, "let mut _i :usize;"));
@@ -1052,6 +1052,11 @@ impl SequenceSyn {
 			}
 		}
 
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"{} total {{}}\\n\",retv);", self.sname)));
+			rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+		}
+
 		rets.push_str(&format_tab_line(tab + 1, ""));
 		rets.push_str(&format_tab_line(tab + 1, "Ok(retv)"));
 		rets.push_str(&format_tab_line(tab + 1, ""));
@@ -1065,7 +1070,7 @@ impl SequenceSyn {
 		rets.push_str(&format_tab_line(tab + 1, "let mut retv :Vec<u8>;"));
 		rets.push_str(&format_tab_line(tab + 1, "let mut _v8 :Vec<u8> = Vec::new();"));
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stdout();"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
 			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
 		}
 		if self.parsenames.len() > 1 {

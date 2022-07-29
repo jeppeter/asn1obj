@@ -4,7 +4,7 @@ use std::io::{Write};
 use std::error::Error;
 
 
-use crate::{asn1obj_error_class,asn1obj_new_error};
+use crate::{asn1obj_error_class,asn1obj_new_error,asn1obj_debug_buffer_trace,asn1obj_format_buffer_log};
 use crate::{asn1obj_log_trace};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 
@@ -34,6 +34,13 @@ impl<T: Asn1Op + Clone> Asn1Op for Asn1Opt<T> {
 
 		let ores = v.decode_asn1(code);
 		if ores.is_err() {
+			let e = ores.err().unwrap();
+			if code.len() > 20 {
+				asn1obj_debug_buffer_trace!(code.as_ptr(),20,"Asn1Opt decode [{}:0x{:x}] error[{:?}]", code.len(),code.len(),e);
+			} else {
+				asn1obj_debug_buffer_trace!(code.as_ptr(),code.len(),"Asn1Opt decode [{}:0x{:x}] error[{:?}]", code.len(),code.len(),e);
+			}
+			
 			self.val = None;
 			self.data = Vec::new();
 		} else {
