@@ -1578,6 +1578,7 @@ impl Asn1Op for Asn1BigNum {
 		self.val = BigUint::from_bytes_be(&code[hdrlen..(hdrlen+totallen)]);
 		let cc = self.val.to_bytes_be();
 		asn1obj_debug_buffer_trace!(cc.as_ptr(), cc.len(),"Asn1BigNum");
+		asn1obj_log_trace!("Asn1BigNum {:?}", self.val);
 		self.data = Vec::new();
 		for i in 0..(hdrlen + totallen) {
 			self.data.push(code[i]);

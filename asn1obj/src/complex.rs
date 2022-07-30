@@ -192,9 +192,11 @@ impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
 		}
 
 		retv += hdrlen;
+		asn1obj_log_trace!("totallen {}",totallen);
 		while retv < (totallen + hdrlen) {
 			let mut v :T = T::init_asn1();
 			let c = v.decode_asn1(&(code[retv..(hdrlen+totallen)]))?;
+			asn1obj_log_trace!("c [{}]",c);
 			retv += c;
 			self.val.push(v);
 		}
@@ -276,9 +278,11 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 		}
 
 		retv += hdrlen;
+		asn1obj_log_trace!("totallen [{}]", totallen);
 		while retv < (totallen + hdrlen) {
 			let mut v :T = T::init_asn1();
 			let c = v.decode_asn1(&(code[retv..(hdrlen+totallen)]))?;
+			asn1obj_log_trace!("passed [{}]", c);
 			retv += c;
 			self.val.push(v);
 		}
