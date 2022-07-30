@@ -82,10 +82,12 @@ asn1_gen_error_class!{SelectorSynError}
 
 struct ObjSelectorSyn {
 	defname :String,
+	debugenable : bool,
 	errname :String,
 	sname :String,
 	selname : String,
-	selmap :HashMap<String,String>,
+	parsenames : Vec<String>,
+	parsemap : HashMap<String,String>,
 	kmap :HashMap<String,Vec<String>>,
 }
 
@@ -95,24 +97,34 @@ impl ObjSelectorSyn {
 	pub fn new() -> Self {
 		ObjSelectorSyn {
 			defname :"".to_string(),
+			debugenable : false,
 			sname : "".to_string(),
 			errname : "".to_string(),
 			selname : "".to_string(),
-			selmap : HashMap::new(),
+			parsenames : Vec::new(),
+			parsemap : HashMap::new(),
 			kmap : HashMap::new(),
 		}
 	}
 
-	pub fn set_selector(&mut self,k :&str,v :&str) -> Result<(),Box<dyn Error>> {
-		self.selname = format!("{}",k);
-		self.selmap.insert(format!("{}",k),format!("{}",v));
+	pub fn set_member(&mut self,k :&str, v :&str) -> Result<(),Box<dyn Error>> {
+		self.parsenames.push(format!("{}",k));
+		self.parsemap.insert(format!("{}",k),format!("{}",v));
 		Ok(())
 	}
 
 	pub fn set_matches(&mut self, k :&str, v :&str) -> Result<(),Box<dyn Error>> {
 		//asn1_gen_log_trace!("k [{}] v [{}]",k,v);
-		if v == "default" {
+		if k == "selector" {
+			self.selname = format!("{}",v);
+		} else if v == "default" {
 			self.defname = format!("{}",k);
+		} else if k == "debug" {
+			if v == "enable" {
+				self.debugenable = true;
+			} else {
+				self.debugenable = false;
+			}
 		} else {
 			let ov = self.kmap.get(k);
 			let mut insertv :Vec<String>;
@@ -135,41 +147,164 @@ impl ObjSelectorSyn {
 
 	fn format_init_asn1(&self, tab :i32) -> String {
 		let mut rets :String = "".to_string();
-		rets.push_str(&format_tab_line(tab,"fn init_asn1() -> Self {"));
+		rets.push_str(&format_tab_line(tab , "fn init_asn1() -> Self {"));
 		rets.push_str(&format_tab_line(tab + 1, &format!("{} {{",self.sname)));
-		let seltype = self.selmap.get(&self.selname).unwrap();
-		rets.push_str(&format_tab_line(tab + 2, &format!("{} : {}::init_asn1(),", self.selname,extract_type_name(seltype))));
-		rets.push_str(&format_tab_line(tab+1,"}"));
+		for k in self.parsenames.iter() {
+			let v = self.parsemap.get(k).unwrap();
+			rets.push_str(&format_tab_line(tab + 2, &format!("{} : {}::init_asn1(),", k,extract_type_name(v))));
+		}
+		rets.push_str(&format_tab_line(tab + 1,"}"));
 		rets.push_str(&format_tab_line(tab,"}"));
 		return rets;
 	}
 
 	fn format_decode_asn1(&self, tab :i32) -> String {
 		let mut rets :String = "".to_string();
-		rets.push_str(&format_tab_line(tab,"fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {"));
+		rets.push_str(&format_tab_line(tab , "fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {"));
 		rets.push_str(&format_tab_line(tab + 1, "let mut retv :usize = 0;"));
-		rets.push_str(&format_tab_line(tab + 1, &format!("retv += self.{}.decode_asn1(code)?;",self.selname)));
-		rets.push_str(&format_tab_line(tab+1, "Ok(retv)"));
+		rets.push_str(&format_tab_line(tab + 1, "let mut _endsize :usize = code.len();"));
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _lastv :usize = 0;"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _i :usize;"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _lasti :usize;"));
+		}
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1, "_lastv = retv;"));
+		}
+		for k in self.parsenames.iter() {			
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"decode {}.{} will decode at {{}}\\n\",retv);",self.sname,k)));
+				rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+			}
+			rets.push_str(&format_tab_line(tab + 1, &format!("let ro = self.{}.decode_asn1(&code[retv.._endsize]);",k)));
+			rets.push_str(&format_tab_line(tab + 1, "if ro.is_err() {"));
+			rets.push_str(&format_tab_line(tab + 2, &format!("let e = ro.err().unwrap();")));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 2, &format!("_outs = format!(\"decode {}.{} error {{:?}}\",e);",self.sname,k)));
+				rets.push_str(&format_tab_line(tab + 2,"let _ = _outf.write(_outs.as_bytes())?;"));
+			}
+			rets.push_str(&format_tab_line(tab + 2, "return Err(e);"));
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1, &format!("_lastv = retv;")));	
+			}
+			rets.push_str(&format_tab_line(tab + 1, &format!("retv += ro.unwrap();")));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"decode {}.{} retv {{}} _lastv {{}}\",retv,_lastv);",self.sname,k)));
+				rets.push_str(&format_tab_line(tab + 1,"_i = 0;"));
+				rets.push_str(&format_tab_line(tab + 1,"_lasti = 0;"));
+				rets.push_str(&format_tab_line(tab + 1,"while _i < (retv - _lastv) {"));
+				rets.push_str(&format_tab_line(tab + 2,"if (_i % 16) == 0 {"));
+				rets.push_str(&format_tab_line(tab + 3,"if _i > 0 {"));
+				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\"    \");"));
+				rets.push_str(&format_tab_line(tab + 4,"while _lasti != _i {"));
+				rets.push_str(&format_tab_line(tab + 5,"if code[(_lastv + _lasti)] >= 0x20 && code[(_lastv + _lasti)] <= 0x7e {"));
+				rets.push_str(&format_tab_line(tab + 6,"_outs.push(code[(_lastv+_lasti)] as char);"));
+				rets.push_str(&format_tab_line(tab + 5,"} else {"));
+				rets.push_str(&format_tab_line(tab + 6,"_outs.push_str(\".\");"));
+				rets.push_str(&format_tab_line(tab + 5,"}"));
+				rets.push_str(&format_tab_line(tab + 5,"_lasti += 1;"));
+				rets.push_str(&format_tab_line(tab + 4,"}"));
+				rets.push_str(&format_tab_line(tab + 3,"}"));
+				rets.push_str(&format_tab_line(tab + 3,"_outs.push_str(&format!(\"\\n0x{:08x}:\",_i));"));
+				rets.push_str(&format_tab_line(tab + 2,"}"));
+				rets.push_str(&format_tab_line(tab + 2,"_outs.push_str(&format!(\" 0x{:02x}\", code[_lastv + _i]));"));
+				rets.push_str(&format_tab_line(tab + 2,"_i += 1;"));
+				rets.push_str(&format_tab_line(tab + 1,"}"));
+				rets.push_str(&format_tab_line(tab + 1,"if _lasti != _i {"));
+				rets.push_str(&format_tab_line(tab + 2,"while (_i % 16) != 0 {"));
+				rets.push_str(&format_tab_line(tab + 3,"_outs.push_str(\"     \");"));
+				rets.push_str(&format_tab_line(tab + 3,"_i += 1;"));
+				rets.push_str(&format_tab_line(tab + 2,"}"));
+				rets.push_str(&format_tab_line(tab + 2,"_outs.push_str(\"    \");"));
+				rets.push_str(&format_tab_line(tab + 2,"while _lasti < (retv - _lastv) {"));
+				rets.push_str(&format_tab_line(tab + 3,"if code[(_lastv + _lasti)] >= 0x20 && code[(_lastv + _lasti)] <= 0x7e {"));
+				rets.push_str(&format_tab_line(tab + 4,"_outs.push(code[(_lastv+_lasti)] as char);"));
+				rets.push_str(&format_tab_line(tab + 3,"} else {"));
+				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\".\");"));
+				rets.push_str(&format_tab_line(tab + 3,"}"));
+				rets.push_str(&format_tab_line(tab + 3,"_lasti += 1;"));
+				rets.push_str(&format_tab_line(tab + 2,"}"));
+				rets.push_str(&format_tab_line(tab + 1,"}"));
+				rets.push_str(&format_tab_line(tab + 1,"_outs.push_str(\"\\n\");"));
+				rets.push_str(&format_tab_line(tab + 1,"let _ = _outf.write(_outs.as_bytes())?;"));
+			}
+		}
+
+
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"{} total {{}}\\n\",retv);", self.sname)));
+			rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+		}
+
+		rets.push_str(&format_tab_line(tab + 1, ""));
+		rets.push_str(&format_tab_line(tab + 1, "Ok(retv)"));
+		rets.push_str(&format_tab_line(tab + 1, ""));
 		rets.push_str(&format_tab_line(tab,"}"));
-		return rets;
+		return rets;		
 	}
 
 	fn format_encode_asn1(&self, tab :i32) -> String {
 		let mut rets :String = "".to_string();
-		rets.push_str(&format_tab_line(tab,"fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {"));
-		rets.push_str(&format_tab_line(tab + 1, "let retv :Vec<u8>;"));
-		rets.push_str(&format_tab_line(tab + 1, &format!("retv = self.{}.encode_asn1()?;",self.selname)));
-		rets.push_str(&format_tab_line(tab+1, "Ok(retv)"));
+		rets.push_str(&format_tab_line(tab , "fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {"));
+		rets.push_str(&format_tab_line(tab + 1, "let mut _v8 :Vec<u8> = Vec::new();"));
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+		}
+		if self.parsenames.len() > 1 {
+			rets.push_str(&format_tab_line(tab + 1, "let mut encv :Vec<u8>;"));	
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, "let encv :Vec<u8>;"));
+		}
+
+
+		
+		for k in self.parsenames.iter() {
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			rets.push_str(&format_tab_line(tab + 1, &format!("encv = self.{}.encode_asn1()?;",k)));
+			rets.push_str(&format_tab_line(tab + 1, "for i in 0..encv.len() {"));
+			rets.push_str(&format_tab_line(tab + 2, "_v8.push(encv[i]);"));
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1,""));
+				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"format {}.{} {{:?}}\\n\",encv);", self.sname, k)));
+				rets.push_str(&format_tab_line(tab + 1,"_outf.write(_outs.as_bytes())?;"));
+			}
+		}
+
+
+		rets.push_str(&format_tab_line(tab + 1, ""));
+		rets.push_str(&format_tab_line(tab + 1, "Ok(_v8)"));
+		rets.push_str(&format_tab_line(tab + 1, ""));
 		rets.push_str(&format_tab_line(tab,"}"));
 		return rets;
 	}
 
 	fn format_print_asn1(&self, tab :i32) -> String {
 		let mut rets :String = "".to_string();
-		rets.push_str(&format_tab_line(tab,"fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {"));
-		rets.push_str(&format_tab_line(tab + 1,&format!("let _ = self.{}.print_asn1(name,tab,iowriter)?;", self.selname)));
+		rets.push_str(&format_tab_line(tab , "fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {"));
+		if self.parsenames.len() == 0 {
+			rets.push_str(&format_tab_line(tab + 1, "let s :String;"));
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, "let mut s :String;"));
+		}
+		rets.push_str(&format_tab_line(tab + 1, &format!("s = asn1_format_line(tab,&format!(\"{{}} {}\", name));", self.sname)));
+		rets.push_str(&format_tab_line(tab + 1, "iowriter.write(s.as_bytes())?;"));
+		
+		rets.push_str(&format_tab_line(tab + 1, ""));
+		for k in self.parsenames.iter() {
+			rets.push_str(&format_tab_line(tab + 1, &format!("s = format!(\"{}\");", k)));
+			rets.push_str(&format_tab_line(tab + 1, &format!("self.{}.print_asn1(&s,tab + 1, iowriter)?;",k)));
+			rets.push_str(&format_tab_line(tab + 1, ""));
+		}
+
 		rets.push_str(&format_tab_line(tab + 1, "Ok(())"));
-		rets.push_str(&format_tab_line(tab ,"}"));
+		rets.push_str(&format_tab_line(tab + 1, ""));
+		rets.push_str(&format_tab_line(tab,"}"));
 		return rets;
 	}
 
@@ -466,7 +601,7 @@ pub fn asn1_obj_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
 							asn1_syn_error_fmt!("{:?}",res.err().unwrap());
 						}
 						let (n,tn) = res.unwrap();
-						let res = selcs.set_selector(&n,&tn);
+						let res = selcs.set_member(&n,&tn);
 						if res.is_err() {
 							asn1_syn_error_fmt!("{:?}",res.err().unwrap());
 						}
@@ -503,7 +638,6 @@ struct ChoiceSyn {
 asn1_gen_error_class!{ChoiceSynError}
 
 impl ChoiceSyn {
-
 	pub fn new() -> Self {
 		ChoiceSyn{
 			debugenable : false,
