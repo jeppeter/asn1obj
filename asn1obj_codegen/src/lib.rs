@@ -387,7 +387,12 @@ impl ObjSelectorSyn {
 		}
 
 		if self.selname.len() == 0 {
-			asn1_gen_new_error!{SelectorSynError,"need selname"}
+			if self.parsenames.len() > 0 {
+				self.selname =format!("{}",self.parsenames[0]);
+			}
+			if self.selname.len() == 0 {
+				asn1_gen_new_error!{SelectorSynError,"need selname"}	
+			}			
 		}
 
 		if self.errname.len() == 0 {
