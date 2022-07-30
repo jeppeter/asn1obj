@@ -11,7 +11,7 @@ use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 use crate::strop::{asn1_format_line};
 use crate::base::{asn1obj_extract_header,asn1obj_format_header};
 
-use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_SEQ_MASK,ASN1_SET_MASK,ASN1_IMP_SET_MASK,ASN1_IMP_FLAG_MASK};
+use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_SEQ_MASK,ASN1_SET_MASK,ASN1_IMP_SET_MASK,ASN1_IMP_FLAG_MASK,ASN1_BIT_STRING_FLAG};
 
 asn1obj_error_class!{Asn1ComplexError}
 
@@ -663,5 +663,103 @@ impl<T: Asn1Op + Asn1Selector + Clone> Asn1Selector for Asn1SeqSelector<T> {
 	}
 	fn encode_select(&self) -> Result<String,Box<dyn Error>> {
 		return self.val.encode_select();
+	}
+}
+
+#[derive(Clone)]
+pub struct Asn1BitSeq<T : Asn1Op> {
+	pub val : T,
+	data : Vec<u8>,
+}
+
+
+impl<T: Asn1Op> Asn1Op for Asn1BitSeq<T> {
+	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let mut retv :usize = 0;
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+		asn1obj_log_trace!("flag [0x{:x}]", flag);
+		if flag as u8 != ASN1_BIT_STRING_FLAG {
+			/*we do have any type*/
+			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}]  != ASN1_BIT_STRING_FLAG [0x{:02x}]", flag, ASN1_BIT_STRING_FLAG}
+		}
+
+		if totallen < 1 {
+			asn1obj_new_error!{Asn1ComplexError,"totallen [{}] < 1", totallen}
+		}
+
+		retv += hdrlen + 1;
+
+		let c = self.val.decode_asn1(&code[retv..(hdrlen + totallen)])?;
+		retv += c;
+		if retv != (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ComplexError,"decode [{}] != [{}] - 1", c, totallen}
+		}
+		self.data = Vec::new();
+		for i in 0..retv {
+			self.data.push(code[i]);
+		}
+		asn1obj_log_trace!("retv [{}]",retv);
+
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let mut retv :Vec<u8>;
+		let vcode :Vec<u8>;
+		let mut idx :usize;
+		let mut bits :u8 = 0;
+
+		vcode = self.val.encode_asn1()?;
+		if vcode.len() > 0 {
+			idx = vcode.len() - 1;
+			while idx > 0 {
+				if vcode[idx] != 0 {
+					break;
+				}
+				idx -= 1;
+			}
+
+			if vcode[idx] == 0  || (vcode[idx] & 0x1) != 0{
+				bits = 0;
+			} else if (vcode[idx] & 0x2)  != 0 {
+				bits = 1;
+			} else if (vcode[idx] & 0x4) != 0 {
+				bits = 2;
+			} else if (vcode[idx] & 0x8) != 0 {
+				bits = 3;
+			} else if (vcode[idx] & 0x10) != 0 {
+				bits = 4;
+			} else if (vcode[idx] & 0x20) != 0 {
+				bits = 5;
+			} else if (vcode[idx] & 0x40) != 0 {
+				bits = 6;
+			} else if (vcode[idx] & 0x80) != 0 {
+				bits = 7;
+			} else {
+				bits = 0;
+			}			
+		}
+
+		let llen = (vcode.len() + 1) as u64;
+		retv = asn1obj_format_header(ASN1_BIT_STRING_FLAG as u64, llen);
+		retv.push(bits);
+		for i in 0..vcode.len() {
+			retv.push(vcode[i]);
+		}
+
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		let cname = format!("{} Asn1BitSeq",name);
+		let _ = self.val.print_asn1(&cname,tab,iowriter)?;
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		Asn1BitSeq {
+			data : Vec::new(),
+			val : T::init_asn1(),
+		}
 	}
 }
