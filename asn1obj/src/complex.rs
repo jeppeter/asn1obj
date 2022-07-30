@@ -1,5 +1,5 @@
 
-use crate::asn1impl::{Asn1Op};
+use crate::asn1impl::{Asn1Op,Asn1Selector};
 use std::io::{Write};
 use std::error::Error;
 
@@ -593,3 +593,75 @@ impl<T: Asn1Op + Clone, const TAG:u8> Asn1Op for Asn1Ndef<T,TAG> {
 	}
 }
 
+#[derive(Clone)]
+pub struct Asn1SeqSelector<T : Asn1Op +  Asn1Selector + Clone> {
+	pub val : T,
+	data : Vec<u8>,
+}
+
+impl<T: Asn1Op + Asn1Selector + Clone> Asn1Op for Asn1SeqSelector<T> {
+	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let mut retv :usize = 0;
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+		asn1obj_log_trace!("flag [0x{:x}]", flag);
+		if (flag as u8) != ASN1_SEQ_MASK {
+			/*we do have any type*/
+			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] != ASN1_SEQ_MASK [0x{:02x}]", flag, ASN1_SEQ_MASK}
+		}
+
+		retv += hdrlen;
+		asn1obj_log_trace!("totallen {}",totallen);
+		while retv < (totallen + hdrlen) {
+			let mut v :T = T::init_asn1();
+			let c = v.decode_asn1(&(code[retv..(hdrlen+totallen)]))?;
+			asn1obj_log_trace!("c [{}]",c);
+			if c != totallen {
+				asn1obj_new_error!{Asn1ComplexError, "c [{}] != totallen [{}]", c, totallen}
+			}
+			retv += c;
+			self.val = v.clone();
+		}
+
+		self.data = Vec::new();
+		for i in 0..retv {
+			self.data.push(code[i]);
+		}
+		asn1obj_log_trace!("retv [{}]",retv);
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let mut retv :Vec<u8>;
+		let encv :Vec<u8>;
+
+		encv = self.val.encode_asn1()?;
+		retv = asn1obj_format_header(ASN1_SEQ_MASK as u64,encv.len() as u64);
+		for i in 0..encv.len() {
+			retv.push(encv[i]);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		let s = format!("[{}]Asn1SeqSelector",name);
+		let _ = self.val.print_asn1(&s,tab,iowriter)?;
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		Asn1SeqSelector {
+			data : Vec::new(),
+			val : T::init_asn1(),
+		}
+	}
+}
+
+
+impl<T: Asn1Op + Asn1Selector + Clone> Asn1Selector for Asn1SeqSelector<T> {
+	fn decode_select(&self) -> Result<String,Box<dyn Error>> {
+		return self.val.decode_select();
+	}
+	fn encode_select(&self) -> Result<String,Box<dyn Error>> {
+		return self.val.encode_select();
+	}
+}
