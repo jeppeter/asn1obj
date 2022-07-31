@@ -1,7 +1,7 @@
 
 //use asn1obj_codegen::{asn1_sequence};
 
-use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null,Asn1Object,Asn1Enumerated,Asn1String,Asn1Any,Asn1PrintableString,Asn1Time,Asn1BigNum};
+use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null,Asn1Object,Asn1Enumerated,Asn1String,Asn1Any,Asn1PrintableString,Asn1Time,Asn1BigNum,Asn1BitData};
 use crate::complex::{Asn1Opt,Asn1ImpSet,Asn1Seq,Asn1Set,Asn1ImpVec,Asn1Ndef,Asn1Imp};
 #[allow(unused_imports)]
 use crate::{asn1obj_log_trace,asn1obj_error_class,asn1obj_new_error,asn1obj_debug_buffer_trace,asn1obj_format_buffer_log};
@@ -1292,4 +1292,20 @@ fn test_a024() {
 	asn1obj_log_trace!("cv  [{}]",cv);
 	assert!(a1.val.val == cv);
 	assert!(s == v1.len());
+}
+
+
+#[test]
+fn test_a025() {
+	let mut a1 :Asn1BitData = Asn1BitData::init_asn1();
+	let mut v1 :Vec<u8>;
+	a1.data = vec![0x22,0x22,0x22];
+	let c = a1.encode_asn1().unwrap();
+	v1 = vec![0x3,0x4,0x1,0x22,0x22,0x22];
+	assert!(check_equal_u8(&v1,&c));
+	v1 = vec![0x3,0x4,0x1,0x22,0x22,0x22];
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(check_equal_u8(&a1.data,&v1[3..]));
+	assert!(s == v1.len());
+	return;
 }

@@ -572,7 +572,147 @@ impl Asn1Op for Asn1BitString {
 	}
 }
 
+#[derive(Clone)]
+pub struct Asn1BitData {
+	pub data :Vec<u8>,
+}
 
+
+impl Asn1Op for Asn1BitData {
+	fn init_asn1() -> Self {
+		Asn1BitData {
+			data : Vec::new(),
+		}
+	}
+
+	fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		let retv :usize;
+		if code.len() < 2 {
+			asn1obj_new_error!{Asn1ObjBaseError,"len [{}] < 2", code.len()}
+		}
+		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+
+		if flag != ASN1_BIT_STRING_FLAG as u64 {
+			asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != ASN1_BIT_STRING_FLAG [0x{:02x}]", flag,ASN1_BIT_STRING_FLAG}
+		}
+
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
+		}
+
+		if totallen < 1 {
+			asn1obj_new_error!{Asn1ObjBaseError,"totallen [{}] < 1", totallen}
+		}
+
+		self.data = Vec::new();
+		for i in 1..totallen {
+			self.data.push(code[hdrlen + i]);
+		}
+		retv = hdrlen + totallen;
+		Ok(retv)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		let llen :u64 = (self.data.len() + 1) as u64;
+		let mut retv :Vec<u8>;
+		let bits :u8;
+		let mut idx :usize;
+
+		retv = asn1obj_format_header(ASN1_BIT_STRING_FLAG as u64,llen);
+		if self.data.len() > 0 {
+			idx = self.data.len() -1;
+
+
+			while idx > 0 {
+				if self.data[idx] != 0 {
+					break;
+				}
+				idx -= 1;
+			}
+
+			if self.data[idx] == 0  || (self.data[idx] & 0x1) != 0{
+				bits = 0;
+			} else if (self.data[idx] & 0x2)  != 0 {
+				bits = 1;
+			} else if (self.data[idx] & 0x4) != 0 {
+				bits = 2;
+			} else if (self.data[idx] & 0x8) != 0 {
+				bits = 3;
+			} else if (self.data[idx] & 0x10) != 0 {
+				bits = 4;
+			} else if (self.data[idx] & 0x20) != 0 {
+				bits = 5;
+			} else if (self.data[idx] & 0x40) != 0 {
+				bits = 6;
+			} else if (self.data[idx] & 0x80) != 0 {
+				bits = 7;
+			} else {
+				bits = 0;
+			}			
+		} else {
+			bits = 0;
+		}
+
+		retv.push(bits);
+		for i in 0..self.data.len() {
+			retv.push(self.data[i]);
+		}
+		Ok(retv)
+	}
+
+	fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {		
+		let mut s = asn1_format_line(tab,&(format!("{}: ASN1_BIT_DATA", name)));
+		let mut idx :usize = 0;
+		let mut lasti :usize = 0;
+
+		while idx < self.data.len() {
+			if (idx % 16) == 0 {
+				if idx > 0 {
+					s.push_str("    ");
+					while lasti != idx {
+						if self.data[lasti] >= 0x20 && self.data[lasti] <= 0x7e {
+							s.push(self.data[lasti] as char);
+						} else {
+							s.push_str(".");
+						}
+						lasti += 1;
+					}
+					s.push_str("\n");
+				}
+				for _ in 0..(tab + 1) {
+					s.push_str("    ");
+				}
+
+			}
+			if idx != lasti {
+				s.push_str(":");
+			}
+			s.push_str(&format!("{:02x}",self.data[idx]));
+			idx += 1;
+		}
+		if lasti != idx {
+			while (idx % 16) != 0 {
+				s.push_str("   ");
+				idx += 1;
+			}
+			s.push_str("    ");
+			while lasti < self.data.len() {
+				if self.data[lasti] >= 0x20 && self.data[lasti] <= 0x7e {
+					s.push(self.data[lasti] as char);
+				} else {
+					s.push_str(".");
+				}
+				lasti += 1;
+			}
+		}
+		if idx > 0 {
+			s.push_str("\n");
+		}
+
+		iowriter.write(s.as_bytes())?;
+		Ok(())
+	}
+}
 #[derive(Clone)]
 pub struct Asn1OctString {
 	pub val :String,
