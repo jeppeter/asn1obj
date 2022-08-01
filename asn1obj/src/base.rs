@@ -4,7 +4,7 @@ use std::error::Error;
 use chrono::{Utc,DateTime,Datelike,Timelike,Duration};
 use chrono::prelude::*;
 use crate::asn1impl::{Asn1Op};
-use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_BOOLEAN_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5,ASN1_BIT_STRING_FLAG,ASN1_OCT_STRING_FLAG,ASN1_NULL_FLAG,ASN1_OBJECT_FLAG,ASN1_ENUMERATED_FLAG,ASN1_UTF8STRING_FLAG,ASN1_IMP_FLAG_MASK,ASN1_PRINTABLE_FLAG,ASN1_TIME_FLAG,ASN1_TIME_DEFAULT_STR,ASN1_OBJECT_DEFAULT_STR};
+use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_BOOLEAN_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5,ASN1_BIT_STRING_FLAG,ASN1_OCT_STRING_FLAG,ASN1_NULL_FLAG,ASN1_OBJECT_FLAG,ASN1_ENUMERATED_FLAG,ASN1_UTF8STRING_FLAG,ASN1_IMP_FLAG_MASK,ASN1_PRINTABLE_FLAG,ASN1_TIME_FLAG,ASN1_TIME_DEFAULT_STR,ASN1_OBJECT_DEFAULT_STR,ASN1_PRINTABLE2_FLAG};
 use crate::strop::{asn1_format_line};
 use crate::{asn1obj_error_class,asn1obj_new_error};
 
@@ -608,6 +608,7 @@ impl Asn1Op for Asn1BitData {
         for i in 1..totallen {
             self.data.push(code[hdrlen + i]);
         }
+        asn1obj_debug_buffer_trace!(self.data.as_ptr(), self.data.len(),"Asn1BitData");
         retv = hdrlen + totallen;
         Ok(retv)
     }
@@ -1438,6 +1439,7 @@ impl Asn1Op for Asn1String {
 #[derive(Clone)]
 pub struct Asn1PrintableString {
     pub val :String,
+    pub flag :u8,
     data :Vec<u8>,
 }
 
@@ -1446,6 +1448,7 @@ impl Asn1Op for Asn1PrintableString {
     fn init_asn1() -> Self {
         Asn1PrintableString {
             val : "".to_string(),
+            flag : ASN1_PRINTABLE_FLAG,
             data : Vec::new(),
         }
     }
@@ -1457,9 +1460,11 @@ impl Asn1Op for Asn1PrintableString {
         }
         let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
 
-        if flag != ASN1_PRINTABLE_FLAG as u64 {
-            asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != ASN1_PRINTABLE_FLAG [0x{:02x}]", flag,ASN1_PRINTABLE_FLAG}
+        if flag != ASN1_PRINTABLE_FLAG as u64 && flag != ASN1_PRINTABLE2_FLAG as u64 {
+            asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != (ASN1_PRINTABLE_FLAG [0x{:02x}] || ASN1_PRINTABLE2_FLAG [0x{:02x}] )", flag,ASN1_PRINTABLE_FLAG,ASN1_PRINTABLE2_FLAG}
         }
+
+        self.flag = flag as u8;
 
         if code.len() < (hdrlen + totallen) {
             asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
@@ -1486,7 +1491,7 @@ impl Asn1Op for Asn1PrintableString {
         let llen :u64 = (vcode.len() ) as u64;
         let mut retv :Vec<u8>;
 
-        retv = asn1obj_format_header(ASN1_PRINTABLE_FLAG as u64,llen);
+        retv = asn1obj_format_header(self.flag as u64,llen);
 
         for i in 0..vcode.len() {
             retv.push(vcode[i]);

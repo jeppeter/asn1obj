@@ -1174,6 +1174,7 @@ fn test_a021() {
 	assert!(check_equal_u8(&v1,&c));
 	let s = a1.decode_asn1(&v1).unwrap();
 	assert!(a1.val == "helloworlds");
+	assert!(a1.flag == 0x13);
 	assert!(s == v1.len());
 
 	a1.val = "helloworldt@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@".to_string();
@@ -1194,6 +1195,18 @@ fn test_a021() {
 	asn1obj_log_trace!("cv  [{}]",cv);
 	assert!(a1.val == cv);
 	assert!(s == v1.len());
+
+	a1.val = "helloworldt".to_string();
+	a1.flag = 0x16;
+	let c = a1.encode_asn1().unwrap();
+	v1 = vec![0x16,0x0b,0x68,0x65,0x6c,0x6c,0x6f,0x77,0x6f,0x72,0x6c,0x64,0x74];
+	assert!(check_equal_u8(&v1,&c));
+	let s = a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == "helloworldt");
+	assert!(a1.flag == 0x16);
+	assert!(s == v1.len());
+
+
 }
 
 #[test]
