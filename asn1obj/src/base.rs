@@ -1975,7 +1975,6 @@ impl Asn1Op for Asn1BigNum {
         if totallen < 1 {
             asn1obj_new_error!{Asn1ObjBaseError,"need 1 length"}
         }
-        let cc = &code[hdrlen..(hdrlen+totallen)];
 
         self.val = BigUint::from_bytes_be(&code[hdrlen..(hdrlen+totallen)]);
         let cc = self.val.to_bytes_be();
