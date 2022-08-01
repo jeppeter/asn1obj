@@ -866,6 +866,7 @@ impl Asn1Op for Asn1OctData {
                 s.push_str("   ");
                 idx += 1;
             }
+            s.push_str("    ");
             while lasti < self.data.len() {
                 if self.data[lasti] >= 0x20 && self.data[lasti] <= 0x7e {
                     s.push(self.data[lasti] as char);
