@@ -1975,6 +1975,7 @@ impl Asn1Op for Asn1BigNum {
         if totallen < 1 {
             asn1obj_new_error!{Asn1ObjBaseError,"need 1 length"}
         }
+        let cc = &code[hdrlen..(hdrlen+totallen)];
 
         self.val = BigUint::from_bytes_be(&code[hdrlen..(hdrlen+totallen)]);
         let cc = self.val.to_bytes_be();
@@ -2011,11 +2012,7 @@ impl Asn1Op for Asn1BigNum {
         let v8 = self.val.to_bytes_be();
         let mut s :String;
         if v8.len() < 8 {
-            let mut val :u64 = 0;           
-            for i in 0..v8.len() {
-                val |= (v8[i] as u64) << ((7 - i) * 8);
-            }
-            s = asn1_format_line(tab, &(format!("{}: ASN1_BIGNUM 0x{:08x}", name, val)));
+            s = asn1_format_line(tab, &(format!("{}: ASN1_BIGNUM 0x{:08x}", name, self.val)));
         } else {
             let mut c :String = "".to_string();
             let mut i :usize=0;
