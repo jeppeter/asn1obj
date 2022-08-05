@@ -2020,6 +2020,15 @@ impl Asn1Op for Asn1BigNum {
             while i < v8.len() {
                 if (i %16) == 0 {
                     if i > 0 {
+                        c.push_str("    ");
+                        while lasti != i {
+                            if v8[lasti] >= 0x20 && v8[lasti] <= 0x7e {
+                                c.push( v8[lasti] as char);
+                            } else {
+                                c.push_str(".");
+                            }
+                            lasti += 1;
+                        }
                         s.push_str(&asn1_format_line(tab + 1, &format!( "{}",c)));
                         c = "".to_string();
                     }
@@ -2031,6 +2040,22 @@ impl Asn1Op for Asn1BigNum {
                 c.push_str(&format!("{:02x}",v8[i]));
                 i += 1;
             }
+            if lasti != i {
+                while (i%16) != 0 {
+                    c.push_str("   ");
+                    i += 1;
+                }
+                c.push_str("    ");
+                while lasti < v8.len() {
+                    if v8[lasti] >= 0x20 && v8[lasti] <= 0x7e {
+                        c.push( v8[lasti] as char);
+                    } else {
+                        c.push_str(".");
+                    }
+                    lasti += 1;                    
+                }
+            }
+
             if c.len() > 0 {
                 s.push_str(&asn1_format_line(tab + 1, &format!("{}",c)));
             }
