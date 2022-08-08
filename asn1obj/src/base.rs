@@ -1461,8 +1461,8 @@ impl Asn1Op for Asn1PrintableString {
         }
         let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
 
-        if flag != ASN1_PRINTABLE_FLAG as u64 && flag != ASN1_PRINTABLE2_FLAG as u64 {
-            asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != (ASN1_PRINTABLE_FLAG [0x{:02x}] || ASN1_PRINTABLE2_FLAG [0x{:02x}] )", flag,ASN1_PRINTABLE_FLAG,ASN1_PRINTABLE2_FLAG}
+        if flag != ASN1_PRINTABLE_FLAG as u64 && flag != ASN1_PRINTABLE2_FLAG as u64  && flag != ASN1_UTF8STRING_FLAG as u64 {
+            asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != (ASN1_PRINTABLE_FLAG [0x{:02x}] || ASN1_PRINTABLE2_FLAG [0x{:02x}] || ASN1_UTF8STRING_FLAG [0x{:02x}] )", flag,ASN1_PRINTABLE_FLAG,ASN1_PRINTABLE2_FLAG,ASN1_UTF8STRING_FLAG}
         }
 
         self.flag = flag as u8;
