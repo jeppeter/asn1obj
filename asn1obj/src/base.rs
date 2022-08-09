@@ -196,7 +196,7 @@ impl Asn1Op for Asn1Any {
     }
 
     fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {     
-        let mut s = asn1_format_line(tab,&(format!("{}: ASN1_ANY {}", name, self.content.len())));
+        let mut s = asn1_format_line(tab,&(format!("{}: ASN1_ANY tag 0x{:02x} {} ", name, self.tag, self.content.len())));
         let mut idx :usize;
         let mut lastidx :usize;
         let mut curs :String;
