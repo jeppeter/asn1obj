@@ -828,6 +828,10 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1,""));
 		rets.push_str(&format_tab_line(tab + 1,&format!("_outs = asn1_format_line(tab,&format!(\"{{}} ASN1_CHOICE {}\",name));",self.sname)));
 		rets.push_str(&format_tab_line(tab + 1,"let _ = iowriter.write(_outs.as_bytes())?;"));
+		rets.push_str(&format_tab_line(tab + 1,""));
+		rets.push_str(&format_tab_line(tab + 1,&format!("let selname = format!(\"{}\");",self.selname)));
+		rets.push_str(&format_tab_line(tab + 1,&format!("let _ = self.{}.print_asn1(&selname,tab + 1, iowriter)?;",self.selname)));
+		rets.push_str(&format_tab_line(tab + 1,""));
 		sidx = 0;
 		idx = 0;
 		while idx < self.parsenames.len() {
