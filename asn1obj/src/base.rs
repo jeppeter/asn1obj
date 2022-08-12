@@ -1511,6 +1511,7 @@ impl Asn1Op for Asn1PrintableString {
 #[derive(Clone)]
 pub struct Asn1Time {
     val :String,
+    origval : String,
     data :Vec<u8>,
 }
 
@@ -1845,6 +1846,7 @@ impl Asn1Time {
         let (year,mon,mday,hour,min,sec) = self.extract_date_value(s)?;
         let _ = self.check_data_valid(year,mon,mday,hour,min,sec)?;
         self.val = self.format_time_str(year,mon,mday,hour,min,sec);
+        self.origval = "".to_string();
         Ok(())
     }
 
@@ -1856,6 +1858,7 @@ impl Asn1Time {
         let (year,mon,mday,hour,min,sec) = (dt.year(),dt.month(),dt.day(),dt.hour(),dt.minute(), dt.second());
         let _ = self.check_data_valid(year as i64,mon as i64,mday as i64,hour as i64,min as i64,sec as i64)?;
         self.val = self.format_time_str(year as i64,mon as i64,mday as i64,hour as i64,min as i64,sec as i64);
+        self.origval = "".to_string();
         Ok(())
     }
 
@@ -1871,6 +1874,7 @@ impl Asn1Op for Asn1Time {
     fn init_asn1() -> Self {
         Asn1Time {
             val : ASN1_TIME_DEFAULT_STR.to_string(),
+            origval : "".to_string(),
             data : Vec::new(),
         }
     }
@@ -1904,6 +1908,7 @@ impl Asn1Op for Asn1Time {
 
         (year,mon,mday,hour,min,sec) = self.extract_encode_value(&s)?;
         let _ = self.check_data_valid(year,mon,mday,hour,min,sec)?;
+        self.origval = format!("{}",s);
         self.val = self.format_time_str(year,mon,mday,hour,min,sec);
         asn1obj_log_trace!("Asn1Time {}",self.val);
         self.data = Vec::new();
@@ -1921,7 +1926,12 @@ impl Asn1Op for Asn1Time {
 
 
         let (year,mon,mday,hour,min,sec) = self.extract_date_value(&self.val)?;
-        let s = format!("{:04}{:02}{:02}{:02}{:02}{:02}Z",year,mon,mday,hour,min,sec);
+        let s;
+        if self.origval.len() == 0 {
+            s = format!("{:04}{:02}{:02}{:02}{:02}{:02}Z",year,mon,mday,hour,min,sec);
+        } else {
+            s = format!("{}",self.origval);
+        }        
         vcode = s.as_bytes().to_vec();
         llen = vcode.len() as u64;
 
