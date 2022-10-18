@@ -78,7 +78,13 @@ fn format_tab_line(tabs :i32, c :&str) -> String {
 	rets
 }
 
+
 asn1_gen_error_class!{SelectorSynError}
+
+//struct TypeSelectorSyn {
+//	parsenames :Vec<String>,
+//	parsemap :HashMap<String,String>,
+//}
 
 struct ObjSelectorSyn {
 	defname :String,
@@ -91,8 +97,8 @@ struct ObjSelectorSyn {
 	kmap :HashMap<String,Vec<String>>,
 }
 
-#[allow(unused_variables)]
-#[allow(unused_mut)]
+//#[allow(unused_variables)]
+//#[allow(unused_mut)]
 impl ObjSelectorSyn {
 	pub fn new() -> Self {
 		ObjSelectorSyn {
@@ -311,7 +317,7 @@ impl ObjSelectorSyn {
 	fn foramt_select_func(&self,tab :i32) -> String {
 		let mut rets :String = "".to_string();
 		let mut sidx :usize = 0;
-		let mut idx :usize = 0;
+		//let mut idx :usize = 0;
 		rets.push_str(&format_tab_line(tab+1,&format!("let k = format!(\"{{}}\",self.{}.get_value());",self.selname)));
 		rets.push_str(&format_tab_line(tab + 1, "let retv :String;"));
 		rets.push_str(&format_tab_line(tab + 1, ""));
@@ -337,7 +343,7 @@ impl ObjSelectorSyn {
 				rets.push_str(&format_tab_line(tab + 2, &format!("retv = format!(\"{}\");",k)));
 				sidx += 1;
 			}
-			idx += 1;
+			//idx += 1;
 		}
 
 		if sidx > 0 {
