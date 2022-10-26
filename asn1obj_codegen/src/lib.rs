@@ -964,7 +964,160 @@ impl syn::parse::Parse for ChoiceSyn {
 	}
 }
 
+#[allow(dead_code)]
+struct TypeChoiceSyn {
+	seltypename :String,
+	valarr :Vec<String>,
+	valmaps :HashMap<String,String>,
+	typmaps :HashMap<String,i32>,
+	sname :String,
+	debugenable :i32,
+}
 
+impl TypeChoiceSyn {
+	pub fn new() -> TypeChoiceSyn {
+		TypeChoiceSyn {
+			seltypename : "".to_string(),
+			valarr : Vec::new(),
+			valmaps : HashMap::new(),
+			typmaps : HashMap::new(),
+			sname : "".to_string(),
+			debugenable : 0,
+		}
+	}
+
+	pub fn set_struct_name(&mut self,s :&str) {
+		self.sname = format!("{}",s);
+		return;
+	}
+
+	pub fn set_name(&mut self, k :&str,v :&str) {
+		self.valarr.push(format!("{}",k));
+		self.valmaps.insert(format!("{}",k),format!("{}",v));
+		return;
+	}
+
+	pub fn set_attr_name(&mut self, _k :&str, _v :&str) -> Result<(),Box<dyn Error>> {
+		return Ok(());
+	}
+
+	pub fn format_asn1_code(&self) -> Result<String,Box<dyn Error>> {
+		return Ok("".to_string());
+	}
+}
+
+
+impl syn::parse::Parse for TypeChoiceSyn {
+	fn parse(input :syn::parse::ParseStream) -> syn::parse::Result<Self> {
+		let mut retv = TypeChoiceSyn::new();
+		let mut k :String = "".to_string();
+		let mut v :String = "".to_string();
+		loop {
+			if input.peek(syn::Ident) {
+				let c :syn::Ident = input.parse()?;
+				//asn1_gen_log_trace!("token [{}]",c);
+				if k.len() == 0 {
+					k = format!("{}",c);
+				} else if v.len() == 0 {
+					v = format!("{}",c);
+				} else {
+					let e = format!("only accept k=v format");
+					return Err(syn::Error::new(input.span(),&e));
+				}
+			} else if input.peek(syn::Token![=]) {
+				let _c : syn::token::Eq = input.parse()?;
+				//asn1_gen_log_trace!("=");
+			} else if input.peek(syn::Token![,]) {
+				let _c : syn::token::Comma = input.parse()?;
+				if k.len() == 0 || v.len() == 0 {
+					let c = format!("need set k=v format");
+					return Err(syn::Error::new(input.span(),&c));
+				}
+				let ov = retv.set_attr_name(&k,&v);
+				if ov.is_err() {
+					let e = ov.err().unwrap();
+					let c = format!("{:?}", e);
+					return Err(syn::Error::new(input.span(),&c));
+				}
+				k = "".to_string();
+				v = "".to_string();
+			} else {
+				if input.is_empty() {
+					if k.len() != 0 && v.len() != 0 {
+						let ov = retv.set_attr_name(&k,&v);
+						if ov.is_err() {
+							let e = ov.err().unwrap();
+							let c = format!("{:?}", e);
+							return Err(syn::Error::new(input.span(),&c));
+						}
+					} else if v.len() == 0 && k.len() != 0 {
+						let c = format!("need value in [{}]",k);
+						return Err(syn::Error::new(input.span(),&c));
+					}
+					break;
+				}
+				let c = format!("not valid token [{}]",input.to_string());
+				return Err(syn::Error::new(input.span(),&c));				
+			}
+		}
+		Ok(retv)
+	}
+}
+
+
+#[proc_macro_attribute]
+pub fn asn1_type_choice(_attr :TokenStream, item :TokenStream) -> TokenStream {
+	asn1_gen_log_trace!("item\n{}",item.to_string());
+	let co :syn::DeriveInput;
+	let nargs = _attr.clone();
+	let sname :String;
+	let mut cs :TypeChoiceSyn = syn::parse_macro_input!(nargs as TypeChoiceSyn);
+
+	match syn::parse::<syn::DeriveInput>(item.clone()) {
+		Ok(v) => {
+			co = v.clone();
+		},
+		Err(_e) => {
+			asn1_syn_error_fmt!("not parse \n{}",item.to_string());
+		}
+	}
+
+	sname = format!("{}",co.ident);
+	//asn1_gen_log_trace!("sname [{}]",sname);
+	cs.set_struct_name(&sname);
+
+
+	match co.data {
+		syn::Data::Struct(ref _vv) => {
+			match _vv.fields {
+				syn::Fields::Named(ref _n) => {
+					for _v in _n.named.iter() {
+						let res = get_name_type(_v.clone());
+						if res.is_err() {
+							asn1_syn_error_fmt!("{:?}",res.err().unwrap());
+						}
+						let (n,tn) = res.unwrap();
+						cs.set_name(&n,&tn);
+					}
+				},
+				_ => {
+					asn1_syn_error_fmt!("not Named structure\n{}",item.to_string());
+				}
+			}
+		},
+		_ => {
+			asn1_syn_error_fmt!("not struct format\n{}",item.to_string());
+		}
+	}
+
+	/*now to compile ok*/
+    //let cc = format_code(&sname,names.clone(),structnames.clone());
+    let mut cc = item.to_string();
+    cc.push_str("\n");
+    cc.push_str(&(cs.format_asn1_code().unwrap()));
+    asn1_gen_log_trace!("CODE\n{}",cc);
+    cc.parse().unwrap()
+}
 
 #[proc_macro_attribute]
 pub fn asn1_choice(_attr :TokenStream,item :TokenStream) -> TokenStream {
