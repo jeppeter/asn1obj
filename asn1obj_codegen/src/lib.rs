@@ -968,6 +968,7 @@ impl syn::parse::Parse for ChoiceSyn {
 struct TypeChoiceSyn {
 	seltypename :String,
 	valarr :Vec<String>,
+	errname :String,
 	valmaps :HashMap<String,String>,
 	typmaps :HashMap<String,i32>,
 	sname :String,
@@ -982,6 +983,7 @@ impl TypeChoiceSyn {
 			valmaps : HashMap::new(),
 			typmaps : HashMap::new(),
 			sname : "".to_string(),
+			errname : "".to_string(),
 			debugenable : 0,
 		}
 	}
@@ -1015,7 +1017,9 @@ impl TypeChoiceSyn {
 			self.debugenable = iv as i32;
 		} else if _k.eq("selector") {
 			self.seltypename = format!("{}",_v);
-		} else {
+		} else if _k.eq("error") {
+			self.errname = format!("{}",_v);
+		}else {
 			iv = self.parse_value(_v)?;
 			self.typmaps.insert(format!("{}",_k), iv as i32);
 		}
@@ -1080,28 +1084,123 @@ impl TypeChoiceSyn {
 
 	fn format_init_asn1(&self, tab :i32) -> Result<String,Box<dyn Error>> {
 		let mut rets :String = "".to_string();
+		rets.push_str(&format_tab_line(tab, "fn init_asn1() -> Self {"));
+		rets.push_str(&format_tab_line(tab + 1, &format!("{} {{", self.sname)));
+
+		for c in self.valarr.iter() {
+			if c.eq(&self.seltypename) {
+				rets.push_str(&format_tab_line(tab + 2,&format!("{} : -1,", self.seltypename)));
+			} else {
+				match self.valmaps.get(c) {
+					Some(v) => {
+						rets.push_str(&format_tab_line(tab + 2,&format!("{} : {}::init_asn1(),", c,v)));
+					},
+					None => {
+						asn1_gen_new_error!{ChoiceSynError,"can not get [{}] variable", c}
+					}
+				}
+			}
+		}
+
+		rets.push_str(&format_tab_line(tab + 1, "}"));
+		rets.push_str(&format_tab_line(tab, "}"));
 		Ok(rets)
 	}
 
 	fn format_decode_asn1(&self, tab :i32) -> Result<String,Box<dyn Error>> {
 		let mut rets :String = "".to_string();
+		rets.push_str(&format_tab_line(tab, "fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {"));
+		rets.push_str(&format_tab_line(tab+1, "let mut ores : Result<usize,Box<dyn Error>>;"));
+		rets.push_str(&format_tab_line(tab+1, " "));
+		for (k,v) in self.typmaps.iter() {
+			rets.push_str(&format_tab_line(tab+1, &format!("ores = self.{}.decode_asn1(code);",k)));
+			rets.push_str(&format_tab_line(tab+1,"if ores.is_ok() {"));
+			rets.push_str(&format_tab_line(tab+2,&format!("self.{} = {};",self.seltypename,v)));
+			rets.push_str(&format_tab_line(tab+2,"return Ok(ores.unwrap());"));
+
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+			rets.push_str(&format_tab_line(tab+1," "));
+		}
+
+		rets.push_str(&format_tab_line(tab + 1,&format!("asn1obj_new_error!{{{},\"not supported type\"}}",self.errname)));
+		rets.push_str(&format_tab_line(tab, "}"));
 		Ok(rets)
 	}
 
 	fn format_encode_asn1(&self, tab :i32) -> Result<String,Box<dyn Error>> {
 		let mut rets :String = "".to_string();
+		let mut idx :i32 = 0;
+		rets.push_str(&format_tab_line(tab,"fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {"));
+		rets.push_str(&format_tab_line(tab + 1, "let retv :Vec<u8>;"));
+		rets.push_str(&format_tab_line(tab + 1, " "));
+		for (k,v) in self.typmaps.iter() {
+			if idx == 0 {
+				rets.push_str(&format_tab_line(tab + 1, &format!("if self.{} == {} {{", self.seltypename,v)));	
+			} else {
+				rets.push_str(&format_tab_line(tab + 1, &format!("}} else if self.{} == {} {{", self.seltypename,v)));	
+			}			
+			rets.push_str(&format_tab_line(tab + 2,&format!("retv = self.{}.encode_asn1()?;", k)));
+			idx += 1;
+		}
+		if idx == 0 {
+			asn1_gen_new_error!{ChoiceSynError,"no type insert"}
+		}
+		rets.push_str(&format_tab_line(tab + 1 ,"} else {"));
+		rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{{},\"not supported type {{}}\", self.{}}}",self.errname,self.seltypename)));
+		rets.push_str(&format_tab_line(tab+1,"}"));
+		rets.push_str(&format_tab_line(tab+1," "));
+		rets.push_str(&format_tab_line(tab+1,"Ok(retv)"));
+		rets.push_str(&format_tab_line(tab,"}"));
 		Ok(rets)
 	}
 
 	fn format_print_asn1(&self, tab :i32) -> Result<String,Box<dyn Error>> {
 		let mut rets :String = "".to_string();
+		let mut idx :i32 = 0;
+		rets.push_str(&format_tab_line(tab,"fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {"));
+		rets.push_str(&format_tab_line(tab+1,&format!("let mut s :String = \"\".to_string();")));
+		rets.push_str(&format_tab_line(tab+1,&format!(" ")));
+		rets.push_str(&format_tab_line(tab+1,&format!("s.push_str(&format!(\"{} type {{}}\",self.{}))",self.seltypename,self.seltypename)));
+		rets.push_str(&format_tab_line(tab+1,"iowriter.write(s.as_bytes())?;"));
+		rets.push_str(&format_tab_line(tab+1," "));
+		for (k,v) in self.typmaps.iter() {
+			if idx == 0 {
+				rets.push_str(&format_tab_line(tab+1,&format!("if self.{} == {} {{", self.seltypename,v)));
+			} else {
+				rets.push_str(&format_tab_line(tab+1,&format!("}} else if self.{} == {} {{", self.seltypename,v)));
+			}
+			rets.push_str(&format_tab_line(tab+2,&format!("self.{}.print_asn1(\"{}\",tab+1,iowriter)?;",k,k)));
+			idx += 1;
+		}
+		if idx == 0 {
+			asn1_gen_new_error!{ChoiceSynError,"no type insert"}
+		}
+		rets.push_str(&format_tab_line(tab + 1 ,"} else {"));
+		rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{{},\"not supported type {{}}\", self.{}}}",self.errname,self.seltypename)));
+		rets.push_str(&format_tab_line(tab+1,"}"));
+		rets.push_str(&format_tab_line(tab+1," "));
+		rets.push_str(&format_tab_line(tab+1,"Ok(())"));
+		rets.push_str(&format_tab_line(tab,"}"));
 		Ok(rets)
 	}
 
+	fn format_error_code(&mut self,tab :i32) -> Result<String,Box<dyn Error>> {
+		let mut rets :String = "".to_string();
+		if self.errname.len() == 0 {
+			self.errname = format!("{}{}Error", self.sname,get_random_bytes(16));
+			rets.push_str(&format_tab_line(tab,&format!("asn1obj_error_class!{{{}}}",self.errname)));
+			rets.push_str(&format_tab_line(tab," "));
+		}
+		return Ok(rets);
+	}
 
-	pub fn format_asn1_code(&self) -> Result<String,Box<dyn Error>> {
+
+	pub fn format_asn1_code(&mut self) -> Result<String,Box<dyn Error>> {
 		let mut rets :String = "".to_string();
 		self.check_variables()?;
+		let c  = self.format_error_code(1)?;
+		rets.push_str(&c);		
+
 		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
 		let c = self.format_init_asn1(1)?;
 		rets.push_str(&c);
