@@ -997,7 +997,28 @@ impl TypeChoiceSyn {
 		return;
 	}
 
+    fn parse_value(&self, s :&str) -> Result<i64,Box<dyn Error>> {
+        match i64::from_str_radix(s,10) {
+            Ok(v) => {              
+                return Ok(v);
+            },
+            Err(e) => {
+                asn1_gen_new_error!{ChoiceSynError,"parse [{}] error[{:?}]",s,e}
+            }
+        }
+    }
+
 	pub fn set_attr_name(&mut self, _k :&str, _v :&str) -> Result<(),Box<dyn Error>> {
+		let iv :i64;
+		if _k.eq("debug") {
+			iv = self.parse_value(_v)?;
+			self.debugenable = iv as i32;
+		} else if _k.eq("selector") {
+			self.seltypename = format!("{}",_v);
+		} else {
+			iv = self.parse_value(_v)?;
+			self.typmaps.insert(format!("{}",_k), iv as i32);
+		}
 		return Ok(());
 	}
 
