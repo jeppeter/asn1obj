@@ -1022,8 +1022,105 @@ impl TypeChoiceSyn {
 		return Ok(());
 	}
 
+	fn check_variables(&self) -> Result<(),Box<dyn Error>> {
+		/*first to check for the typmaps are in var*/
+		let mut found :bool;
+		for (k,_) in self.typmaps.iter() {
+			found = false;
+			for (k2,_)	 in self.valmaps.iter() {
+				if k.eq(k2) {
+					found = true;
+					break;
+				}
+			}
+
+
+			if !found {
+				asn1_gen_new_error!{ChoiceSynError,"{} not found in valmaps", k}
+			}
+		}
+
+		/*now to check seltype in */
+		found = false;
+		for (k, _) in self.valmaps.iter() {
+			if k.eq(&self.seltypename) {
+				found = true;
+				break;
+			}
+		}
+
+		if !found {
+			asn1_gen_new_error!{ChoiceSynError,"{} not found in valmaps ", self.seltypename}
+		}
+
+		for (k,_) in self.valmaps.iter() {
+			found = false;
+			for (k2,_)	 in self.typmaps.iter() {
+				if k.eq(k2) {
+					found = true;
+					break;
+				}
+			}
+
+			if !found {
+				if k.eq(&self.seltypename) {
+					found = true;
+				}
+			}
+
+
+			if !found {
+				asn1_gen_new_error!{ChoiceSynError,"{} not found in typmaps or seltypename", k}
+			}
+
+		}
+
+		Ok(())
+	}
+
+	fn format_init_asn1(&self, tab :i32) -> Result<String,Box<dyn Error>> {
+		let mut rets :String = "".to_string();
+		Ok(rets)
+	}
+
+	fn format_decode_asn1(&self, tab :i32) -> Result<String,Box<dyn Error>> {
+		let mut rets :String = "".to_string();
+		Ok(rets)
+	}
+
+	fn format_encode_asn1(&self, tab :i32) -> Result<String,Box<dyn Error>> {
+		let mut rets :String = "".to_string();
+		Ok(rets)
+	}
+
+	fn format_print_asn1(&self, tab :i32) -> Result<String,Box<dyn Error>> {
+		let mut rets :String = "".to_string();
+		Ok(rets)
+	}
+
+
 	pub fn format_asn1_code(&self) -> Result<String,Box<dyn Error>> {
-		return Ok("".to_string());
+		let mut rets :String = "".to_string();
+		self.check_variables()?;
+		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
+		let c = self.format_init_asn1(1)?;
+		rets.push_str(&c);
+		rets.push_str(&format_tab_line(1,""));
+		let c = self.format_decode_asn1(1)?;
+		rets.push_str(&c);
+		rets.push_str(&format_tab_line(1,""));
+
+		let c = self.format_encode_asn1(1)?;
+		rets.push_str(&c);
+		rets.push_str(&format_tab_line(1,""));
+
+		let c = self.format_print_asn1(1)?;
+		rets.push_str(&c);
+
+
+
+		rets.push_str(&format_tab_line(0,"}"));
+		return Ok(rets);
 	}
 }
 
