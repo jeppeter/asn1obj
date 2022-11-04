@@ -1093,7 +1093,7 @@ impl TypeChoiceSyn {
 			} else {
 				match self.valmaps.get(c) {
 					Some(v) => {
-						rets.push_str(&format_tab_line(tab + 2,&format!("{} : {}::init_asn1(),", c,v)));
+						rets.push_str(&format_tab_line(tab + 2,&format!("{} : {}::init_asn1(),", c,extract_type_name(v))));
 					},
 					None => {
 						asn1_gen_new_error!{ChoiceSynError,"can not get [{}] variable", c}
@@ -1158,9 +1158,9 @@ impl TypeChoiceSyn {
 		let mut rets :String = "".to_string();
 		let mut idx :i32 = 0;
 		rets.push_str(&format_tab_line(tab,"fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {"));
-		rets.push_str(&format_tab_line(tab+1,&format!("let mut s :String = \"\".to_string();")));
+		rets.push_str(&format_tab_line(tab+1,&format!("let  s :String;")));
 		rets.push_str(&format_tab_line(tab+1,&format!(" ")));
-		rets.push_str(&format_tab_line(tab+1,&format!("s.push_str(&format!(\"{} type {{}}\",self.{}))",self.seltypename,self.seltypename)));
+		rets.push_str(&format_tab_line(tab+1,&format!("s = asn1_format_line(tab,&format!(\"{{}}.{} type {{}}\",name,self.{}));",self.seltypename,self.seltypename)));
 		rets.push_str(&format_tab_line(tab+1,"iowriter.write(s.as_bytes())?;"));
 		rets.push_str(&format_tab_line(tab+1," "));
 		for (k,v) in self.typmaps.iter() {
@@ -1198,7 +1198,7 @@ impl TypeChoiceSyn {
 	pub fn format_asn1_code(&mut self) -> Result<String,Box<dyn Error>> {
 		let mut rets :String = "".to_string();
 		self.check_variables()?;
-		let c  = self.format_error_code(1)?;
+		let c  = self.format_error_code(0)?;
 		rets.push_str(&c);		
 
 		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
@@ -1232,7 +1232,7 @@ impl syn::parse::Parse for TypeChoiceSyn {
 		loop {
 			if input.peek(syn::Ident) {
 				let c :syn::Ident = input.parse()?;
-				//asn1_gen_log_trace!("token [{}]",c);
+				asn1_gen_log_trace!("token [{}]",c);
 				if k.len() == 0 {
 					k = format!("{}",c);
 				} else if v.len() == 0 {
@@ -1241,9 +1241,16 @@ impl syn::parse::Parse for TypeChoiceSyn {
 					let e = format!("only accept k=v format");
 					return Err(syn::Error::new(input.span(),&e));
 				}
+			} else if input.peek(syn::LitInt) {
+				if k.len() == 0 || v.len() != 0 {
+					let e = format!("only accept v for int");
+					return Err(syn::Error::new(input.span(),&e));
+				}
+				let c :syn::LitInt = input.parse()?;
+				v = format!("{}",c);
 			} else if input.peek(syn::Token![=]) {
 				let _c : syn::token::Eq = input.parse()?;
-				//asn1_gen_log_trace!("=");
+				asn1_gen_log_trace!("=");
 			} else if input.peek(syn::Token![,]) {
 				let _c : syn::token::Comma = input.parse()?;
 				if k.len() == 0 || v.len() == 0 {
