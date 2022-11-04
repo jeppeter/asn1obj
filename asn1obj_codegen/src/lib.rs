@@ -965,7 +965,7 @@ impl syn::parse::Parse for ChoiceSyn {
 }
 
 #[allow(dead_code)]
-struct TypeChoiceSyn {
+struct IntChoiceSyn {
 	seltypename :String,
 	valarr :Vec<String>,
 	errname :String,
@@ -975,9 +975,9 @@ struct TypeChoiceSyn {
 	debugenable :i32,
 }
 
-impl TypeChoiceSyn {
-	pub fn new() -> TypeChoiceSyn {
-		TypeChoiceSyn {
+impl IntChoiceSyn {
+	pub fn new() -> IntChoiceSyn {
+		IntChoiceSyn {
 			seltypename : "".to_string(),
 			valarr : Vec::new(),
 			valmaps : HashMap::new(),
@@ -1224,9 +1224,9 @@ impl TypeChoiceSyn {
 }
 
 
-impl syn::parse::Parse for TypeChoiceSyn {
+impl syn::parse::Parse for IntChoiceSyn {
 	fn parse(input :syn::parse::ParseStream) -> syn::parse::Result<Self> {
-		let mut retv = TypeChoiceSyn::new();
+		let mut retv = IntChoiceSyn::new();
 		let mut k :String = "".to_string();
 		let mut v :String = "".to_string();
 		loop {
@@ -1290,12 +1290,12 @@ impl syn::parse::Parse for TypeChoiceSyn {
 
 
 #[proc_macro_attribute]
-pub fn asn1_type_choice(_attr :TokenStream, item :TokenStream) -> TokenStream {
+pub fn asn1_int_choice(_attr :TokenStream, item :TokenStream) -> TokenStream {
 	asn1_gen_log_trace!("item\n{}",item.to_string());
 	let co :syn::DeriveInput;
 	let nargs = _attr.clone();
 	let sname :String;
-	let mut cs :TypeChoiceSyn = syn::parse_macro_input!(nargs as TypeChoiceSyn);
+	let mut cs :IntChoiceSyn = syn::parse_macro_input!(nargs as IntChoiceSyn);
 
 	match syn::parse::<syn::DeriveInput>(item.clone()) {
 		Ok(v) => {
