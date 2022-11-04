@@ -528,6 +528,10 @@ impl Asn1Op for Asn1BitString {
         let bits :u8;
         let mut idx :usize;
 
+        if vcode.len() == 0 {
+            asn1obj_new_error!{Asn1ObjBaseError,"data [0] not valid"}
+        }
+
         retv = asn1obj_format_header(ASN1_BIT_STRING_FLAG as u64,llen);
         idx = vcode.len() - 1;
 
