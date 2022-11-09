@@ -1513,6 +1513,76 @@ impl Asn1Op for Asn1PrintableString {
 
 
 #[derive(Clone)]
+pub struct Asn1IA5String {
+    pub val :String,
+    pub flag :u8,
+    data :Vec<u8>,
+}
+
+
+impl Asn1Op for Asn1IA5String {
+    fn init_asn1() -> Self {
+        Asn1IA5String {
+            val : "".to_string(),
+            flag : ASN1_PRINTABLE2_FLAG,
+            data : Vec::new(),
+        }
+    }
+
+    fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
+        let retv :usize;
+        if code.len() < 2 {
+            asn1obj_new_error!{Asn1ObjBaseError,"len [{}] < 2", code.len()}
+        }
+        let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+
+        if flag != ASN1_PRINTABLE2_FLAG as u64   {
+            asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != (ASN1_PRINTABLE2_FLAG [0x{:02x}])", flag,ASN1_PRINTABLE2_FLAG}
+        }
+
+        self.flag = flag as u8;
+
+        if code.len() < (hdrlen + totallen) {
+            asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
+        }
+
+
+        let mut retm = BytesMut::with_capacity(totallen);
+        for i in 0..totallen {
+            retm.put_u8(code[hdrlen + i]);
+        }
+        let a = retm.freeze();
+        self.val = String::from_utf8_lossy(&a).to_string();
+        asn1obj_log_trace!("Asn1IA5String [{}]",self.val);
+        self.data = Vec::new();
+        retv = hdrlen + totallen;
+        for i in 0..retv {
+            self.data.push(code[i]);
+        }
+        Ok(retv)
+    }
+
+    fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+        let vcode = self.val.as_bytes();
+        let llen :u64 = (vcode.len() ) as u64;
+        let mut retv :Vec<u8>;
+
+        retv = asn1obj_format_header(self.flag as u64,llen);
+
+        for i in 0..vcode.len() {
+            retv.push(vcode[i]);
+        }
+        Ok(retv)
+    }
+
+    fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {     
+        let s = asn1_format_line(tab,&(format!("{}: ASN1_IA5STRING {}", name, self.val)));
+        iowriter.write(s.as_bytes())?;
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
 pub struct Asn1Time {
     val :String,
     origval : String,
