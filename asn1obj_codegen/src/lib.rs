@@ -1111,8 +1111,16 @@ impl IntChoiceSyn {
 		let mut rets :String = "".to_string();
 		rets.push_str(&format_tab_line(tab, "fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {"));
 		rets.push_str(&format_tab_line(tab+1, "let mut ores : Result<usize,Box<dyn Error>>;"));
+		if self.debugenable > 0 {
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+		}
 		rets.push_str(&format_tab_line(tab+1, " "));
 		for (k,v) in self.typmaps.iter() {
+			if self.debugenable > 0 {
+				rets.push_str(&(format_tab_line(tab+1,&(format!("_outs = format!(\"will decode {}\\n\");",k)))));
+				rets.push_str(&(format_tab_line(tab+1,&(format!("_outf.write(_outs.as_bytes())?;")))));
+			}
 			rets.push_str(&format_tab_line(tab+1, &format!("ores = self.{}.decode_asn1(code);",k)));
 			rets.push_str(&format_tab_line(tab+1,"if ores.is_ok() {"));
 			rets.push_str(&format_tab_line(tab+2,&format!("self.{} = {};",self.seltypename,v)));
