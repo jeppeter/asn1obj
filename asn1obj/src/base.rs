@@ -1699,6 +1699,7 @@ impl Asn1Time {
 
     }
 
+    #[allow(deprecated)]
     fn extract_encode_value(&self, s :&str) -> Result<(i64,i64,i64,i64,i64,i64),Box<dyn Error>> {
         let mut year :i64;
         let mut mon :i64;
@@ -1936,6 +1937,7 @@ impl Asn1Time {
         Ok(())
     }
 
+    #[allow(deprecated)]
     pub fn get_value_time(&self) -> Result<DateTime<Utc>,Box<dyn Error>> {
         let (year,mon,mday,hour,min,sec) = self.extract_date_value(&self.val)?;
         let dt :DateTime<Utc> = Utc.ymd(year as i32,mon as u32,mday as u32).and_hms(hour as u32,min as u32,sec as u32);
