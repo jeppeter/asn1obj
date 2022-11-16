@@ -607,6 +607,7 @@ impl Asn1Op for Asn1BitData {
         if totallen < 1 {
             asn1obj_new_error!{Asn1ObjBaseError,"totallen [{}] < 1", totallen}
         }
+        asn1obj_log_trace!("totallen [{}]",totallen);
 
         self.data = Vec::new();
         for i in 1..totallen {
@@ -666,7 +667,7 @@ impl Asn1Op for Asn1BitData {
     }
 
     fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {     
-        let mut s = asn1_format_line(tab,&(format!("{}: ASN1_BIT_DATA", name)));
+        let mut s = asn1_format_line(tab,&(format!("{}: ASN1_BIT_DATA len[0x{:x}:{}]", name,self.data.len(),self.data.len())));
         let mut idx :usize = 0;
         let mut lasti :usize = 0;
 
