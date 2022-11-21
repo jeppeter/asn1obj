@@ -4,7 +4,7 @@ use std::error::Error;
 use chrono::{Utc,DateTime,Datelike,Timelike,Duration};
 use chrono::prelude::*;
 use crate::asn1impl::{Asn1Op};
-use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_BOOLEAN_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5,ASN1_BIT_STRING_FLAG,ASN1_OCT_STRING_FLAG,ASN1_NULL_FLAG,ASN1_OBJECT_FLAG,ASN1_ENUMERATED_FLAG,ASN1_UTF8STRING_FLAG,ASN1_IMP_FLAG_MASK,ASN1_PRINTABLE_FLAG,ASN1_TIME_FLAG,ASN1_TIME_DEFAULT_STR,ASN1_OBJECT_DEFAULT_STR,ASN1_PRINTABLE2_FLAG};
+use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_BOOLEAN_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5,ASN1_BIT_STRING_FLAG,ASN1_OCT_STRING_FLAG,ASN1_NULL_FLAG,ASN1_OBJECT_FLAG,ASN1_ENUMERATED_FLAG,ASN1_UTF8STRING_FLAG,ASN1_PRINTABLE_FLAG,ASN1_UTCTIME_FLAG,ASN1_GENERALTIME_FLAG,ASN1_TIME_DEFAULT_STR,ASN1_OBJECT_DEFAULT_STR,ASN1_PRINTABLE2_FLAG};
 use crate::strop::{asn1_format_line};
 use crate::{asn1obj_error_class,asn1obj_new_error};
 
@@ -1588,6 +1588,7 @@ pub struct Asn1Time {
     val :String,
     origval : String,
     data :Vec<u8>,
+    utag :u8,
 }
 
 
@@ -1953,6 +1954,7 @@ impl Asn1Op for Asn1Time {
             val : ASN1_TIME_DEFAULT_STR.to_string(),
             origval : "".to_string(),
             data : Vec::new(),
+            utag : ASN1_UTCTIME_FLAG,
         }
     }
 
@@ -1964,9 +1966,11 @@ impl Asn1Op for Asn1Time {
         }
         let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
 
-        if (flag as u8)  != ASN1_TIME_FLAG {
-            asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}]  != ASN1_TIME_FLAG [0x{:02x}]", flag,ASN1_IMP_FLAG_MASK}
+        if (flag as u8)  != ASN1_GENERALTIME_FLAG && (flag as u8) != ASN1_UTCTIME_FLAG {
+            asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}]  != ASN1_UTCTIME_FLAG [0x{:02x}] or ASN1_GENERALTIME_FLAG [0x{:02x}]", flag,ASN1_UTCTIME_FLAG,ASN1_GENERALTIME_FLAG}
         }
+
+        self.utag = flag as u8;
 
         if code.len() < (hdrlen + totallen) {
             asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
@@ -2012,7 +2016,7 @@ impl Asn1Op for Asn1Time {
         vcode = s.as_bytes().to_vec();
         llen = vcode.len() as u64;
 
-        retv = asn1obj_format_header(ASN1_TIME_FLAG as u64,llen);
+        retv = asn1obj_format_header(self.utag as u64,llen);
 
         for i in 0..vcode.len() {
             retv.push(vcode[i]);
