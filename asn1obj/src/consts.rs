@@ -25,6 +25,10 @@ pub const ASN1_OBJECT_DEFAULT_STR :&str = "1.1.1";
 
 pub const ASN1_JSON_TAG :&str = "tag";
 pub const ASN1_JSON_CONTENT :&str = "content";
+pub const ASN1_JSON_PRINTABLE_STRING :&str = "printablestring";
+pub const ASN1_JSON_IA5STRING :&str = "ia5string";
+pub const ASN1_JSON_INNER_FLAG :&str = "_flag";
+pub const ASN1_JSON_TIME :&str = "time";
 
 pub const ASN1_MAX_INT :u64 = 0xffffffff;
 pub const ASN1_MAX_LONG :u64 = 0xffffffff;

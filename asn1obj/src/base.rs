@@ -1157,6 +1157,27 @@ pub struct Asn1Null {
     data :Vec<u8>,
 }
 
+impl Asn1Null {
+    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let setjson = serde_json::from_str(&format!("null")).unwrap();
+        val[key] = setjson;
+        Ok(1)
+    }
+
+    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let ores = val.get(key);
+        if ores.is_none() {
+            self.data = Vec::new();
+            return Ok(0);
+        }
+        let vmap = ores.unwrap();
+        if !vmap.is_null() {
+            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid null",key}
+        }
+        self.data = Vec::new();
+        return Ok(1);
+    }
+}
 
 impl Asn1Op for Asn1Null {
     fn init_asn1() -> Self {
@@ -1213,6 +1234,29 @@ const ULONG_MAX :u64 = 0xffffffffffffffff;
 pub struct Asn1Object {
     val :String,
     data :Vec<u8>,
+}
+
+impl Asn1Object {
+    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
+        val[key] = setjson;
+        Ok(1)
+    }
+
+    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let ores = val.get(key);
+        if ores.is_none() {
+            let _ = self.set_value("1.1.1")?;
+            return Ok(0);
+        }
+        let vmap = ores.unwrap();
+        if !vmap.is_string() {
+            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
+        }
+        let c = vmap.as_str().unwrap();
+        let _ = self.set_value(c)?;
+        return Ok(1);
+    }
 }
 
 
@@ -1484,6 +1528,41 @@ pub struct Asn1Enumerated {
     data :Vec<u8>,
 }
 
+impl Asn1Enumerated {
+    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
+        val[key] = setjson;
+        Ok(1)
+    }
+
+    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let ores = val.get(key);
+        if ores.is_none() {
+            self.val = 0;
+            self.data = Vec::new();
+            return Ok(0);
+        }
+        let vmap = ores.unwrap();
+        if !vmap.is_i64() && !vmap.is_string() {
+            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or i64",key}
+        }
+        if vmap.is_i64() {
+            let c = vmap.as_i64().unwrap();
+            self.val = c ;
+        } else if vmap.is_string() {
+            let c = vmap.as_str().unwrap();
+            match c.parse::<i64>() {
+                Ok(fi) => {
+                    self.val = fi;
+                },
+                Err(e) => {
+                    asn1obj_new_error!{Asn1ObjBaseError,"{} val {} error {:?}", key,c,e}
+                }
+            }
+        }
+        return Ok(1);
+    }
+}
 
 impl Asn1Op for Asn1Enumerated {
     fn init_asn1() -> Self {
@@ -1647,6 +1726,33 @@ pub struct Asn1String {
 }
 
 
+impl Asn1String {
+    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
+        val[key] = setjson;
+        Ok(1)
+    }
+
+    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let ores = val.get(key);
+        if ores.is_none() {
+            self.val = "".to_string();
+            self.data = Vec::new();
+            return Ok(0);
+        }
+        let vmap = ores.unwrap();
+        if  !vmap.is_string() {
+            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
+        }
+
+        if vmap.is_string() {
+            let c = vmap.as_str().unwrap();
+            self.val = format!("{}",c);
+        }
+        return Ok(1);
+    }
+}
+
 impl Asn1Op for Asn1String {
     fn init_asn1() -> Self {
         Asn1String {
@@ -1713,6 +1819,60 @@ pub struct Asn1PrintableString {
     data :Vec<u8>,
 }
 
+impl Asn1PrintableString {
+    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+        let cs = serde_json::from_str(&format!("{}",self.val)).unwrap();
+        let ci = serde_json::from_str(&format!("{}",self.flag)).unwrap();
+        setjson[ASN1_JSON_PRINTABLE_STRING] = cs;
+        setjson[ASN1_JSON_INNER_FLAG] = ci;
+        val[key] = setjson;
+        Ok(1)
+    }
+
+    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let ores = val.get(key);
+        if ores.is_none() {
+            self.val = "".to_string();
+            self.data = Vec::new();
+            return Ok(0);
+        }
+        let vmap = ores.unwrap();
+        if  !vmap.is_string() && !vmap.is_object() {
+            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or object",key}
+        }
+
+        if vmap.is_string() {
+            let c = vmap.as_str().unwrap();
+            self.val = format!("{}",c);
+            self.flag = ASN1_PRINTABLE_FLAG;
+        } else if vmap.is_object() {
+            let c = vmap.as_object().unwrap();
+            let k = c.get(ASN1_JSON_PRINTABLE_STRING);
+            if k.is_none() {
+                asn1obj_new_error!{Asn1ObjBaseError,"{} not found {} in Asn1PrintableString object",key,ASN1_JSON_PRINTABLE_STRING}
+            } 
+            let k = k.unwrap();
+            if !k.is_string() {
+                asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not string",key,ASN1_JSON_PRINTABLE_STRING}
+            }
+            self.val = format!("{}",k.as_str().unwrap());
+            self.flag = ASN1_PRINTABLE_FLAG;
+            let k = c.get(ASN1_JSON_INNER_FLAG);
+            if k.is_some()  {
+                let k = k.unwrap();
+                if k.is_i64() {
+                    let ival = k.as_i64().unwrap() as u8;
+                    if ival != ASN1_PRINTABLE_FLAG && ival != ASN1_PRINTABLE2_FLAG  && ival != ASN1_UTF8STRING_FLAG {
+                        asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not valid flag",key,ASN1_JSON_INNER_FLAG}
+                    }
+                    self.flag = ival;                    
+                }
+            }
+        }
+        return Ok(1);
+    }
+}
 
 impl Asn1Op for Asn1PrintableString {
     fn init_asn1() -> Self {
@@ -1784,6 +1944,60 @@ pub struct Asn1IA5String {
     data :Vec<u8>,
 }
 
+impl Asn1IA5String {
+    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+        let cs = serde_json::from_str(&format!("{}",self.val)).unwrap();
+        let ci = serde_json::from_str(&format!("{}",self.flag)).unwrap();
+        setjson[ASN1_JSON_IA5STRING] = cs;
+        setjson[ASN1_JSON_INNER_FLAG] = ci;
+        val[key] = setjson;
+        Ok(1)
+    }
+
+    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let ores = val.get(key);
+        if ores.is_none() {
+            self.val = "".to_string();
+            self.data = Vec::new();
+            return Ok(0);
+        }
+        let vmap = ores.unwrap();
+        if  !vmap.is_string() && !vmap.is_object() {
+            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or object",key}
+        }
+
+        if vmap.is_string() {
+            let c = vmap.as_str().unwrap();
+            self.val = format!("{}",c);
+            self.flag = ASN1_PRINTABLE_FLAG;
+        } else if vmap.is_object() {
+            let c = vmap.as_object().unwrap();
+            let k = c.get(ASN1_JSON_IA5STRING);
+            if k.is_none() {
+                asn1obj_new_error!{Asn1ObjBaseError,"{} not found {} in Asn1PrintableString object",key,ASN1_JSON_IA5STRING}
+            } 
+            let k = k.unwrap();
+            if !k.is_string() {
+                asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not string",key,ASN1_JSON_IA5STRING}
+            }
+            self.val = format!("{}",k.as_str().unwrap());
+            self.flag = ASN1_PRINTABLE2_FLAG;
+            let k = c.get(ASN1_JSON_INNER_FLAG);
+            if k.is_some()  {
+                let k = k.unwrap();
+                if k.is_i64() {
+                    let ival = k.as_i64().unwrap() as u8;
+                    if ival != ASN1_PRINTABLE2_FLAG  {
+                        asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not valid flag",key,ASN1_JSON_INNER_FLAG}
+                    }
+                    self.flag = ival;                    
+                }
+            }
+        }
+        return Ok(1);
+    }
+}
 
 impl Asn1Op for Asn1IA5String {
     fn init_asn1() -> Self {
@@ -1855,6 +2069,64 @@ pub struct Asn1Time {
     utag :u8,
 }
 
+impl Asn1Time {
+    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+        if self.origval.len() > 0 {
+            setjson[ASN1_JSON_TIME] = serde_json::from_str(&format!("{}",self.origval)).unwrap();
+        } else {
+            setjson[ASN1_JSON_TIME] = serde_json::from_str(&format!("{}",self.val)).unwrap();
+        }
+        setjson[ASN1_JSON_INNER_FLAG] = serde_json::from_str(&format!("{}",self.utag)).unwrap();
+        val[key] = setjson;
+        Ok(1)
+    }
+
+    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let ores = val.get(key);
+        if ores.is_none() {
+            self.val = ASN1_TIME_DEFAULT_STR.to_string();
+            self.origval = "".to_string();
+            self.data = Vec::new();
+            self.utag = ASN1_UTCTIME_FLAG;
+            return Ok(0);
+        }
+        let vmap = ores.unwrap();
+        if  !vmap.is_string() && !vmap.is_object() {
+            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or object",key}
+        }
+        self.utag = ASN1_UTCTIME_FLAG;
+        self.origval = "".to_string();
+
+        if vmap.is_string() {
+            let c = vmap.as_str().unwrap();
+            let _ = self.set_value_str(c)?;
+        } else if vmap.is_object() {
+            let c = vmap.as_object().unwrap();
+            let k = c.get(ASN1_JSON_TIME);
+            if k.is_none() {
+                asn1obj_new_error!{Asn1ObjBaseError,"{} not found {} in Asn1PrintableString object",key,ASN1_JSON_TIME}
+            } 
+            let k = k.unwrap();
+            if !k.is_string() {
+                asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not string",key,ASN1_JSON_TIME}
+            }
+            let _ = self.set_value_str(k.as_str().unwrap());
+            let k = c.get(ASN1_JSON_INNER_FLAG);
+            if k.is_some()  {
+                let k = k.unwrap();
+                if k.is_i64() {
+                    let ival = k.as_i64().unwrap() as u8;
+                    if ival != ASN1_UTCTIME_FLAG  && ival != ASN1_GENERALTIME_FLAG {
+                        asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not valid flag",key,ASN1_JSON_INNER_FLAG}
+                    }
+                    self.utag = ival;                    
+                }
+            }
+        }
+        return Ok(1);
+    }
+}
 
 impl Asn1Time {
 
@@ -2301,6 +2573,38 @@ impl Asn1Op for Asn1Time {
 pub struct Asn1BigNum {
     pub val :BigUint,
     data :Vec<u8>,
+}
+
+impl Asn1BigNum {
+    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let s = format!("{}",self.val.to_str_radix(16));
+        let setjson :serde_json::value::Value = serde_json::from_str(&s).unwrap();
+        val[key] = setjson;
+        Ok(1)
+    }
+
+    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let ores = val.get(key);
+        if ores.is_none() {
+            self.val = BigUint::parse_bytes(b"0",16).unwrap();
+            self.data = Vec::new();
+            return Ok(0);
+        }
+        let vmap = ores.unwrap();
+        if  !vmap.is_string() {
+            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
+        }
+
+        if vmap.is_string() {
+            let c = vmap.as_str().unwrap();
+            let ores = BigUint::parse_bytes(c.as_bytes(),16);
+            if ores.is_none() {
+                asn1obj_new_error!{Asn1ObjBaseError,"{} {} not valid biguint",key,c}
+            }
+            self.val = ores.unwrap();
+        }
+        return Ok(1);
+    }
 }
 
 
