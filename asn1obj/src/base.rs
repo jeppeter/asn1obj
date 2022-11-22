@@ -306,7 +306,7 @@ impl Asn1Op for Asn1Any {
 
         iowriter.write(s.as_bytes())?;
         Ok(())
-    }   
+    }
 }
 
 #[derive(Clone)]
@@ -526,18 +526,28 @@ impl Asn1Op for Asn1Boolean {
 
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
-        val[key] = setjson;
+        if key.len() > 0 {
+            val[key] = setjson;    
+        } else {
+            *val = setjson;
+        }
+        
         Ok(1)
     }
 
     fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let ores = val.get(key);
-        if ores.is_none() {
-            self.val = false;
-            self.data = Vec::new();
-            return Ok(0);
+        let vmap :serde_json::value::Value;
+        if key.len() > 0 {
+            let ores = val.get(key);
+            if ores.is_none() {
+                self.val = false;
+                self.data = Vec::new();
+                return Ok(0);
+            }
+            vmap = serde_json::json!(ores.unwrap());
+        } else {
+            vmap = val.clone();
         }
-        let vmap = ores.unwrap();
         if !vmap.is_boolean()  {
             asn1obj_new_error!{Asn1ObjBaseError,"{} not valid bool",key}
         }
@@ -615,21 +625,30 @@ pub struct Asn1BitString {
 
 
 impl Asn1Op for Asn1BitString {
-
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
-        val[key] = setjson;
+        let setjson = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
+        if key.len() > 0 {
+            val[key] = setjson;    
+        } else {
+            *val = setjson;
+        }
+        
         Ok(1)
     }
 
     fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let ores = val.get(key);
-        if ores.is_none() {
-            self.val = "".to_string();
-            self.data = Vec::new();
-            return Ok(0);
+        let vmap :serde_json::value::Value;
+        if key.len() > 0 {
+            let ores = val.get(key);
+            if ores.is_none() {
+                self.val = "".to_string();
+                self.data = Vec::new();
+                return Ok(0);
+            }
+            vmap = serde_json::json!(ores.unwrap());
+        } else {
+            vmap = val.clone();
         }
-        let vmap = ores.unwrap();
         if !vmap.is_string()  {
             asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
         }

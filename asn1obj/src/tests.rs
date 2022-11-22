@@ -1377,3 +1377,43 @@ fn test_a027() {
 	let _ = a1.encode_json("hello",&mut cv).unwrap();
 	assert!(cv["hello"] == serde_json::json!(10) );
 }
+
+#[test]
+fn test_a028() {
+	let mut a1 :Asn1Boolean = Asn1Boolean::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"true"#)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.val == true);
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!(true) );
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"hello" : false
+	}}
+		"#)).unwrap();
+	let _ = a1.decode_json("hello",&val).unwrap();
+	assert!(a1.val == false);
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("hello",&mut cv).unwrap();
+	assert!(cv["hello"] == serde_json::json!(false) );
+}
+
+#[test]
+fn test_a029() {
+	let mut a1 :Asn1BitString = Asn1BitString::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#""ccval""#)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.val == "ccval");
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!("ccval") );
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"hello" : "bbval"
+	}}
+		"#)).unwrap();
+	let _ = a1.decode_json("hello",&val).unwrap();
+	assert!(a1.val == "bbval");
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("hello",&mut cv).unwrap();
+	assert!(cv["hello"] == serde_json::json!("bbval"));
+}
