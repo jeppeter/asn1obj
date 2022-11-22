@@ -314,6 +314,23 @@ impl ObjSelectorSyn {
 		return rets;
 	}
 
+	fn format_encode_json(&self, tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		rets.push_str(&format_tab_line(tab , "fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
+		if self.parsenames.len() == 0 {
+			rets.push_str(&format_tab_line(tab + 1, "let s :String;"));
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, "let mut s :String;"));
+		}
+		/*now to */
+		rets.push_str(&format_tab_line(tab + 1, ""));
+		for k in self.parsenames.iter() {
+			rets.push_str()
+		}
+		rets.push_str(&format_tab_line(tab,"}"));
+		return rets;
+	}
+
 	fn foramt_select_func(&self,tab :i32) -> String {
 		let mut rets :String = "".to_string();
 		let mut sidx :usize = 0;
@@ -419,6 +436,10 @@ impl ObjSelectorSyn {
 		rets.push_str(&format_tab_line(0,""));
 
 		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(self.format_encode_json(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(self.format_decode_json(1));
 		rets.push_str(&format_tab_line(1,""));
 		rets.push_str(&self.format_init_asn1(1));
 		rets.push_str(&format_tab_line(1,""));

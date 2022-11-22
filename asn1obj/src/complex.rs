@@ -115,7 +115,7 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpSet<T,TAG> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		let mut mainv :Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
 		let mut idx :i32 = 0;
-		for v in self.val {
+		for v in &self.val {
 			let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
 			let _ = v.encode_json(ASN1_JSON_DUMMY, &mut cv)?;
 			mainv.push(cv[ASN1_JSON_DUMMY].clone());
@@ -144,7 +144,23 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpSet<T,TAG> {
 		} else if ck.is_array() {
 			let b = ck.as_array().unwrap();
 			for v in b.iter() {
-				mainv[ASN1_JSON_DUMMY] = serde_json::value::Value(v.unwrap().clone());
+				mainv[ASN1_JSON_DUMMY] = serde_json::json!(v);
+				/*if v.is_boolean() {
+					mainv[ASN1_JSON_DUMMY] = serde_json::Value::Bool(v.as_bool().unwrap().clone());	
+				} else if v.is_string() {
+					mainv[ASN1_JSON_DUMMY] = serde_json::Value::String(format!("{}",v.as_str().unwrap()));
+				} else if v.is_array() {
+					mainv[ASN1_JSON_DUMMY] = serde_json::Value::Array(v.as_array().unwrap().clone());
+				} else if v.is_object() {
+					mainv[ASN1_JSON_DUMMY] = serde_json::Value::Object(v.as_object().unwrap().clone());
+				} else if v.is_i64() {
+					mainv[ASN1_JSON_DUMMY] = serde_json::json!(v.as_i64().unwrap().clone());
+				} else if v.is_f64() {
+					mainv[ASN1_JSON_DUMMY] = serde_json::json!(v.as_f64().unwrap().clone());
+				} else if v.is_null() {
+					mainv[ASN1_JSON_DUMMY] = serde_json::json!(null);
+				}*/
+				
 				let mut t = T::init_asn1();
 				let _ = t.decode_json(ASN1_JSON_DUMMY,&mainv);
 				self.val.push(t);
@@ -248,15 +264,15 @@ pub struct Asn1Seq<T : Asn1Op> {
 
 impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mut mainv :serde_json::value::Value = serde_json::from_str("[]").unwrap();
+		let mut mainv :Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
 		let mut idx :i32 = 0;
-		for v in self.val {
+		for v in &self.val {
 			let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
 			let _ = v.encode_json(ASN1_JSON_DUMMY, &mut cv)?;
-			mainv[idx] = cv[ASN1_JSON_DUMMY];
+			mainv.push(cv[ASN1_JSON_DUMMY].clone());
 			idx += 1;			
 		}
-		val[key] = mainv;
+		val[key] = serde_json::json!(mainv);
 		return Ok(idx);
 	}
 
@@ -271,18 +287,18 @@ impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
 		let ck = k.unwrap();
 		self.val = Vec::new();
 		if ck.is_object() {	
-			mainv[ASN1_JSON_DUMMY] = ck.as_object().unwrap();
+			mainv[ASN1_JSON_DUMMY] = serde_json::json!(ck);
 			let mut t = T::init_asn1();
 			let _ = t.decode_json(ASN1_JSON_DUMMY,&mainv)?;
-			self.val.push(t.clone());
+			self.val.push(t);
 			idx += 1;
 		} else if ck.is_array() {
 			let b = ck.as_array().unwrap();
 			for v in b.iter() {
-				mainv[ASN1_JSON_DUMMY] = v.unwrap();
+				mainv[ASN1_JSON_DUMMY] = serde_json::json!(v);
 				let mut t = T::init_asn1();
 				let _ = t.decode_json(ASN1_JSON_DUMMY,&mainv);
-				self.val.push(t.clone());
+				self.val.push(t);
 				idx += 1;
 			}
 		} else {
@@ -372,15 +388,15 @@ pub struct Asn1Set<T : Asn1Op> {
 
 impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mut mainv :serde_json::value::Value = serde_json::from_str("[]").unwrap();
+		let mut mainv : Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
 		let mut idx :i32 = 0;
-		for v in self.val {
+		for v in &self.val {
 			let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
 			let _ = v.encode_json(ASN1_JSON_DUMMY, &mut cv)?;
-			mainv[idx] = cv[ASN1_JSON_DUMMY];
+			mainv.push(cv[ASN1_JSON_DUMMY].clone());
 			idx += 1;			
 		}
-		val[key] = mainv;
+		val[key] = serde_json::json!(mainv);
 		return Ok(idx);
 	}
 
@@ -395,18 +411,18 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 		let ck = k.unwrap();
 		self.val = Vec::new();
 		if ck.is_object() {	
-			mainv[ASN1_JSON_DUMMY] = ck.as_object().unwrap();
+			mainv[ASN1_JSON_DUMMY] = serde_json::json!(ck);
 			let mut t = T::init_asn1();
 			let _ = t.decode_json(ASN1_JSON_DUMMY,&mainv)?;
-			self.val.push(t.clone());
+			self.val.push(t);
 			idx += 1;
 		} else if ck.is_array() {
 			let b = ck.as_array().unwrap();
 			for v in b.iter() {
-				mainv[ASN1_JSON_DUMMY] = v.unwrap();
+				mainv[ASN1_JSON_DUMMY] = serde_json::json!(v);
 				let mut t = T::init_asn1();
 				let _ = t.decode_json(ASN1_JSON_DUMMY,&mainv);
-				self.val.push(t.clone());
+				self.val.push(t);
 				idx += 1;
 			}
 		} else {
@@ -505,7 +521,7 @@ pub struct Asn1Imp<T : Asn1Op,const TAG:u8=0> {
 
 impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1Imp<T,TAG> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.val.encode_json(key,&mut val);
+		return self.val.encode_json(key,val);
 	}
 
 	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
@@ -695,7 +711,7 @@ pub struct Asn1SeqSelector<T : Asn1Op +  Asn1Selector + Clone> {
 
 impl<T: Asn1Op + Asn1Selector + Clone> Asn1Op for Asn1SeqSelector<T> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.val.encode_json(key,&mut val);
+		return self.val.encode_json(key,val);
 	}
 
 	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
@@ -777,7 +793,7 @@ pub struct Asn1BitSeq<T : Asn1Op> {
 
 impl<T: Asn1Op> Asn1Op for Asn1BitSeq<T> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.val.encode_json(key,&mut val);
+		return self.val.encode_json(key,val);
 	}
 
 	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
