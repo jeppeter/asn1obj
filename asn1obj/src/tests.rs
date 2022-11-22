@@ -1440,3 +1440,22 @@ fn test_a030() {
 	assert!(cv["hello"] == serde_json::json!([21,25,77]));
 }
 
+#[test]
+fn test_a031() {
+	let mut a1 :Asn1OctString = Asn1OctString::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#""cllc""#)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.val == "cllc");
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!("cllc"));
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"hello" : "bbwww"
+	}}
+		"#)).unwrap();
+	let _ = a1.decode_json("hello",&val).unwrap();
+	assert!(a1.val == "bbwww");
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("hello",&mut cv).unwrap();
+	assert!(cv["hello"] == serde_json::json!("bbwww"));
+}
