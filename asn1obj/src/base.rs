@@ -160,8 +160,10 @@ pub struct Asn1Any {
     pub tag : u64,
 }
 
-impl Asn1Any {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+
+impl Asn1Op for Asn1Any {
+
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
         setjson[ASN1_JSON_CONTENT] = serde_json::json!([]);
         for i in 0..self.content.len() {
@@ -172,7 +174,7 @@ impl Asn1Any {
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.content = Vec::new();
@@ -205,9 +207,7 @@ impl Asn1Any {
         }
         return Ok(1);
     }
-}
 
-impl Asn1Op for Asn1Any {
     fn init_asn1() -> Self {
         Asn1Any {
             tag : 0,
@@ -299,14 +299,16 @@ pub struct Asn1Integer {
 }
 
 
-impl Asn1Integer {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+
+impl Asn1Op for Asn1Integer {
+
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
         val[key] = setjson;
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.val = 0;
@@ -333,10 +335,7 @@ impl Asn1Integer {
         }
         return Ok(1);
     }
-}
 
-
-impl Asn1Op for Asn1Integer {
     fn init_asn1() -> Self {
         Asn1Integer {
             val : 0,
@@ -496,14 +495,15 @@ pub struct Asn1Boolean {
     data :Vec<u8>,
 }
 
-impl Asn1Boolean {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+impl Asn1Op for Asn1Boolean {
+
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
         val[key] = setjson;
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.val = false;
@@ -518,9 +518,7 @@ impl Asn1Boolean {
         self.val = c ;
         return Ok(1);
     }
-}
 
-impl Asn1Op for Asn1Boolean {
     fn init_asn1() -> Self {
         Asn1Boolean {
             val : false,
@@ -588,14 +586,16 @@ pub struct Asn1BitString {
     data :Vec<u8>,
 }
 
-impl Asn1BitString {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+
+impl Asn1Op for Asn1BitString {
+
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
         val[key] = setjson;
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.val = "".to_string();
@@ -610,10 +610,7 @@ impl Asn1BitString {
         self.val = format!("{}",c) ;
         return Ok(1);
     }
-}
 
-
-impl Asn1Op for Asn1BitString {
     fn init_asn1() -> Self {
         Asn1BitString {
             val : "".to_string(),
@@ -715,8 +712,10 @@ pub struct Asn1BitData {
     pub data :Vec<u8>,
 }
 
-impl Asn1BitData {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+
+impl Asn1Op for Asn1BitData {
+
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let mut cs :String = "".to_string();
         let mut idx :i32 = 0;
         cs.push_str("[");
@@ -733,7 +732,7 @@ impl Asn1BitData {
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.data = Vec::new();
@@ -761,10 +760,7 @@ impl Asn1BitData {
         }
         return Ok(1);
     }
-}
 
-
-impl Asn1Op for Asn1BitData {
     fn init_asn1() -> Self {
         Asn1BitData {
             data : Vec::new(),
@@ -909,14 +905,14 @@ pub struct Asn1OctString {
     data :Vec<u8>,
 }
 
-impl Asn1OctString {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+impl Asn1Op for Asn1OctString {
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
         val[key] = setjson;
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.data = Vec::new();
@@ -944,9 +940,8 @@ impl Asn1OctString {
         }
         return Ok(1);
     }
-}
 
-impl Asn1Op for Asn1OctString {
+
     fn init_asn1() -> Self {
         Asn1OctString {
             val : "".to_string(),
@@ -1010,8 +1005,10 @@ pub struct Asn1OctData {
     pub data :Vec<u8>,
 }
 
-impl Asn1OctData {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+
+impl Asn1Op for Asn1OctData {
+
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let mut cs :String = "[".to_string();
         let mut idx :i32 = 0;
         for v in self.data.iter() {
@@ -1027,7 +1024,7 @@ impl Asn1OctData {
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.data = Vec::new();
@@ -1054,10 +1051,7 @@ impl Asn1OctData {
         }
         return Ok(1);
     }
-}
 
-
-impl Asn1Op for Asn1OctData {
     fn init_asn1() -> Self {
         Asn1OctData {
             data : Vec::new(),
@@ -1157,14 +1151,15 @@ pub struct Asn1Null {
     data :Vec<u8>,
 }
 
-impl Asn1Null {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+impl Asn1Op for Asn1Null {
+
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("null")).unwrap();
         val[key] = setjson;
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.data = Vec::new();
@@ -1177,9 +1172,7 @@ impl Asn1Null {
         self.data = Vec::new();
         return Ok(1);
     }
-}
 
-impl Asn1Op for Asn1Null {
     fn init_asn1() -> Self {
         Asn1Null {
             data : Vec::new(),
@@ -1236,28 +1229,6 @@ pub struct Asn1Object {
     data :Vec<u8>,
 }
 
-impl Asn1Object {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
-        val[key] = setjson;
-        Ok(1)
-    }
-
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let ores = val.get(key);
-        if ores.is_none() {
-            let _ = self.set_value("1.1.1")?;
-            return Ok(0);
-        }
-        let vmap = ores.unwrap();
-        if !vmap.is_string() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
-        }
-        let c = vmap.as_str().unwrap();
-        let _ = self.set_value(c)?;
-        return Ok(1);
-    }
-}
 
 
 impl Asn1Object {
@@ -1468,6 +1439,28 @@ impl Asn1Object {
 
 
 impl Asn1Op for Asn1Object {
+
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
+        val[key] = setjson;
+        Ok(1)
+    }
+
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let ores = val.get(key);
+        if ores.is_none() {
+            let _ = self.set_value("1.1.1")?;
+            return Ok(0);
+        }
+        let vmap = ores.unwrap();
+        if !vmap.is_string() {
+            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
+        }
+        let c = vmap.as_str().unwrap();
+        let _ = self.set_value(c)?;
+        return Ok(1);
+    }
+
     fn init_asn1() -> Self {
         Asn1Object {
             val : ASN1_OBJECT_DEFAULT_STR.to_string(),
@@ -1528,14 +1521,14 @@ pub struct Asn1Enumerated {
     data :Vec<u8>,
 }
 
-impl Asn1Enumerated {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+impl Asn1Op for Asn1Enumerated {
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
         val[key] = setjson;
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.val = 0;
@@ -1562,9 +1555,7 @@ impl Asn1Enumerated {
         }
         return Ok(1);
     }
-}
 
-impl Asn1Op for Asn1Enumerated {
     fn init_asn1() -> Self {
         Asn1Enumerated {
             val : 0,
@@ -1726,14 +1717,15 @@ pub struct Asn1String {
 }
 
 
-impl Asn1String {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+
+impl Asn1Op for Asn1String {
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
         val[key] = setjson;
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.val = "".to_string();
@@ -1751,9 +1743,7 @@ impl Asn1String {
         }
         return Ok(1);
     }
-}
 
-impl Asn1Op for Asn1String {
     fn init_asn1() -> Self {
         Asn1String {
             val : "".to_string(),
@@ -1819,8 +1809,8 @@ pub struct Asn1PrintableString {
     data :Vec<u8>,
 }
 
-impl Asn1PrintableString {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+impl Asn1Op for Asn1PrintableString {
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
         let cs = serde_json::from_str(&format!("{}",self.val)).unwrap();
         let ci = serde_json::from_str(&format!("{}",self.flag)).unwrap();
@@ -1830,7 +1820,7 @@ impl Asn1PrintableString {
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.val = "".to_string();
@@ -1872,9 +1862,7 @@ impl Asn1PrintableString {
         }
         return Ok(1);
     }
-}
 
-impl Asn1Op for Asn1PrintableString {
     fn init_asn1() -> Self {
         Asn1PrintableString {
             val : "".to_string(),
@@ -1944,8 +1932,9 @@ pub struct Asn1IA5String {
     data :Vec<u8>,
 }
 
-impl Asn1IA5String {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+
+impl Asn1Op for Asn1IA5String {
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
         let cs = serde_json::from_str(&format!("{}",self.val)).unwrap();
         let ci = serde_json::from_str(&format!("{}",self.flag)).unwrap();
@@ -1955,7 +1944,7 @@ impl Asn1IA5String {
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.val = "".to_string();
@@ -1997,9 +1986,7 @@ impl Asn1IA5String {
         }
         return Ok(1);
     }
-}
 
-impl Asn1Op for Asn1IA5String {
     fn init_asn1() -> Self {
         Asn1IA5String {
             val : "".to_string(),
@@ -2069,64 +2056,6 @@ pub struct Asn1Time {
     utag :u8,
 }
 
-impl Asn1Time {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-        if self.origval.len() > 0 {
-            setjson[ASN1_JSON_TIME] = serde_json::from_str(&format!("{}",self.origval)).unwrap();
-        } else {
-            setjson[ASN1_JSON_TIME] = serde_json::from_str(&format!("{}",self.val)).unwrap();
-        }
-        setjson[ASN1_JSON_INNER_FLAG] = serde_json::from_str(&format!("{}",self.utag)).unwrap();
-        val[key] = setjson;
-        Ok(1)
-    }
-
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let ores = val.get(key);
-        if ores.is_none() {
-            self.val = ASN1_TIME_DEFAULT_STR.to_string();
-            self.origval = "".to_string();
-            self.data = Vec::new();
-            self.utag = ASN1_UTCTIME_FLAG;
-            return Ok(0);
-        }
-        let vmap = ores.unwrap();
-        if  !vmap.is_string() && !vmap.is_object() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or object",key}
-        }
-        self.utag = ASN1_UTCTIME_FLAG;
-        self.origval = "".to_string();
-
-        if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            let _ = self.set_value_str(c)?;
-        } else if vmap.is_object() {
-            let c = vmap.as_object().unwrap();
-            let k = c.get(ASN1_JSON_TIME);
-            if k.is_none() {
-                asn1obj_new_error!{Asn1ObjBaseError,"{} not found {} in Asn1PrintableString object",key,ASN1_JSON_TIME}
-            } 
-            let k = k.unwrap();
-            if !k.is_string() {
-                asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not string",key,ASN1_JSON_TIME}
-            }
-            let _ = self.set_value_str(k.as_str().unwrap());
-            let k = c.get(ASN1_JSON_INNER_FLAG);
-            if k.is_some()  {
-                let k = k.unwrap();
-                if k.is_i64() {
-                    let ival = k.as_i64().unwrap() as u8;
-                    if ival != ASN1_UTCTIME_FLAG  && ival != ASN1_GENERALTIME_FLAG {
-                        asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not valid flag",key,ASN1_JSON_INNER_FLAG}
-                    }
-                    self.utag = ival;                    
-                }
-            }
-        }
-        return Ok(1);
-    }
-}
 
 impl Asn1Time {
 
@@ -2485,6 +2414,63 @@ impl Asn1Time {
 
 
 impl Asn1Op for Asn1Time {
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+        if self.origval.len() > 0 {
+            setjson[ASN1_JSON_TIME] = serde_json::from_str(&format!("{}",self.origval)).unwrap();
+        } else {
+            setjson[ASN1_JSON_TIME] = serde_json::from_str(&format!("{}",self.val)).unwrap();
+        }
+        setjson[ASN1_JSON_INNER_FLAG] = serde_json::from_str(&format!("{}",self.utag)).unwrap();
+        val[key] = setjson;
+        Ok(1)
+    }
+
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let ores = val.get(key);
+        if ores.is_none() {
+            self.val = ASN1_TIME_DEFAULT_STR.to_string();
+            self.origval = "".to_string();
+            self.data = Vec::new();
+            self.utag = ASN1_UTCTIME_FLAG;
+            return Ok(0);
+        }
+        let vmap = ores.unwrap();
+        if  !vmap.is_string() && !vmap.is_object() {
+            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or object",key}
+        }
+        self.utag = ASN1_UTCTIME_FLAG;
+        self.origval = "".to_string();
+
+        if vmap.is_string() {
+            let c = vmap.as_str().unwrap();
+            let _ = self.set_value_str(c)?;
+        } else if vmap.is_object() {
+            let c = vmap.as_object().unwrap();
+            let k = c.get(ASN1_JSON_TIME);
+            if k.is_none() {
+                asn1obj_new_error!{Asn1ObjBaseError,"{} not found {} in Asn1PrintableString object",key,ASN1_JSON_TIME}
+            } 
+            let k = k.unwrap();
+            if !k.is_string() {
+                asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not string",key,ASN1_JSON_TIME}
+            }
+            let _ = self.set_value_str(k.as_str().unwrap());
+            let k = c.get(ASN1_JSON_INNER_FLAG);
+            if k.is_some()  {
+                let k = k.unwrap();
+                if k.is_i64() {
+                    let ival = k.as_i64().unwrap() as u8;
+                    if ival != ASN1_UTCTIME_FLAG  && ival != ASN1_GENERALTIME_FLAG {
+                        asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not valid flag",key,ASN1_JSON_INNER_FLAG}
+                    }
+                    self.utag = ival;                    
+                }
+            }
+        }
+        return Ok(1);
+    }
+
     fn init_asn1() -> Self {
         Asn1Time {
             val : ASN1_TIME_DEFAULT_STR.to_string(),
@@ -2575,15 +2561,16 @@ pub struct Asn1BigNum {
     data :Vec<u8>,
 }
 
-impl Asn1BigNum {
-    pub fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+
+impl Asn1Op for Asn1BigNum {
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let s = format!("{}",self.val.to_str_radix(16));
         let setjson :serde_json::value::Value = serde_json::from_str(&s).unwrap();
         val[key] = setjson;
         Ok(1)
     }
 
-    pub fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let ores = val.get(key);
         if ores.is_none() {
             self.val = BigUint::parse_bytes(b"0",16).unwrap();
@@ -2605,10 +2592,7 @@ impl Asn1BigNum {
         }
         return Ok(1);
     }
-}
 
-
-impl Asn1Op for Asn1BigNum {
     fn init_asn1() -> Self {
         Asn1BigNum {
             val : Zero::zero(),
