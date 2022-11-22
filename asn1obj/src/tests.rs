@@ -1417,3 +1417,26 @@ fn test_a029() {
 	let _ = a1.encode_json("hello",&mut cv).unwrap();
 	assert!(cv["hello"] == serde_json::json!("bbval"));
 }
+
+#[test]
+fn test_a030() {
+	let mut a1 :Asn1BitData = Asn1BitData::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"[20,20,33]"#)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	let v1 = vec![20,20,33];
+	assert!(check_equal_u8(&a1.data,&v1));
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!([20,20,33]));
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"hello" : [21,25,77]
+	}}
+		"#)).unwrap();
+	let _ = a1.decode_json("hello",&val).unwrap();
+	let v1 = vec![21,25,77];
+	assert!(check_equal_u8(&a1.data,&v1));
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("hello",&mut cv).unwrap();
+	assert!(cv["hello"] == serde_json::json!([21,25,77]));
+}
+
