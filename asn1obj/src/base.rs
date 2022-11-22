@@ -1230,17 +1230,27 @@ impl Asn1Op for Asn1Null {
 
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("null")).unwrap();
-        val[key] = setjson;
+        if key.len() > 0 {
+            val[key] = setjson;    
+        } else {
+            *val = setjson;
+        }
+        
         Ok(1)
     }
 
     fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let ores = val.get(key);
-        if ores.is_none() {
-            self.data = Vec::new();
-            return Ok(0);
+        let vmap :serde_json::value::Value;
+        if key.len() > 0 {
+            let ores = val.get(key);
+            if ores.is_none() {
+                self.data = Vec::new();
+                return Ok(0);
+            }
+            vmap = serde_json::json!(ores.unwrap());
+        } else {
+            vmap = val.clone();
         }
-        let vmap = ores.unwrap();
         if !vmap.is_null() {
             asn1obj_new_error!{Asn1ObjBaseError,"{} not valid null",key}
         }

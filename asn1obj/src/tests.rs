@@ -1481,3 +1481,21 @@ fn test_a032() {
 	let _ = a1.encode_json("hello",&mut cv).unwrap();
 	assert!(cv["hello"] == serde_json::json!([21,25,77]));
 }
+
+#[test]
+fn test_a033() {
+	let mut a1 :Asn1Null = Asn1Null::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"null"#)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!(null));
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"hello" : null
+	}}
+		"#)).unwrap();
+	let _ = a1.decode_json("hello",&val).unwrap();
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("hello",&mut cv).unwrap();
+	assert!(cv["hello"] == serde_json::json!(null));
+}
