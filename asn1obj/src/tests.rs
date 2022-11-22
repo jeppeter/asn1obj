@@ -1341,4 +1341,21 @@ fn test_a026() {
 	let _ = a1.encode_json("",&mut cv).unwrap();
 	assert!(cv[ASN1_JSON_TAG] == serde_json::json!(10) );
 	assert!(cv[ASN1_JSON_CONTENT] == serde_json::json!([20,21,32]));
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"hello" : 			{{
+				"{}" : 10,
+				"{}" : [20,21,32]
+			}}
+	}}
+		"#,ASN1_JSON_TAG,ASN1_JSON_CONTENT)).unwrap();
+	let _ = a1.decode_json("hello",&val).unwrap();
+	let v1 = vec![20,21,32];
+	assert!(a1.tag == 10);
+	assert!(check_equal_u8(&a1.content,&v1));
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("hello",&mut cv).unwrap();
+	assert!(cv["hello"][ASN1_JSON_TAG] == serde_json::json!(10) );
+	assert!(cv["hello"][ASN1_JSON_CONTENT] == serde_json::json!([20,21,32]));
+
+
 }

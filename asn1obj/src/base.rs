@@ -177,10 +177,8 @@ impl Asn1Op for Asn1Any {
         setjson[ASN1_JSON_CONTENT] = serde_json::from_str(&s).unwrap();
         setjson[ASN1_JSON_TAG] = serde_json::json!(self.tag);
         if key.len() > 0 {
-            asn1obj_log_trace!(" ");
             val[key] = setjson;    
         } else {
-            asn1obj_log_trace!(" ");
             *val = setjson;
         }
         
