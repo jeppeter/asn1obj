@@ -7,6 +7,7 @@ use crate::complex::{Asn1Opt,Asn1ImpSet,Asn1Seq,Asn1Set,Asn1Ndef,Asn1Imp};
 use crate::{asn1obj_log_trace,asn1obj_error_class,asn1obj_new_error,asn1obj_debug_buffer_trace,asn1obj_format_buffer_log};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 use crate::asn1impl::{Asn1Op};
+use crate::consts::*;
 use chrono::{Utc,DateTime,Datelike,Timelike};
 use chrono::prelude::*;
 
@@ -1321,4 +1322,23 @@ fn test_a025() {
 	assert!(check_equal_u8(&a1.data,&v1[3..]));
 	assert!(s == v1.len());
 	return;
+}
+
+#[test]
+fn test_a026() {
+	let mut a1 :Asn1Any = Asn1Any::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"
+			{{
+				"{}" : 10,
+				"{}" : [20,21,32]
+			}}
+		"#,ASN1_JSON_TAG,ASN1_JSON_CONTENT)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	let v1 = vec![20,21,32];
+	assert!(a1.tag == 10);
+	assert!(check_equal_u8(&a1.content,&v1));
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv[ASN1_JSON_TAG] == serde_json::json!(10) );
+	assert!(cv[ASN1_JSON_CONTENT] == serde_json::json!([20,21,32]));
 }

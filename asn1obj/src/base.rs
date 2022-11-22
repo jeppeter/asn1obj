@@ -165,23 +165,42 @@ impl Asn1Op for Asn1Any {
 
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-        setjson[ASN1_JSON_CONTENT] = serde_json::json!([]);
+        let mut s :String = "".to_string();
+        s.push_str("[");
         for i in 0..self.content.len() {
-            setjson[ASN1_JSON_CONTENT][i] = serde_json::json!(self.content[i]);
+            if i > 0 {
+                s.push_str(",");
+            }
+            s.push_str(&format!("{}",self.content[i]));
         }
+        s.push_str("]");
+        setjson[ASN1_JSON_CONTENT] = serde_json::from_str(&s).unwrap();
         setjson[ASN1_JSON_TAG] = serde_json::json!(self.tag);
-        val[key] = setjson;
+        if key.len() > 0 {
+            asn1obj_log_trace!(" ");
+            val[key] = setjson;    
+        } else {
+            asn1obj_log_trace!(" ");
+            *val = setjson;
+        }
+        
         Ok(1)
     }
 
     fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let ores = val.get(key);
-        if ores.is_none() {
-            self.content = Vec::new();
-            self.tag = ASN1_NULL_FLAG as u64;
-            return Ok(0);
+        let vmap :serde_json::value::Value;
+        if key.len() > 0 {
+            let ores = val.get(key);
+            if ores.is_none() {
+                self.content = Vec::new();
+                self.tag = ASN1_NULL_FLAG as u64;
+                return Ok(0);
+            }
+            vmap = serde_json::json!(ores.unwrap());
+
+        } else {
+            vmap = val.clone();
         }
-        let vmap = ores.unwrap();
         let ores = vmap.get(ASN1_JSON_TAG);
         if ores.is_none() {
             asn1obj_new_error!{Asn1ObjBaseError,"no {} found in {}", ASN1_JSON_TAG,key}

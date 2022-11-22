@@ -324,10 +324,12 @@ impl ObjSelectorSyn {
 		}
 		/*now to */
 		rets.push_str(&format_tab_line(tab + 1, ""));
-		for k in self.parsenames.iter() {
-			rets.push_str()
-		}
 		rets.push_str(&format_tab_line(tab,"}"));
+		return rets;
+	}
+
+	fn format_decode_json(&self, _tab :i32) -> String {
+		let rets = "".to_string();
 		return rets;
 	}
 
@@ -437,9 +439,9 @@ impl ObjSelectorSyn {
 
 		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
 		rets.push_str(&format_tab_line(1,""));
-		rets.push_str(self.format_encode_json(1));
+		rets.push_str(&(self.format_encode_json(1)));
 		rets.push_str(&format_tab_line(1,""));
-		rets.push_str(self.format_decode_json(1));
+		rets.push_str(&(self.format_decode_json(1)));
 		rets.push_str(&format_tab_line(1,""));
 		rets.push_str(&self.format_init_asn1(1));
 		rets.push_str(&format_tab_line(1,""));
