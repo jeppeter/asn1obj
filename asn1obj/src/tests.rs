@@ -1,7 +1,7 @@
 
 //use asn1obj_codegen::{asn1_sequence};
 
-use crate::base::{Asn1Integer,Asn1Boolean,Asn1BitString,Asn1OctString,Asn1Null,Asn1Object,Asn1Enumerated,Asn1String,Asn1Any,Asn1PrintableString,Asn1Time,Asn1BigNum,Asn1BitData};
+use crate::base::*;
 use crate::complex::{Asn1Opt,Asn1ImpSet,Asn1Seq,Asn1Set,Asn1Ndef,Asn1Imp};
 #[allow(unused_imports)]
 use crate::{asn1obj_log_trace,asn1obj_error_class,asn1obj_new_error,asn1obj_debug_buffer_trace,asn1obj_format_buffer_log};
@@ -1458,4 +1458,26 @@ fn test_a031() {
 	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
 	let _ = a1.encode_json("hello",&mut cv).unwrap();
 	assert!(cv["hello"] == serde_json::json!("bbwww"));
+}
+
+#[test]
+fn test_a032() {
+	let mut a1 :Asn1OctData = Asn1OctData::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"[20,20,33]"#)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	let v1 = vec![20,20,33];
+	assert!(check_equal_u8(&a1.data,&v1));
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!([20,20,33]));
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"hello" : [21,25,77]
+	}}
+		"#)).unwrap();
+	let _ = a1.decode_json("hello",&val).unwrap();
+	let v1 = vec![21,25,77];
+	assert!(check_equal_u8(&a1.data,&v1));
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("hello",&mut cv).unwrap();
+	assert!(cv["hello"] == serde_json::json!([21,25,77]));
 }
