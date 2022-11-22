@@ -23,6 +23,8 @@ pub const ASN1_TIME_DEFAULT_STR :&str = "1970-01-01 00:00";
 pub const ASN1_OBJECT_DEFAULT_STR :&str = "1.1.1";
 
 
+pub const ASN1_JSON_TAG :&str = "tag";
+pub const ASN1_JSON_CONTENT :&str = "content";
 
 pub const ASN1_MAX_INT :u64 = 0xffffffff;
 pub const ASN1_MAX_LONG :u64 = 0xffffffff;
