@@ -1356,6 +1356,24 @@ fn test_a026() {
 	let _ = a1.encode_json("hello",&mut cv).unwrap();
 	assert!(cv["hello"][ASN1_JSON_TAG] == serde_json::json!(10) );
 	assert!(cv["hello"][ASN1_JSON_CONTENT] == serde_json::json!([20,21,32]));
+}
 
-
+#[test]
+fn test_a027() {
+	let mut a1 :Asn1Integer = Asn1Integer::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"10"#)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.val == 10);
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!(10) );
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"hello" : 10
+	}}
+		"#)).unwrap();
+	let _ = a1.decode_json("hello",&val).unwrap();
+	assert!(a1.val == 10);
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("hello",&mut cv).unwrap();
+	assert!(cv["hello"] == serde_json::json!(10) );
 }
