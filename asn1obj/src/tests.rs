@@ -1590,3 +1590,63 @@ fn test_a037() {
 	assert!(cv["hello"][ASN1_JSON_PRINTABLE_STRING] == serde_json::json!("bbwww"));
 	assert!(cv["hello"][ASN1_JSON_INNER_FLAG] == serde_json::json!(ASN1_PRINTABLE2_FLAG));
 }
+
+#[test]
+fn test_a038() {
+	let mut a1 :Asn1IA5String = Asn1IA5String::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"{}" : "cllc",
+		"{}" : {}
+	}}"#,ASN1_JSON_IA5STRING,ASN1_JSON_INNER_FLAG,ASN1_PRINTABLE2_FLAG)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.val == "cllc");
+	assert!(a1.flag == ASN1_PRINTABLE2_FLAG);
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv[ASN1_JSON_IA5STRING] == serde_json::json!("cllc"));
+	assert!(cv[ASN1_JSON_INNER_FLAG] == serde_json::json!(ASN1_PRINTABLE2_FLAG));
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"hello" : {{
+			"{}" : "bbwww",
+			"{}" : {}
+		}}
+	}}
+		"#,ASN1_JSON_IA5STRING,ASN1_JSON_INNER_FLAG,ASN1_PRINTABLE2_FLAG)).unwrap();
+	let _ = a1.decode_json("hello",&val).unwrap();
+	assert!(a1.val == "bbwww");
+	assert!(a1.flag == ASN1_PRINTABLE2_FLAG);
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("hello",&mut cv).unwrap();
+	assert!(cv["hello"][ASN1_JSON_IA5STRING] == serde_json::json!("bbwww"));
+	assert!(cv["hello"][ASN1_JSON_INNER_FLAG] == serde_json::json!(ASN1_PRINTABLE2_FLAG));
+}
+
+#[test]
+fn test_a039() {
+	let mut a1 :Asn1Time = Asn1Time::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"{}" : "2022-12-01 10:20:39",
+		"{}" : {}
+	}}"#,ASN1_JSON_TIME,ASN1_JSON_INNER_FLAG,ASN1_GENERALTIME_FLAG)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.get_value_str() == "2022-12-01 10:20:39");
+	assert!(a1.get_utag() == ASN1_GENERALTIME_FLAG);
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv[ASN1_JSON_TIME] == serde_json::json!("2022-12-01 10:20:39"));
+	assert!(cv[ASN1_JSON_INNER_FLAG] == serde_json::json!(ASN1_GENERALTIME_FLAG));
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"hello" : {{
+			"{}" : "2022-12-01 10:20:39",
+			"{}" : {}
+		}}
+	}}
+		"#,ASN1_JSON_TIME,ASN1_JSON_INNER_FLAG,ASN1_UTCTIME_FLAG)).unwrap();
+	let _ = a1.decode_json("hello",&val).unwrap();
+	assert!(a1.get_value_str() == "2022-12-01 10:20:39");
+	assert!(a1.get_utag() == ASN1_UTCTIME_FLAG);
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("hello",&mut cv).unwrap();
+	assert!(cv["hello"][ASN1_JSON_TIME] == serde_json::json!("2022-12-01 10:20:39"));
+	assert!(cv["hello"][ASN1_JSON_INNER_FLAG] == serde_json::json!(ASN1_UTCTIME_FLAG));
+}
