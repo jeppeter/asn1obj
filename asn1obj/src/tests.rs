@@ -16,6 +16,8 @@ use num_traits::Num;
 use std::io::{Write};
 use std::error::Error;
 
+asn1obj_error_class!{Asn1TestError}
+
 fn check_equal_u8(a :&[u8],b :&[u8]) -> bool {
 	if a.len() != b.len() {
 		return false;
@@ -1859,6 +1861,10 @@ impl Asn1Op for CCTest {
 			mainv = serde_json::json!(k.clone());
 		} else {
 			mainv = val.clone();
+		}
+
+		if !mainv.is_object() {
+			asn1obj_new_error!{Asn1TestError,"not object to decode"}
 		}
 
 		idx += self.ccv.decode_json("ccv",&mainv)?;
