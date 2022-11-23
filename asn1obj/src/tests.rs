@@ -13,7 +13,8 @@ use chrono::prelude::*;
 
 use num_bigint::{BigUint};
 use num_traits::Num;
-
+use std::io::{Write};
+use std::error::Error;
 
 fn check_equal_u8(a :&[u8],b :&[u8]) -> bool {
 	if a.len() != b.len() {
@@ -1819,4 +1820,72 @@ fn test_a047() {
 	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"20"#)).unwrap();
 	let ores = a1.decode_json("",&val);
 	assert!(ores.is_err());
+}
+
+struct CCTest {
+	pub ccv :Asn1Object,
+	pub bbv :Asn1BigNum,
+	pub ddv :Asn1PrintableString,
+}
+
+impl Asn1Op for CCTest {
+	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+		let mut mainv :serde_json::value::Value = serde_json::json!({});
+		let mut idx :i32 = 0;
+
+		idx += self.ccv.encode_json("ccv",&mut mainv)?;
+		idx += self.bbv.encode_json("bbv",&mut mainv)?;
+		idx += self.ddv.encode_json("ddv",&mut mainv)?;
+		if key.len() > 0 {
+			val[key] = mainv;
+		} else {
+			*val = mainv;
+		}
+
+		Ok(idx)
+	}
+
+	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+		let mainv :serde_json::value::Value;
+		let mut idx :i32=0;
+		if key.len() > 0 {
+			let k = val.get(key);
+			if k.is_none() {
+				self.ccv = Asn1Object::init_asn1();
+				self.bbv = Asn1BigNum::init_asn1();
+				self.ddv = Asn1PrintableString::init_asn1();
+				return Ok(0);
+			}
+			mainv = serde_json::json!(k.clone());
+		} else {
+			mainv = val.clone();
+		}
+
+		idx += self.ccv.decode_json("ccv",&mainv)?;
+		idx += self.bbv.decode_json("bbv",&mainv)?;
+		idx += self.ddv.decode_json("ddv",&mainv)?;
+
+		return Ok(idx);
+	}
+
+	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		Ok(0)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		Ok(Vec::new())
+	}
+
+	fn print_asn1<U :Write>(&self,_name :&str,_tab :i32, _iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		CCTest {
+			ccv :Asn1Object::init_asn1(),
+			bbv :Asn1BigNum::init_asn1(),
+			ddv :Asn1PrintableString::init_asn1(),
+		}
+	}
+
 }
