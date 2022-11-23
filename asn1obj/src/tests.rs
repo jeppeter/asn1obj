@@ -1762,3 +1762,22 @@ fn test_a044() {
 	let ores = a1.decode_json("",&val);
 	assert!(ores.is_err());
 }
+
+#[test]
+fn test_a045() {
+	let mut a1 :Asn1Imp<Asn1BigNum> = Asn1Imp::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#""2244ccddeeff""#)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.val.val == BigUint::parse_bytes(b"2244ccddeeff",16).unwrap());
+	let mut cv :serde_json::value::Value = serde_json::json!({});
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!("2244ccddeeff"));
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#" {{"cc" :"2244ccddeeff" }}"#)).unwrap();
+	let _ = a1.decode_json("cc2",&val).unwrap();
+	assert!(a1.val.val == BigUint::parse_bytes(b"0",16).unwrap());
+	let _ = a1.decode_json("cc",&val).unwrap();
+	assert!(a1.val.val == BigUint::parse_bytes(b"2244ccddeeff",16).unwrap());
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"20"#)).unwrap();
+	let ores = a1.decode_json("",&val);
+	assert!(ores.is_err());
+}
