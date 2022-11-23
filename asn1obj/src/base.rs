@@ -1540,7 +1540,7 @@ impl Asn1Op for Asn1Object {
         if key.len() > 0 {
             let ores = val.get(key);
             if ores.is_none() {
-                let _ = self.set_value("1.1.1")?;
+                let _ = self.set_value(ASN1_OBJECT_DEFAULT_STR)?;
                 return Ok(0);
             }
             vmap = serde_json::json!(ores.unwrap());

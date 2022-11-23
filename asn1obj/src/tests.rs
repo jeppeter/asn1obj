@@ -6,7 +6,7 @@ use crate::complex::*;
 #[allow(unused_imports)]
 use crate::{asn1obj_log_trace,asn1obj_error_class,asn1obj_new_error,asn1obj_debug_buffer_trace,asn1obj_format_buffer_log};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
-use crate::asn1impl::{Asn1Op};
+use crate::asn1impl::{Asn1Op,Asn1Selector};
 use crate::consts::*;
 use chrono::{Utc,DateTime,Datelike,Timelike};
 use chrono::prelude::*;
@@ -1971,5 +1971,411 @@ fn test_a048() {
 	assert!(cv[0]["ccv"] == serde_json::json!("1.7.227"));
 	assert!(cv[0]["bbv"] == serde_json::json!("22ddee000000022d"));
 	assert!(cv[0]["ddv"][ASN1_JSON_PRINTABLE_STRING] == serde_json::json!("hello worldst"));
+}
 
+struct BBSelector {
+	pub stype :Asn1Object,
+}
+
+
+impl Asn1Selector for BBSelector {
+	fn decode_select(&self) -> Result<String,Box<dyn Error>> {
+		let c :String = self.stype.get_value();
+		if c == "1.2.3" {
+			return Ok("ccv".to_string());
+		} else if c == "1.2.4" {
+			return Ok("bbv".to_string());
+		} else if c == "1.2.5" {
+			return Ok("ddv".to_string());
+		} 
+		return Ok("ddv".to_string());		
+	}
+	fn encode_select(&self) -> Result<String,Box<dyn Error>> {
+		let c :String = self.stype.get_value();
+		if c == "1.2.3" {
+			return Ok("ccv".to_string());
+		} else if c == "1.2.4" {
+			return Ok("bbv".to_string());
+		} else if c == "1.2.5" {
+			return Ok("ddv".to_string());
+		} 
+		return Ok("ddv".to_string());		
+	}
+}
+
+impl Asn1Op for BBSelector {
+	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+		return self.stype.encode_json(key,val);
+	}
+
+	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+		return self.stype.decode_json(key,val);
+	}
+
+	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		Ok(0)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		Ok(Vec::new())
+	}
+
+	fn print_asn1<U :Write>(&self,_name :&str,_tab :i32, _iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		BBSelector {
+			stype : Asn1Object::init_asn1(),
+		}
+	}
+}
+
+struct BBTest {
+	pub seltype :BBSelector,
+	pub ccv :Asn1Object,
+	pub bbv :Asn1BigNum,
+	pub ddv :Asn1PrintableString,
+}
+
+impl Asn1Op for BBTest {
+	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+		let mut mainv :serde_json::value::Value = serde_json::json!({});
+		let mut idx :i32 = 0;
+
+		idx += self.seltype.encode_json("seltype",&mut mainv)?;
+		let c :String = self.seltype.encode_select()?;
+		if c == "ccv" {
+			idx += self.ccv.encode_json("ccv",&mut mainv)?;	
+		} else if c == "bbv" {
+			idx += self.bbv.encode_json("bbv",&mut mainv)?;	
+		} else if c == "ddv" {
+			idx += self.ddv.encode_json("ddv",&mut mainv)?;	
+		} else {
+			asn1obj_new_error!{Asn1TestError,"not support type {}", c}
+		}
+		
+		
+		if key.len() > 0 {
+			val[key] = mainv;
+		} else {
+			*val = mainv;
+		}
+
+		Ok(idx)
+	}
+
+	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+		let mainv :serde_json::value::Value;
+		let mut idx :i32=0;
+		if key.len() > 0 {
+			let k = val.get(key);
+			if k.is_none() {
+				self.seltype = BBSelector::init_asn1();
+				self.ccv = Asn1Object::init_asn1();
+				self.bbv = Asn1BigNum::init_asn1();
+				self.ddv = Asn1PrintableString::init_asn1();
+				return Ok(0);
+			}
+			mainv = serde_json::json!(k.clone());
+		} else {
+			mainv = val.clone();
+		}
+
+		if !mainv.is_object() {
+			asn1obj_new_error!{Asn1TestError,"not object to decode"}
+		}
+
+		idx += self.seltype.decode_json("seltype",&mainv)?;
+		self.ccv = Asn1Object::init_asn1();
+		self.bbv = Asn1BigNum::init_asn1();
+		self.ddv = Asn1PrintableString::init_asn1();
+		let c :String = self.seltype.decode_select()?;
+		if c == "ccv" {
+			idx += self.ccv.decode_json("ccv",&mainv)?;	
+		} else if c == "bbv" {
+			idx += self.bbv.decode_json("bbv",&mainv)?;	
+		} else if c == "ddv" {
+			idx += self.ddv.decode_json("ddv",&mainv)?;	
+		} else {
+			asn1obj_new_error!{Asn1TestError,"not support decode {}",c}
+		}	
+		
+
+		return Ok(idx);
+	}
+
+	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		Ok(0)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		Ok(Vec::new())
+	}
+
+	fn print_asn1<U :Write>(&self,_name :&str,_tab :i32, _iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		BBTest {
+			seltype : BBSelector::init_asn1(),
+			ccv :Asn1Object::init_asn1(),
+			bbv :Asn1BigNum::init_asn1(),
+			ddv :Asn1PrintableString::init_asn1(),
+		}
+	}
+}
+
+struct BBTestSeq {
+	pub elem :Asn1Seq<BBTest>,
+}
+
+impl Asn1Op for BBTestSeq {
+	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+		return self.elem.encode_json(key,val);
+	}
+
+	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+		return self.elem.decode_json(key,val);
+	}
+
+	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		Ok(0)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		Ok(Vec::new())
+	}
+
+	fn print_asn1<U :Write>(&self,_name :&str,_tab :i32, _iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		BBTestSeq {
+			elem : Asn1Seq::init_asn1(),
+		}
+	}
+}
+
+
+#[test]
+fn test_a049() {
+	let mut a1 :BBTestSeq = BBTestSeq::init_asn1();
+	let s = format!(r#"
+		{{
+			"seltype" : "1.2.3",
+			"ccv" : "1.7.222"
+		}}
+		"#);
+	let val = serde_json::from_str(&s).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.elem.val[0].ccv.get_value() == "1.7.222");
+	assert_eq!(a1.elem.val[0].bbv.val, BigUint::parse_bytes(b"0",16).unwrap());
+	assert_eq!(a1.elem.val[0].ddv.val, "");
+	assert_eq!(a1.elem.val[0].ddv.flag, ASN1_PRINTABLE_FLAG);
+	let val = serde_json::json!([{
+			"seltype" : "1.2.3",
+			"ccv" : "1.7.222"
+	},{
+			"seltype" : "1.2.4",
+			"bbv" : "22ddee0000000222"
+	}]);
+	let _ = a1.decode_json("",&val).unwrap();
+	assert_eq!(a1.elem.val.len(), 2);
+	assert!(a1.elem.val[0].seltype.stype.get_value() == "1.2.3");
+	assert!(a1.elem.val[0].ccv.get_value() == "1.7.222");
+	assert_eq!(a1.elem.val[0].bbv.val, BigUint::parse_bytes(b"0",16).unwrap());
+	assert_eq!(a1.elem.val[0].ddv.val, "");
+	assert_eq!(a1.elem.val[0].ddv.flag, ASN1_PRINTABLE_FLAG);
+
+	assert!(a1.elem.val[1].seltype.stype.get_value() == "1.2.4");
+	assert!(a1.elem.val[1].ccv.get_value() == ASN1_OBJECT_DEFAULT_STR);
+	assert_eq!(a1.elem.val[1].bbv.val, BigUint::parse_bytes(b"22ddee0000000222",16).unwrap());
+	assert_eq!(a1.elem.val[1].ddv.val, "");
+	assert_eq!(a1.elem.val[1].ddv.flag, ASN1_PRINTABLE_FLAG);
+
+	let mut cv = serde_json::json!({});
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!([{
+		"seltype" : "1.2.3",
+		"ccv" : "1.7.222"
+	},{
+		"seltype" : "1.2.4",
+		"bbv" : "22ddee0000000222"
+	}]));
+}
+
+struct IntTest {
+	pub seltype :i32,
+	pub ccv :Asn1Object,
+	pub bbv :Asn1BigNum,
+	pub ddv :Asn1PrintableString,
+}
+
+impl Asn1Op for IntTest {
+	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+		let mut mainv :serde_json::value::Value = serde_json::json!({});
+		let mut idx :i32 = 0;
+		let mut cint :Asn1Integer = Asn1Integer::init_asn1();
+
+		cint.val = self.seltype as i64;
+		idx += cint.encode_json("seltype",&mut mainv)?;
+
+		if self.seltype == 1 {
+			idx += self.ccv.encode_json("ccv",&mut mainv)?;	
+		} else if self.seltype == 2 {
+			idx += self.bbv.encode_json("bbv",&mut mainv)?;	
+		} else if self.seltype == 3 {
+			idx += self.ddv.encode_json("ddv",&mut mainv)?;	
+		} else {
+			asn1obj_new_error!{Asn1TestError,"not support type {}", self.seltype}
+		}	
+		
+		if key.len() > 0 {
+			val[key] = mainv;
+		} else {
+			*val = mainv;
+		}
+
+		Ok(idx)
+	}
+
+	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+		let mainv :serde_json::value::Value;
+		let mut idx :i32=0;
+		let mut cint :Asn1Integer = Asn1Integer::init_asn1();
+		if key.len() > 0 {
+			let k = val.get(key);
+			if k.is_none() {
+				self.seltype = -1;
+				self.ccv = Asn1Object::init_asn1();
+				self.bbv = Asn1BigNum::init_asn1();
+				self.ddv = Asn1PrintableString::init_asn1();
+				return Ok(0);
+			}
+			mainv = serde_json::json!(k.clone());
+		} else {
+			mainv = val.clone();
+		}
+
+		if !mainv.is_object() {
+			asn1obj_new_error!{Asn1TestError,"not object to decode"}
+		}
+
+		idx += cint.decode_json("seltype",&mainv)?;
+		self.seltype = cint.val as i32;
+		if self.seltype == 1 {
+			idx += self.ccv.decode_json("ccv",&mainv)?;	
+		} else if self.seltype == 2 {
+			idx += self.bbv.decode_json("bbv",&mainv)?;	
+		} else if self.seltype == 3 {
+			idx += self.ddv.decode_json("ddv",&mainv)?;	
+		} else {
+			asn1obj_new_error!{Asn1TestError,"not support decode {}",self.seltype}
+		}	
+
+		return Ok(idx);
+	}
+
+	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		Ok(0)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		Ok(Vec::new())
+	}
+
+	fn print_asn1<U :Write>(&self,_name :&str,_tab :i32, _iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		IntTest {
+			seltype : -1,
+			ccv :Asn1Object::init_asn1(),
+			bbv :Asn1BigNum::init_asn1(),
+			ddv :Asn1PrintableString::init_asn1(),
+		}
+	}
+}
+
+struct IntTestSeq {
+	pub elem :Asn1Seq<IntTest>,
+}
+
+impl Asn1Op for IntTestSeq {
+	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+		return self.elem.encode_json(key,val);
+	}
+
+	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+		return self.elem.decode_json(key,val);
+	}
+
+	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
+		Ok(0)
+	}
+
+	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+		Ok(Vec::new())
+	}
+
+	fn print_asn1<U :Write>(&self,_name :&str,_tab :i32, _iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+		Ok(())
+	}
+
+	fn init_asn1() -> Self {
+		IntTestSeq {
+			elem : Asn1Seq::init_asn1(),
+		}
+	}
+}
+
+#[test]
+fn test_a050() {
+	let mut a1 :IntTestSeq = IntTestSeq::init_asn1();
+	let s = format!(r#"
+		{{
+			"seltype" : 1,
+			"ccv" : "1.7.222"
+		}}
+		"#);
+	let val = serde_json::from_str(&s).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.elem.val[0].ccv.get_value() == "1.7.222");
+	assert_eq!(a1.elem.val[0].bbv.val, BigUint::parse_bytes(b"0",16).unwrap());
+	assert_eq!(a1.elem.val[0].ddv.val, "");
+	assert_eq!(a1.elem.val[0].ddv.flag, ASN1_PRINTABLE_FLAG);
+	let val = serde_json::json!([{
+			"seltype" : 1,
+			"ccv" : "1.7.222"
+	},{
+			"seltype" : 2,
+			"bbv" : "22ddee0000000222"
+	}]);
+	let _ = a1.decode_json("",&val).unwrap();
+	assert_eq!(a1.elem.val.len(), 2);
+	assert!(a1.elem.val[0].seltype  == 1);
+	assert!(a1.elem.val[0].ccv.get_value() == "1.7.222");
+	assert_eq!(a1.elem.val[0].bbv.val, BigUint::parse_bytes(b"0",16).unwrap());
+	assert_eq!(a1.elem.val[0].ddv.val, "");
+	assert_eq!(a1.elem.val[0].ddv.flag, ASN1_PRINTABLE_FLAG);
+
+	assert!(a1.elem.val[1].seltype  == 2);
+	assert!(a1.elem.val[1].ccv.get_value() == ASN1_OBJECT_DEFAULT_STR);
+	assert_eq!(a1.elem.val[1].bbv.val, BigUint::parse_bytes(b"22ddee0000000222",16).unwrap());
+	assert_eq!(a1.elem.val[1].ddv.val, "");
+	assert_eq!(a1.elem.val[1].ddv.flag, ASN1_PRINTABLE_FLAG);
+
+	let mut cv = serde_json::json!({});
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!([{
+		"seltype" : 1,
+		"ccv" : "1.7.222"
+	},{
+		"seltype" : 2,
+		"bbv" : "22ddee0000000222"
+	}]));
 }
