@@ -618,12 +618,15 @@ impl<T: Asn1Op + Clone, const TAG:u8> Asn1Op for Asn1Ndef<T,TAG> {
 	}
 
 	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let k = val.get(key);
-		if k.is_none() {
-			self.val = None;
-			return Ok(0);
+		if key.len() > 0 {
+			let k = val.get(key);
+			if k.is_none() {
+				self.val = None;
+				return Ok(0);
+			}			
 		}
 		let mut v :T = T::init_asn1();
+		self.val = None;
 		let _ = v.decode_json(key,val)?;
 		self.val = Some(v.clone());
 		return Ok(1);
