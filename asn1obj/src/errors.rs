@@ -6,6 +6,7 @@ macro_rules! asn1obj_error_class {
 		msg :String,		
 	}
 
+	#[allow(dead_code)]
 	impl $type {
 		fn create(c :&str) -> $type {
 			$type {msg : format!("{}",c)}

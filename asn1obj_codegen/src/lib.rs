@@ -43,7 +43,12 @@ fn extract_type_name(n :&str) -> String {
 	let ov = rets.find('<');
 	if ov.is_some() {
 		let n = ov.unwrap();
-		rets = rets[0..n].to_string();
+		let bytes = rets.as_bytes();
+		let mut cnt = n;
+		while bytes[cnt]  == 0x3c || bytes[cnt] == 0x20 {
+			cnt -= 1;
+		}
+		rets = rets[0..(cnt+1)].to_string();
 	}
 	return rets;
 }
@@ -319,7 +324,7 @@ impl ObjSelectorSyn {
 		rets.push_str(&format_tab_line(tab , "fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
 		if self.parsenames.len() == 1 {
 			rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.encode_json(key,val);",self.parsenames[0])));
-		} elif self.parsenames.len() > 1 {
+		} else if self.parsenames.len() > 1 {
 			rets.push_str(&format_tab_line(tab + 1, "let mut mainv = serde_json::json!({});"));
 			rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32 = 0;"));
 
@@ -342,12 +347,12 @@ impl ObjSelectorSyn {
 		return rets;
 	}
 
-	fn format_decode_json(&self, _tab :i32) -> String {
+	fn format_decode_json(&self, tab :i32) -> String {
 		let mut rets :String = "".to_string();
 		rets.push_str(&format_tab_line(tab , "fn decode_json(&mut self, key :&str,val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
 		if self.parsenames.len() == 1 {
 			rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.decode_json(key,val);",self.parsenames[0])));
-		} elif self.parsenames.len() > 1 {
+		} else if self.parsenames.len() > 1 {
 			rets.push_str(&format_tab_line(tab + 1, "let mainv : serde_json::value::Value;"));
 			rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32 = 0;"));
 			rets.push_str(&format_tab_line(tab + 1, " "));
@@ -987,6 +992,8 @@ impl ChoiceSyn {
 
 	fn format_decode_json(&self,tab :i32) -> String {
 		let mut rets :String = "".to_string();
+		let mut idx :usize;
+		let mut sidx :usize;
 		rets.push_str(&format_tab_line(tab,"fn decode_json(&mut self, key :&str,val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>>{"));
 		rets.push_str(&format_tab_line(tab + 1,"let mainv :serde_json::value::Value;"));
 		rets.push_str(&format_tab_line(tab + 1,"let mut idx :i32=0;"));
@@ -1008,7 +1015,7 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 2,&format!("asn1obj_new_error!{{{},\"not object to decode\"}}",self.errname)));
 		rets.push_str(&format_tab_line(tab + 1,"}"));
 		rets.push_str(&format_tab_line(tab + 1," "));
-		rets.push_str(&format_tab_line(tab + 1,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.selname)));
+		rets.push_str(&format_tab_line(tab + 1,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.selname,self.selname)));
 		idx = 0;
 		while idx < self.parsenames.len() {
 			if self.parsenames[idx] != self.selname {
@@ -1388,6 +1395,109 @@ impl IntChoiceSyn {
 		return Ok(rets);
 	}
 
+	fn format_encode_json(&self,tab :i32) -> Result<String,Box<dyn Error>> {
+		let mut rets :String = "".to_string();
+		let mut idx :usize;
+		rets.push_str(&format_tab_line(tab,"fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
+		rets.push_str(&format_tab_line(tab + 1, "let mut mainv :serde_json::value::Value = serde_json::json!({});"));
+		rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32 = 0;"));
+		rets.push_str(&format_tab_line(tab + 1, "let mut cint :Asn1Integer = Asn1Integer::init_asn1();"));
+		rets.push_str(&format_tab_line(tab + 1, " "));
+		rets.push_str(&format_tab_line(tab + 1, &format!("cint.val = self.{} as i64;",self.seltypename)));
+		rets.push_str(&format_tab_line(tab + 1, &format!("idx += cint.encode_json(\"{}\",&mut mainv)?;",self.seltypename)));
+		rets.push_str(&format_tab_line(tab + 1, " "));
+		idx = 0;
+		for (k,v) in self.typmaps.iter() { 
+			if idx > 0 {
+				rets.push_str(&format_tab_line(tab + 1,&format!("}} else if self.{} == {} {{",self.seltypename,v)));
+			} else {
+				rets.push_str(&format_tab_line(tab + 1,&format!("if self.{} == {} {{",self.seltypename,v)));
+			}
+			rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,k)));	
+			idx += 1;
+		}
+		if idx > 0 {
+			rets.push_str(&format_tab_line(tab + 1, &format!("}} else {{")));
+			rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{{},\"not support {{}} value\",self.{}}}",self.errname,self.seltypename)));
+			rets.push_str(&format_tab_line(tab + 1, &format!("}}")));	
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj_new_error!{{{},\"not support {{}} value\",self.{}}}",self.errname,self.seltypename)));
+		}
+		rets.push_str(&format_tab_line(tab + 1, " "));
+		rets.push_str(&format_tab_line(tab + 1, "if key.len() > 0 {"));
+		rets.push_str(&format_tab_line(tab + 2, "val[key] = mainv;"));
+		rets.push_str(&format_tab_line(tab + 1, "} else {"));
+		rets.push_str(&format_tab_line(tab + 2, "*val = mainv;"));
+		rets.push_str(&format_tab_line(tab + 1, "}"));
+		rets.push_str(&format_tab_line(tab + 1, " "));
+		rets.push_str(&format_tab_line(tab + 1, "return Ok(idx);"));
+		rets.push_str(&format_tab_line(tab,"}"));
+		return Ok(rets);
+	}
+
+	fn format_decode_json(&self,tab :i32) -> Result<String,Box<dyn Error>> {
+		let mut rets :String = "".to_string();
+		let mut idx :usize;
+		rets.push_str(&format_tab_line(tab,"fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
+		rets.push_str(&format_tab_line(tab+1,"let mainv :serde_json::value::Value;"));
+		rets.push_str(&format_tab_line(tab+1,"let mut idx :i32=0;"));
+		rets.push_str(&format_tab_line(tab+1,"let mut cint :Asn1Integer = Asn1Integer::init_asn1();"));
+		rets.push_str(&format_tab_line(tab+1," "));
+		rets.push_str(&format_tab_line(tab+1,"if key.len() > 0 {"));
+		rets.push_str(&format_tab_line(tab+2,"let k = val.get(key);"));
+		rets.push_str(&format_tab_line(tab+2,"if k.is_none() {"));
+		for c in self.valarr.iter() {
+			if c.eq(&self.seltypename) {
+				rets.push_str(&format_tab_line(tab + 3,&format!("self.{} = -1;", self.seltypename)));
+			} else {
+				match self.valmaps.get(c) {
+					Some(v) => {
+						rets.push_str(&format_tab_line(tab + 3,&format!("self.{} = {}::init_asn1();", c,extract_type_name(v))));
+					},
+					None => {
+						asn1_gen_new_error!{ChoiceSynError,"can not get [{}] variable", c}
+					}
+				}
+			}
+		}
+		rets.push_str(&format_tab_line(tab+3,"return Ok(0);"));
+		rets.push_str(&format_tab_line(tab+2,"}"));
+		rets.push_str(&format_tab_line(tab+2,"mainv = serde_json::json!(k.clone());"));
+		rets.push_str(&format_tab_line(tab+1,"} else {"));
+		rets.push_str(&format_tab_line(tab+2,"mainv = val.clone();"));
+		rets.push_str(&format_tab_line(tab+1,"}"));
+		rets.push_str(&format_tab_line(tab+1," "));
+		rets.push_str(&format_tab_line(tab+1,"if !mainv.is_object() {"));
+		rets.push_str(&format_tab_line(tab+2,&format!("asn1obj_new_error!{{{},\"not object to decode\"}}",self.errname)));
+		rets.push_str(&format_tab_line(tab+1,"}"));
+		rets.push_str(&format_tab_line(tab+1," "));
+		rets.push_str(&format_tab_line(tab+1,&format!("idx += cint.decode_json(\"{}\",&mainv)?;",self.seltypename)));
+		rets.push_str(&format_tab_line(tab+1,&format!("self.{} = cint.val as i32;",self.seltypename)));
+		rets.push_str(&format_tab_line(tab+1," "));
+		idx = 0;
+		for (k,v) in self.typmaps.iter() { 
+			if idx > 0 {
+				rets.push_str(&format_tab_line(tab + 1,&format!("}} else if self.{} == {} {{",self.seltypename,v)));
+			} else {
+				rets.push_str(&format_tab_line(tab + 1,&format!("if self.{} == {} {{",self.seltypename,v)));
+			}
+			rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,k)));	
+			idx += 1;
+		}
+		if idx > 0 {
+			rets.push_str(&format_tab_line(tab + 1, &format!("}} else {{")));
+			rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{{},\"not support {{}} value decode\",self.{}}}",self.errname,self.seltypename)));
+			rets.push_str(&format_tab_line(tab + 1, &format!("}}")));	
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj_new_error!{{{},\"not support {{}} value decode\",self.{}}}",self.errname,self.seltypename)));
+		}
+
+		rets.push_str(&format_tab_line(tab+1," "));
+		rets.push_str(&format_tab_line(tab+1,"return Ok(idx);"));
+		rets.push_str(&format_tab_line(tab,"}"));
+		return Ok(rets);
+	}
+
 
 	pub fn format_asn1_code(&mut self) -> Result<String,Box<dyn Error>> {
 		let mut rets :String = "".to_string();
@@ -1396,6 +1506,15 @@ impl IntChoiceSyn {
 		rets.push_str(&c);		
 
 		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
+
+		let c = self.format_encode_json(1)?;
+		rets.push_str(&c);
+		rets.push_str(&format_tab_line(1,""));
+
+		let c = self.format_decode_json(1)?;
+		rets.push_str(&c);
+		rets.push_str(&format_tab_line(1,""));
+
 		let c = self.format_init_asn1(1)?;
 		rets.push_str(&c);
 		rets.push_str(&format_tab_line(1,""));
@@ -1404,13 +1523,6 @@ impl IntChoiceSyn {
 		rets.push_str(&format_tab_line(1,""));
 
 		let c = self.format_encode_asn1(1)?;
-		rets.push_str(&c);
-		rets.push_str(&format_tab_line(1,""));
-		let c = self.format_encode_json(1)?;
-		rets.push_str(&c);
-		rets.push_str(&format_tab_line(1,""));
-
-		let c = self.format_decode_json(1)?;
 		rets.push_str(&c);
 		rets.push_str(&format_tab_line(1,""));
 
@@ -1798,8 +1910,6 @@ impl SequenceSyn {
 		} else {
 			rets.push_str(&format_tab_line(tab + 1, "let encv :Vec<u8>;"));
 		}
-
-
 		
 		for k in self.parsenames.iter() {
 			rets.push_str(&format_tab_line(tab + 1, ""));
@@ -1846,6 +1956,82 @@ impl SequenceSyn {
 		return rets;
 	}
 
+	fn is_asn1_seqname(&self,name :&str) -> bool {
+		let mut retv :bool = false;
+		let k2 = self.kmap.get(name);
+		if k2.is_some() {
+			let v2 = k2.unwrap();
+			let v = extract_type_name(v2);
+			if v == "Asn1Seq" {
+				retv = true;
+			}
+		}
+		return retv;
+	}
+
+	fn format_encode_json(&self,tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		rets.push_str(&format_tab_line(tab,"fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
+		if self.parsenames.len() == 1 && self.is_asn1_seqname(&self.parsenames[0]) {
+			rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.encode_json(key,val);",self.parsenames[0])));
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, "let mut mainv :serde_json::value::Value = serde_json::json!({});"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32 = 0;"));
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			for k in self.parsenames.iter() {
+				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,k)));
+			}
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			rets.push_str(&format_tab_line(tab + 1, "if key.len() > 0 {"));
+			rets.push_str(&format_tab_line(tab + 2, "val[key] = mainv;"));
+			rets.push_str(&format_tab_line(tab + 1, "} else {"));
+			rets.push_str(&format_tab_line(tab + 2, "*val = mainv;"));
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			rets.push_str(&format_tab_line(tab + 1, "return Ok(idx);"));			
+		}
+		rets.push_str(&format_tab_line(tab,"}"));
+		return rets;
+	}
+
+	fn format_decode_json(&self,tab :i32) -> String {
+		let mut rets :String = "".to_string();
+		rets.push_str(&format_tab_line(tab, "fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
+		if self.parsenames.len() == 1 && self.is_asn1_seqname(&(self.parsenames[0])) {
+			rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.decode_json(key,val);",self.parsenames[0])));
+		} else {
+			rets.push_str(&format_tab_line(tab + 1, "let mainv :serde_json::value::Value;"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32=0;"));
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			rets.push_str(&format_tab_line(tab + 1, "if key.len() > 0 {"));
+			rets.push_str(&format_tab_line(tab + 2, "let k = val.get(key);"));
+			rets.push_str(&format_tab_line(tab + 2, "if k.is_none() {"));
+			for k in self.parsenames.iter() {
+				let v = self.kmap.get(k).unwrap();
+				rets.push_str(&format_tab_line(tab + 3, &format!("self.{} = {}::init_asn1();",k,extract_type_name(v))));
+			}
+			rets.push_str(&format_tab_line(tab + 3, "return Ok(0);"));
+			rets.push_str(&format_tab_line(tab + 2, "}"));
+			rets.push_str(&format_tab_line(tab + 2, "mainv = serde_json::json!(k.clone());"));
+			rets.push_str(&format_tab_line(tab + 1, "} else {"));
+			rets.push_str(&format_tab_line(tab + 2, "mainv = val.clone();"));
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			rets.push_str(&format_tab_line(tab + 1, "if !mainv.is_object() {"));
+			rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{{},\"not object to decode\"}}",self.errname)));
+			rets.push_str(&format_tab_line(tab + 1, "}"));
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			for k in self.parsenames.iter() {
+				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,k)));
+			}
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			rets.push_str(&format_tab_line(tab + 1, "return Ok(idx);"));
+		}
+		rets.push_str(&format_tab_line(tab, "}"));
+		return rets;
+	}
+
+
 	pub fn format_asn1_code(&mut self) -> Result<String,Box<dyn Error>> {
 		let mut rets :String = "".to_string();
 		if self.sname.len() == 0 {
@@ -1860,6 +2046,10 @@ impl SequenceSyn {
 		}
 
 		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_encode_json(1));
+		rets.push_str(&format_tab_line(1,""));
+		rets.push_str(&self.format_decode_json(1));
 		rets.push_str(&format_tab_line(1,""));
 		rets.push_str(&self.format_init_asn1(1));
 		rets.push_str(&format_tab_line(1,""));
