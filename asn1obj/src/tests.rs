@@ -1211,6 +1211,7 @@ fn test_a021() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn test_a022() {
 	let mut a1 :Asn1Time = Asn1Time::init_asn1();
 	let _ = a1.set_value_str("2022-02-02 01:20:33").unwrap();
@@ -1498,4 +1499,44 @@ fn test_a033() {
 	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
 	let _ = a1.encode_json("hello",&mut cv).unwrap();
 	assert!(cv["hello"] == serde_json::json!(null));
+}
+
+#[test]
+fn test_a034() {
+	let mut a1 :Asn1Object = Asn1Object::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#""2.3.111""#)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.get_value() == "2.3.111");
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!("2.3.111"));
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"hello" : "2.3.111"
+	}}
+		"#)).unwrap();
+	let _ = a1.decode_json("hello",&val).unwrap();
+	assert!(a1.get_value() == "2.3.111");
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("hello",&mut cv).unwrap();
+	assert!(val["hello"] == serde_json::json!("2.3.111"));
+}
+
+#[test]
+fn test_a035() {
+	let mut a1 :Asn1Enumerated = Asn1Enumerated::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"10"#)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.val == 10);
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!(10) );
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
+		"hello" : 10
+	}}
+		"#)).unwrap();
+	let _ = a1.decode_json("hello",&val).unwrap();
+	assert!(a1.val == 10);
+	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let _ = a1.encode_json("hello",&mut cv).unwrap();
+	assert!(cv["hello"] == serde_json::json!(10) );
 }
