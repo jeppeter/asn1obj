@@ -2438,3 +2438,129 @@ fn test_a051() {
 	assert!(cv[0]["bbv"] == serde_json::json!("22ddee000000022d"));
 	assert!(cv[0]["ddv"][ASN1_JSON_PRINTABLE_STRING] == serde_json::json!("hello worldst"));
 }
+
+#[asn1_obj_selector(selector=stype,ccv="1.2.3",bbv="1.2.4",ddv="1.2.5",ddv=default)]
+struct BBSelectorauto {
+	pub stype :Asn1Object,
+}
+
+#[asn1_choice(selector=seltype)]
+struct BBTestauto {
+	pub seltype :BBSelectorauto,
+	pub ccv :Asn1Object,
+	pub bbv :Asn1BigNum,
+	pub ddv :Asn1PrintableString,
+}
+
+#[asn1_sequence()]
+struct BBTestautoSeq {
+	pub elem :Asn1Seq<BBTestauto>,
+}
+
+#[test]
+fn test_a052() {
+	let mut a1 :BBTestautoSeq = BBTestautoSeq::init_asn1();
+	let s = format!(r#"
+		{{
+			"seltype" : "1.2.3",
+			"ccv" : "1.7.222"
+		}}
+		"#);
+	let val = serde_json::from_str(&s).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.elem.val[0].ccv.get_value() == "1.7.222");
+	assert_eq!(a1.elem.val[0].bbv.val, BigUint::parse_bytes(b"0",16).unwrap());
+	assert_eq!(a1.elem.val[0].ddv.val, "");
+	assert_eq!(a1.elem.val[0].ddv.flag, ASN1_PRINTABLE_FLAG);
+	let val = serde_json::json!([{
+			"seltype" : "1.2.3",
+			"ccv" : "1.7.222"
+	},{
+			"seltype" : "1.2.4",
+			"bbv" : "22ddee0000000222"
+	}]);
+	let _ = a1.decode_json("",&val).unwrap();
+	assert_eq!(a1.elem.val.len(), 2);
+	assert!(a1.elem.val[0].seltype.stype.get_value() == "1.2.3");
+	assert!(a1.elem.val[0].ccv.get_value() == "1.7.222");
+	assert_eq!(a1.elem.val[0].bbv.val, BigUint::parse_bytes(b"0",16).unwrap());
+	assert_eq!(a1.elem.val[0].ddv.val, "");
+	assert_eq!(a1.elem.val[0].ddv.flag, ASN1_PRINTABLE_FLAG);
+
+	assert!(a1.elem.val[1].seltype.stype.get_value() == "1.2.4");
+	assert!(a1.elem.val[1].ccv.get_value() == ASN1_OBJECT_DEFAULT_STR);
+	assert_eq!(a1.elem.val[1].bbv.val, BigUint::parse_bytes(b"22ddee0000000222",16).unwrap());
+	assert_eq!(a1.elem.val[1].ddv.val, "");
+	assert_eq!(a1.elem.val[1].ddv.flag, ASN1_PRINTABLE_FLAG);
+
+	let mut cv = serde_json::json!({});
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!([{
+		"seltype" : "1.2.3",
+		"ccv" : "1.7.222"
+	},{
+		"seltype" : "1.2.4",
+		"bbv" : "22ddee0000000222"
+	}]));
+}
+
+#[asn1_int_choice(debug=3,ccv=1,bbv=2,ddv=3,selector=seltype)]
+struct IntTestauto {
+	pub seltype :i32,
+	pub ccv :Asn1Object,
+	pub bbv :Asn1BigNum,
+	pub ddv :Asn1PrintableString,
+}
+
+
+#[asn1_sequence()]
+struct IntTestautoSeq {
+	pub elem :Asn1Seq<IntTestauto>,
+}
+
+#[test]
+fn test_a053() {
+	let mut a1 :IntTestSeq = IntTestSeq::init_asn1();
+	let s = format!(r#"
+		{{
+			"seltype" : 1,
+			"ccv" : "1.7.222"
+		}}
+		"#);
+	let val = serde_json::from_str(&s).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.elem.val[0].ccv.get_value() == "1.7.222");
+	assert_eq!(a1.elem.val[0].bbv.val, BigUint::parse_bytes(b"0",16).unwrap());
+	assert_eq!(a1.elem.val[0].ddv.val, "");
+	assert_eq!(a1.elem.val[0].ddv.flag, ASN1_PRINTABLE_FLAG);
+	let val = serde_json::json!([{
+			"seltype" : 1,
+			"ccv" : "1.7.222"
+	},{
+			"seltype" : 2,
+			"bbv" : "22ddee0000000222"
+	}]);
+	let _ = a1.decode_json("",&val).unwrap();
+	assert_eq!(a1.elem.val.len(), 2);
+	assert!(a1.elem.val[0].seltype  == 1);
+	assert!(a1.elem.val[0].ccv.get_value() == "1.7.222");
+	assert_eq!(a1.elem.val[0].bbv.val, BigUint::parse_bytes(b"0",16).unwrap());
+	assert_eq!(a1.elem.val[0].ddv.val, "");
+	assert_eq!(a1.elem.val[0].ddv.flag, ASN1_PRINTABLE_FLAG);
+
+	assert!(a1.elem.val[1].seltype  == 2);
+	assert!(a1.elem.val[1].ccv.get_value() == ASN1_OBJECT_DEFAULT_STR);
+	assert_eq!(a1.elem.val[1].bbv.val, BigUint::parse_bytes(b"22ddee0000000222",16).unwrap());
+	assert_eq!(a1.elem.val[1].ddv.val, "");
+	assert_eq!(a1.elem.val[1].ddv.flag, ASN1_PRINTABLE_FLAG);
+
+	let mut cv = serde_json::json!({});
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv == serde_json::json!([{
+		"seltype" : 1,
+		"ccv" : "1.7.222"
+	},{
+		"seltype" : 2,
+		"bbv" : "22ddee0000000222"
+	}]));
+}
