@@ -156,7 +156,7 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpSet<T,TAG> {
 			let b = ck.as_array().unwrap();
 			for v in b.iter() {				
 				let mut t = T::init_asn1();
-				let _ = t.decode_json("",v);
+				let _ = t.decode_json("",v)?;
 				self.val.push(t);
 				idx += 1;
 			}
@@ -262,41 +262,46 @@ impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
 		let mut idx :i32 = 0;
 		for v in &self.val {
 			let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-			let _ = v.encode_json(ASN1_JSON_DUMMY, &mut cv)?;
-			mainv.push(cv[ASN1_JSON_DUMMY].clone());
+			let _ = v.encode_json("", &mut cv)?;
+			mainv.push(cv.clone());
 			idx += 1;			
 		}
-		val[key] = serde_json::json!(mainv);
+		if key.len() > 0 {
+			val[key] = serde_json::json!(mainv);	
+		} else {
+			*val = serde_json::json!(mainv);
+		}
+		
 		return Ok(idx);
 	}
 
 	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let k = val.get(key);
-		let mut mainv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+		let ck :serde_json::value::Value;
 		let mut idx :i32 = 0;
-		if k.is_none() {
-			self.val = Vec::new();
-			return Ok(0);
+		if key.len() > 0 {
+			let k = val.get(key);
+			if k.is_none() {
+				self.val = Vec::new();
+				return Ok(0);
+			}
+			ck = serde_json::json!(k.unwrap());
+		} else {
+			ck = val.clone();
 		}
-		let ck = k.unwrap();
 		self.val = Vec::new();
-		if ck.is_object() {	
-			mainv[ASN1_JSON_DUMMY] = serde_json::json!(ck);
-			let mut t = T::init_asn1();
-			let _ = t.decode_json(ASN1_JSON_DUMMY,&mainv)?;
-			self.val.push(t);
-			idx += 1;
-		} else if ck.is_array() {
+		if ck.is_array() {
 			let b = ck.as_array().unwrap();
 			for v in b.iter() {
-				mainv[ASN1_JSON_DUMMY] = serde_json::json!(v);
 				let mut t = T::init_asn1();
-				let _ = t.decode_json(ASN1_JSON_DUMMY,&mainv);
+				let _ = t.decode_json("",v)?;
 				self.val.push(t);
 				idx += 1;
-			}
+			}			
 		} else {
-			asn1obj_new_error!{Asn1ComplexError,"{} not valid type",key}
+			let mut t = T::init_asn1();
+			let _ = t.decode_json("",&ck)?;
+			self.val.push(t);
+			idx += 1;
 		}
 		return Ok(idx);
 	}
