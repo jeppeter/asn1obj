@@ -1740,3 +1740,25 @@ fn test_a043() {
 	let ores = a1.decode_json("",&val);
 	assert!(ores.is_err());
 }
+
+#[test]
+fn test_a044() {
+	let mut a1 :Asn1Set<Asn1BigNum> = Asn1Set::init_asn1();
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"["2244ccddeeff","2244ccddeefe"]"#)).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	assert!(a1.val[0].val == BigUint::parse_bytes(b"2244ccddeeff",16).unwrap());
+	assert!(a1.val[1].val == BigUint::parse_bytes(b"2244ccddeefe",16).unwrap());
+	let mut cv :serde_json::value::Value = serde_json::json!({});
+	let _ = a1.encode_json("",&mut cv).unwrap();
+	assert!(cv[0] == serde_json::json!("2244ccddeeff"));
+	assert!(cv[1] == serde_json::json!("2244ccddeefe"));
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#" {{"cc" :["2244ccddeeff","2244ccddeefe"] }}"#)).unwrap();
+	let _ = a1.decode_json("cc2",&val).unwrap();
+	assert!(a1.val.len() == 0);
+	let _ = a1.decode_json("cc",&val).unwrap();
+	assert!(a1.val[0].val == BigUint::parse_bytes(b"2244ccddeeff",16).unwrap());
+	assert!(a1.val[1].val == BigUint::parse_bytes(b"2244ccddeefe",16).unwrap());
+	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"["2244ccddeeff","2244ccddeefe",20]"#)).unwrap();
+	let ores = a1.decode_json("",&val);
+	assert!(ores.is_err());
+}
