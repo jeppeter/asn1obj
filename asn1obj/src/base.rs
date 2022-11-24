@@ -2563,11 +2563,7 @@ impl Asn1Time {
 impl Asn1Op for Asn1Time {
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-        if self.origval.len() > 0 {
-            setjson[ASN1_JSON_TIME] = serde_json::from_str(&format!("\"{}\"",self.origval)).unwrap();
-        } else {
-            setjson[ASN1_JSON_TIME] = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
-        }
+        setjson[ASN1_JSON_TIME] = serde_json::from_str(&format!("\"{}\"",self.get_value_str())).unwrap();
         setjson[ASN1_JSON_INNER_FLAG] = serde_json::from_str(&format!("{}",self.utag)).unwrap();
         if key.len() > 0 {
             val[key] = setjson;    
