@@ -330,7 +330,7 @@ impl ObjSelectorSyn {
 
 			rets.push_str(&format_tab_line(tab + 1, " "));
 			for k in self.parsenames.iter() {
-				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv);",k,k)));
+				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,k)));
 			}
 			rets.push_str(&format_tab_line(tab + 1, " "));
 			rets.push_str(&format_tab_line(tab + 1,"if key.len() > 0 {"));
@@ -1192,16 +1192,16 @@ impl IntChoiceSyn {
 		return;
 	}
 
-    fn parse_value(&self, s :&str) -> Result<i64,Box<dyn Error>> {
-        match i64::from_str_radix(s,10) {
-            Ok(v) => {              
-                return Ok(v);
-            },
-            Err(e) => {
-                asn1_gen_new_error!{ChoiceSynError,"parse [{}] error[{:?}]",s,e}
-            }
-        }
-    }
+	fn parse_value(&self, s :&str) -> Result<i64,Box<dyn Error>> {
+		match i64::from_str_radix(s,10) {
+			Ok(v) => {              
+				return Ok(v);
+			},
+			Err(e) => {
+				asn1_gen_new_error!{ChoiceSynError,"parse [{}] error[{:?}]",s,e}
+			}
+		}
+	}
 
 	pub fn set_attr_name(&mut self, _k :&str, _v :&str) -> Result<(),Box<dyn Error>> {
 		let iv :i64;
@@ -1935,23 +1935,27 @@ impl SequenceSyn {
 	fn format_print_asn1(&self,tab :i32) -> String {
 		let mut rets :String = "".to_string();
 		rets.push_str(&format_tab_line(tab , "fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {"));
-		if self.parsenames.len() == 0 {
-			rets.push_str(&format_tab_line(tab + 1, "let s :String;"));
+		if self.parsenames.len() == 1 && self.is_asn1_seqname(&(self.parsenames[0])) {
+			rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.print_asn1(name,tab,iowriter);",self.parsenames[0])));
 		} else {
-			rets.push_str(&format_tab_line(tab + 1, "let mut s :String;"));
-		}
-		rets.push_str(&format_tab_line(tab + 1, &format!("s = asn1_format_line(tab,&format!(\"{{}} {}\", name));", self.sname)));
-		rets.push_str(&format_tab_line(tab + 1, "iowriter.write(s.as_bytes())?;"));
-		
-		rets.push_str(&format_tab_line(tab + 1, ""));
-		for k in self.parsenames.iter() {
-			rets.push_str(&format_tab_line(tab + 1, &format!("s = format!(\"{}\");", k)));
-			rets.push_str(&format_tab_line(tab + 1, &format!("self.{}.print_asn1(&s,tab + 1, iowriter)?;",k)));
-			rets.push_str(&format_tab_line(tab + 1, ""));
-		}
+			if self.parsenames.len() == 0 {
+				rets.push_str(&format_tab_line(tab + 1, "let s :String;"));
+			} else {
+				rets.push_str(&format_tab_line(tab + 1, "let mut s :String;"));
+			}
+			rets.push_str(&format_tab_line(tab + 1, &format!("s = asn1_format_line(tab,&format!(\"{{}} {}\", name));", self.sname)));
+			rets.push_str(&format_tab_line(tab + 1, "iowriter.write(s.as_bytes())?;"));
 
-		rets.push_str(&format_tab_line(tab + 1, "Ok(())"));
-		rets.push_str(&format_tab_line(tab + 1, ""));
+			rets.push_str(&format_tab_line(tab + 1, ""));
+			for k in self.parsenames.iter() {
+				rets.push_str(&format_tab_line(tab + 1, &format!("s = format!(\"{}\");", k)));
+				rets.push_str(&format_tab_line(tab + 1, &format!("self.{}.print_asn1(&s,tab + 1, iowriter)?;",k)));
+				rets.push_str(&format_tab_line(tab + 1, ""));
+			}
+
+			rets.push_str(&format_tab_line(tab + 1, "Ok(())"));
+			rets.push_str(&format_tab_line(tab + 1, ""));			
+		}
 		rets.push_str(&format_tab_line(tab,"}"));
 		return rets;
 	}
