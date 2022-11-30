@@ -1977,7 +1977,7 @@ impl Asn1Op for Asn1PrintableString {
                 let k = k.unwrap();
                 if k.is_i64() {
                     let ival = k.as_i64().unwrap() as u8;
-                    if ival != ASN1_PRINTABLE_FLAG && ival != ASN1_PRINTABLE2_FLAG  && ival != ASN1_UTF8STRING_FLAG {
+                    if ival != ASN1_PRINTABLE_FLAG && ival != ASN1_PRINTABLE2_FLAG  && ival != ASN1_UTF8STRING_FLAG && ival != ASN1_T61STRING_FLAG {
                         asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not valid flag",key,ASN1_JSON_INNER_FLAG}
                     }
                     self.flag = ival;                    
@@ -2002,8 +2002,8 @@ impl Asn1Op for Asn1PrintableString {
         }
         let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
 
-        if flag != ASN1_PRINTABLE_FLAG as u64 && flag != ASN1_PRINTABLE2_FLAG as u64  && flag != ASN1_UTF8STRING_FLAG as u64 {
-            asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != (ASN1_PRINTABLE_FLAG [0x{:02x}] || ASN1_PRINTABLE2_FLAG [0x{:02x}] || ASN1_UTF8STRING_FLAG [0x{:02x}] )", flag,ASN1_PRINTABLE_FLAG,ASN1_PRINTABLE2_FLAG,ASN1_UTF8STRING_FLAG}
+        if flag != ASN1_PRINTABLE_FLAG as u64 && flag != ASN1_PRINTABLE2_FLAG as u64  && flag != ASN1_UTF8STRING_FLAG as u64 && flag != ASN1_T61STRING_FLAG as u64 {
+            asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != (ASN1_PRINTABLE_FLAG [0x{:02x}] || ASN1_PRINTABLE2_FLAG [0x{:02x}] || ASN1_UTF8STRING_FLAG [0x{:02x}] || ASN1_T61STRING_FLAG[0x{:02x}] )", flag,ASN1_PRINTABLE_FLAG,ASN1_PRINTABLE2_FLAG,ASN1_UTF8STRING_FLAG,ASN1_T61STRING_FLAG}
         }
 
         self.flag = flag as u8;

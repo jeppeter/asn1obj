@@ -11,6 +11,7 @@ pub const ASN1_OBJECT_FLAG :u8 = 0x6;
 pub const ASN1_ENUMERATED_FLAG :u8 = 0xa;
 pub const ASN1_UTF8STRING_FLAG :u8 = 0xc;
 pub const ASN1_PRINTABLE_FLAG :u8 = 0x13;
+pub const ASN1_T61STRING_FLAG :u8 = 0x14;
 pub const ASN1_PRINTABLE2_FLAG :u8 = 0x16;
 pub const ASN1_UTCTIME_FLAG : u8 = 0x17;
 pub const ASN1_GENERALTIME_FLAG : u8 = 0x18;
