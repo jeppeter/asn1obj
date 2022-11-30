@@ -8,7 +8,7 @@ use chrono::{Local,Timelike,Datelike};
 
 
 
-fn _asn1_gen_get_environ_var(envname :&str) -> String {
+pub (crate) fn _asn1_gen_get_environ_var(envname :&str) -> String {
 	match env::var(envname) {
 		Ok(v) => {
 			format!("{}",v)

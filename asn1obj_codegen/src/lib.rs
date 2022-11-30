@@ -11,16 +11,57 @@ use std::boxed::Box;
 
 use syn;
 use std::collections::HashMap;
+use lazy_static::lazy_static;
 
 #[macro_use]
 mod errors;
 #[macro_use]
 mod logger;
 
+use crate::logger::*;
+
 mod randv;
 
 use logger::{asn1_gen_debug_out};
 use randv::{get_random_bytes};
+
+struct ProcVar {
+	debuglevel :i32,
+}
+
+fn asn1_gen_proc_var_init(prefix :&str) -> ProcVar {
+	let getv :String;
+	let mut dbglvl :i32 = 0;
+	let key :String;
+
+	key = format!("{}_DEBUG_LEVEL", prefix);
+	getv = _asn1_gen_get_environ_var(&key);
+	if getv.len() > 0 {
+		match getv.parse::<i32>() {
+			Ok(v) => {
+				dbglvl = v;
+			},
+			Err(e) => {
+				dbglvl = 0;
+				eprintln!("can not parse [{}] error[{}]", getv,e);
+			}
+		}
+	}
+
+
+	return ProcVar {
+		debuglevel : dbglvl,
+	};
+}
+
+
+
+lazy_static! {
+	static ref ASN1_GEN_PROC_VAR : ProcVar = {
+		asn1_gen_proc_var_init("ASN1_GEN")
+	};
+}
+
 
 asn1_gen_error_class!{TypeError}
 
@@ -106,9 +147,15 @@ struct ObjSelectorSyn {
 //#[allow(unused_mut)]
 impl ObjSelectorSyn {
 	pub fn new() -> Self {
+		let dbgval : bool;
+		if ASN1_GEN_PROC_VAR.debuglevel > 0 {
+			dbgval = true;
+		} else {
+			dbgval = false;
+		}
 		ObjSelectorSyn {
 			defname :"".to_string(),
-			debugenable : false,
+			debugenable : dbgval,
 			sname : "".to_string(),
 			errname : "".to_string(),
 			selname : "".to_string(),
@@ -728,8 +775,14 @@ asn1_gen_error_class!{ChoiceSynError}
 
 impl ChoiceSyn {
 	pub fn new() -> Self {
+		let dbgval : bool;
+		if ASN1_GEN_PROC_VAR.debuglevel > 0 {
+			dbgval = true;
+		} else {
+			dbgval = false;
+		}
 		ChoiceSyn{
-			debugenable : false,
+			debugenable : dbgval,
 			sname : "".to_string(),
 			selname : "".to_string(),
 			errname : "".to_string(),
@@ -1177,7 +1230,7 @@ impl IntChoiceSyn {
 			typmaps : HashMap::new(),
 			sname : "".to_string(),
 			errname : "".to_string(),
-			debugenable : 0,
+			debugenable : ASN1_GEN_PROC_VAR.debuglevel,
 		}
 	}
 
@@ -1722,8 +1775,14 @@ struct SequenceSyn {
 
 impl SequenceSyn {
 	pub fn new() -> Self {
+		let dbgval : bool;
+		if ASN1_GEN_PROC_VAR.debuglevel > 0 {
+			dbgval = true;
+		} else {
+			dbgval = false;
+		}
 		SequenceSyn{
-			debugenable : false,
+			debugenable : dbgval,
 			sname : "".to_string(),
 			errname : "".to_string(),
 			parsenames : Vec::new(),
