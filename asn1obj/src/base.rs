@@ -22,6 +22,7 @@ use std::str::FromStr;
 use std::ops::Shr;
 use num_bigint::{BigUint};
 use num_traits::{Zero};
+use std::cmp::PartialEq;
 
 
 asn1obj_error_class!{Asn1ObjBaseError}
@@ -1314,7 +1315,21 @@ pub struct Asn1Object {
     data :Vec<u8>,
 }
 
+impl PartialEq for Asn1Object {
+    fn eq(&self, other :&Self) -> bool {
+        if self.val.eq(&other.val) {
+            return true;
+        }
+        return false;
+    }
 
+    fn ne(&self,other :&Self) -> bool {
+        if self.eq(other) {
+            return false;
+        }
+        return true;
+    }
+}
 
 impl Asn1Object {
     pub fn set_value(&mut self,val :&str) -> Result<String,Box<dyn Error>> {
