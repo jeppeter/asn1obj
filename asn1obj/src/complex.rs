@@ -379,6 +379,25 @@ impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
 	}
 }
 
+impl<T: Asn1Op> Asn1Seq<T> {
+	pub fn make_safe_one(&mut self,note :&str) -> Result<(),Box<dyn Error>> {
+		if self.val.len() != 0 && self.val.len() != 1 {
+			asn1obj_new_error!{Asn1ComplexError,"{} len {} != 1 or 0",note,self.val.len()}
+		}
+		if self.val.len() == 0 {
+			self.val.push(T::init_asn1());
+		}
+		Ok(())
+	}
+
+	pub fn sure_safe_one(&self, note :&str) -> Result<(),Box<dyn Error>> {
+		if self.val.len() != 1 {
+			asn1obj_new_error!{Asn1ComplexError,"{} len {} != 1",note,self.val.len()}
+		}
+		Ok(())
+	}
+}
+
 #[derive(Clone)]
 pub struct Asn1Set<T : Asn1Op> {
 	pub val : Vec<T>,

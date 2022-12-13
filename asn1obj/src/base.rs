@@ -317,6 +317,13 @@ pub struct Asn1Integer {
 }
 
 
+impl Asn1Integer {
+    pub fn set_value(&mut self, val :i64) -> i64 {
+        let retv = self.val;
+        self.val = val;
+        return retv;
+    }
+}
 
 impl Asn1Op for Asn1Integer {
 
@@ -2729,6 +2736,13 @@ pub struct Asn1BigNum {
     data :Vec<u8>,
 }
 
+impl Asn1BigNum {
+    pub fn set_value(&mut self, val :&[u8]) -> Vec<u8> {
+        let retv = self.val.to_bytes_be().to_vec();
+        self.val = BigUint::from_bytes_be(val);
+        return retv;
+    }
+}
 
 impl Asn1Op for Asn1BigNum {
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
