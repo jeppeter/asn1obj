@@ -390,6 +390,13 @@ impl<T: Asn1Op> Asn1Seq<T> {
 		Ok(())
 	}
 
+	pub fn check_safe_one(&self,note :&str) -> Result<(),Box<dyn Error>> {
+		if self.val.len() != 1 {
+			asn1obj_new_error!{Asn1ComplexError,"{} len {} != 1",note,self.val.len()}
+		}
+		Ok(())
+	}
+
 	pub fn sure_safe_one(&self, note :&str) -> Result<(),Box<dyn Error>> {
 		if self.val.len() != 1 {
 			asn1obj_new_error!{Asn1ComplexError,"{} len {} != 1",note,self.val.len()}
