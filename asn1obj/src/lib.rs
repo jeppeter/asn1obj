@@ -1,4 +1,14 @@
 //!  package to use for ASN.1 pack and unpack rust library
+//!  we define basic struct Asn1Any Asn1Integer Asn1Boolean
+//!  Asn1BitString Asn1BitData Asn1OctString Asn1OctData Asn1Null
+//!  Asn1Object Asn1Enumerated Asn1String Asn1PrintableString
+//!  Asn1IA5String Asn1Time Asn1BigNum 
+//!  and 
+//!  complex struct Asn1Opt Asn1ImpSet Asn1Seq Asn1Set Asn1Imp Asn1Ndef 
+//!  Asn1SeqSelector Asn1BitSeq 
+//!  and in every valid struct except for asn1_int_choice macro defined,
+//!  all are encoded and decoded in sequence 
+//!  give examples
 //!  ```rust
 //!  use asn1obj_codegen::{asn1_sequence};
 //!  use asn1obj::{asn1obj_error_class,asn1obj_new_error};
