@@ -2,6 +2,14 @@
 name = "asn1obj"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.59.0"
+author = ["jeppeter <jeppeter@gmail.com>"]
+description = """
+Rust Asn1 format decode/encode
+"""
+license = "MIT/Apache-2.0"
+
+repository = "https://github.com/jeppeter/asn1obj"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
