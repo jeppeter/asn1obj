@@ -3,7 +3,7 @@ use asn1obj::{asn1obj_error_class,asn1obj_new_error};
 use asn1obj::base::*;
 use asn1obj::complex::*;
 use asn1obj::asn1impl::{Asn1Op,Asn1Selector};
- use asn1obj::strop::asn1_format_line;
+use asn1obj::strop::asn1_format_line;
 
 use num_bigint::{BigUint};
 use hex::FromHex;
