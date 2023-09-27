@@ -1035,7 +1035,7 @@ impl Asn1Op for Asn1BitDataFlag {
                 self.data.push(v.as_u64().unwrap() as u8);
             }
         }
-        let k = vmap.get(ASN1_JSON_INNER_FLAG);
+        let k = nvmap.get(ASN1_JSON_INNER_FLAG);
         if k.is_some()  {
             let k = k.unwrap();
             if k.is_i64() {

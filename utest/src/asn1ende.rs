@@ -73,14 +73,36 @@ fn asn1bitdataflagenc_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn
 	Ok(())
 }
 
+fn asn1bitdataflagdec_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSetImpl>>>,_ctx :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
+	let sarr :Vec<String>;
+	let mut sout = std::io::stdout();
+	init_log(ns.clone())?;
+	sarr = ns.get_array("subnargs");
+	if sarr.len() < 1 {
+		extargs_new_error!{EcAsn1Error,"no file specified"}
+	}
+
+	for f in sarr.iter() {
+		let s :String = read_file(f)?;
+		let cv :serde_json::value::Value;
+		cv = serde_json::from_str(&s)?;
+		let mut bitdata :Asn1BitDataFlag = Asn1BitDataFlag::init_asn1();
+		bitdata.decode_json("",&cv)?;
+		bitdata.print_asn1("Asn1BitDataFlag",0,&mut sout)?;
+	}
+	Ok(())
+}
 
 
-#[extargs_map_function(asn1bitdataflagenc_handler)]
+#[extargs_map_function(asn1bitdataflagenc_handler,asn1bitdataflagdec_handler)]
 pub fn load_asn1_parser(parser :ExtArgsParser) -> Result<(),Box<dyn Error>> {
 	let cmdline = format!(r#"
 	{{
 		"asn1bitflag" : 0,
 		"asn1bitdataflagenc<asn1bitdataflagenc_handler>##hexval to make Asn1BitDataLeftFlag##" : {{
+			"$" : "+"
+		}},
+		"asn1bitdataflagdec<asn1bitdataflagdec_handler>##jsonfile ... to make Asn1BitDataLeftFlag##" : {{
 			"$" : "+"
 		}}
 	}}
