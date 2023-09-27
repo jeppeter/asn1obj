@@ -869,8 +869,6 @@ impl Asn1Op for Asn1BitData {
         retv = asn1obj_format_header(ASN1_BIT_STRING_FLAG as u64,llen);
         if self.data.len() > 0 {
             idx = self.data.len() -1;
-
-
             while idx > 0 {
                 if self.data[idx] != 0 {
                     break;
@@ -878,7 +876,7 @@ impl Asn1Op for Asn1BitData {
                 idx -= 1;
             }
 
-            if self.data[idx] == 0  || (self.data[idx] & 0x1) != 0{
+            if self.data[idx] == 0  || (self.data[idx] & 0x1) != 0 {
                 bits = 0;
             } else if (self.data[idx] & 0x2)  != 0 {
                 bits = 1;
@@ -910,6 +908,198 @@ impl Asn1Op for Asn1BitData {
 
     fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {     
         let mut s = asn1_format_line(tab,&(format!("{}: ASN1_BIT_DATA len[0x{:x}:{}]", name,self.data.len(),self.data.len())));
+        let mut idx :usize = 0;
+        let mut lasti :usize = 0;
+
+        while idx < self.data.len() {
+            if (idx % 16) == 0 {
+                if idx > 0 {
+                    s.push_str("    ");
+                    while lasti != idx {
+                        if self.data[lasti] >= 0x20 && self.data[lasti] <= 0x7e {
+                            s.push(self.data[lasti] as char);
+                        } else {
+                            s.push_str(".");
+                        }
+                        lasti += 1;
+                    }
+                    s.push_str("\n");
+                }
+                for _ in 0..(tab + 1) {
+                    s.push_str("    ");
+                }
+
+            }
+            if idx != lasti {
+                s.push_str(":");
+            }
+            s.push_str(&format!("{:02x}",self.data[idx]));
+            idx += 1;
+        }
+        if lasti != idx {
+            while (idx % 16) != 0 {
+                s.push_str("   ");
+                idx += 1;
+            }
+            s.push_str("    ");
+            while lasti < self.data.len() {
+                if self.data[lasti] >= 0x20 && self.data[lasti] <= 0x7e {
+                    s.push(self.data[lasti] as char);
+                } else {
+                    s.push_str(".");
+                }
+                lasti += 1;
+            }
+        }
+        if idx > 0 {
+            s.push_str("\n");
+        }
+
+        iowriter.write(s.as_bytes())?;
+        Ok(())
+    }
+}
+
+
+#[derive(Clone)]
+pub struct Asn1BitDataLeftFlag {
+    pub data :Vec<u8>,
+    pub flag :u8,
+}
+
+
+impl Asn1Op for Asn1BitDataLeftFlag {
+
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let mut cs :String = "".to_string();
+        let mut idx :i32 = 0;
+        let mut bs :String = "".to_string();
+        bs.push_str("[");
+        for v in self.data.iter() {
+            if idx > 0 {
+                bs.push_str(",");
+            }
+            bs.push_str(&format!("{}",v));
+            idx += 1;
+        }
+        bs.push_str("]");
+        cs.push_str("{");
+        cs.push_str(&format!("\"{}\" : {},",ASN1_JSON_BITDATA,bs));
+        cs.push_str(&format!("\"{}\" : {}",ASN1_JSON_INNER_FLAG,self.flag));
+        cs.push_str("}");
+        let setjson = serde_json::from_str(&cs).unwrap();
+        if key.len() > 0 {
+            val[key] = setjson;    
+        } else {
+            *val = setjson;
+        }
+        
+        Ok(1)
+    }
+
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let nvmap :serde_json::value::Value;
+        if key.len() > 0 {
+            let ores = val.get(key);
+            if ores.is_none() {
+                self.data = Vec::new();
+                return Ok(0);
+            }
+            nvmap = serde_json::json!(ores.unwrap());
+        } else {
+            nvmap = val.clone();
+        }
+        let vmap :serde_json::value::Value;
+        let k = nvmap.get(ASN1_JSON_BITDATA);
+        if k.is_none() {
+            asn1obj_new_error!{Asn1ObjBaseError,"no [{}] find",ASN1_JSON_BITDATA}
+        }
+        vmap = k.unwrap().clone();
+
+        if !vmap.is_string() && !vmap.is_array()  {
+            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or array",key}
+        }
+        self.data = Vec::new();
+        if vmap.is_string() {
+            let c = vmap.as_str().unwrap();
+            for v in c.as_bytes().iter() {
+                self.data.push((*v) as u8);
+            }
+
+        } else if vmap.is_array() {
+            let c = vmap.as_array().unwrap();
+            for v in c.iter() {
+                if !v.is_i64() {
+                    asn1obj_new_error!{Asn1ObjBaseError,"{} invalid element {:?}",key,c}
+                }
+                self.data.push(v.as_u64().unwrap() as u8);
+            }
+        }
+        let k = vmap.get(ASN1_JSON_INNER_FLAG);
+        if k.is_some()  {
+            let k = k.unwrap();
+            if k.is_i64() {
+                let ival = k.as_i64().unwrap() as u8;
+                self.flag = ival ;
+            }
+        }
+        return Ok(1);
+    }
+
+    fn init_asn1() -> Self {
+        Asn1BitDataLeftFlag {
+            data : Vec::new(),
+            flag : 0,
+        }
+    }
+
+    fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
+        let retv :usize;
+        if code.len() < 2 {
+            asn1obj_new_error!{Asn1ObjBaseError,"len [{}] < 2", code.len()}
+        }
+        let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+
+        if flag != ASN1_BIT_STRING_FLAG as u64 {
+            asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != ASN1_BIT_STRING_FLAG [0x{:02x}]", flag,ASN1_BIT_STRING_FLAG}
+        }
+
+        if code.len() < (hdrlen + totallen) {
+            asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
+        }
+
+        if totallen < 1 {
+            asn1obj_new_error!{Asn1ObjBaseError,"totallen [{}] < 1", totallen}
+        }
+        asn1obj_log_trace!("totallen [{}]",totallen);
+
+        self.flag = code[hdrlen] & 0x7;
+        self.data = Vec::new();
+        for i in 1..totallen {
+            self.data.push(code[hdrlen + i]);
+        }
+        asn1obj_debug_buffer_trace!(self.data.as_ptr(), self.data.len(),"Asn1BitData");
+        retv = hdrlen + totallen;
+        Ok(retv)
+    }
+
+    fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+        let llen :u64 = (self.data.len() + 1) as u64;
+        let mut retv :Vec<u8>;
+        let bits :u8;
+
+        retv = asn1obj_format_header(ASN1_BIT_STRING_FLAG as u64,llen);
+        bits = self.flag & 0x7;
+
+        retv.push(bits);
+        for i in 0..self.data.len() {
+            retv.push(self.data[i]);
+        }
+        Ok(retv)
+    }
+
+    fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {     
+        let mut s = asn1_format_line(tab,&(format!("{}: ASN1_BIT_DATA len[0x{:x}:{}] leftflag [0x{:x}]", name,self.data.len(),self.data.len(),self.flag)));
         let mut idx :usize = 0;
         let mut lasti :usize = 0;
 
