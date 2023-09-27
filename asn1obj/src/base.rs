@@ -962,13 +962,13 @@ impl Asn1Op for Asn1BitData {
 
 
 #[derive(Clone)]
-pub struct Asn1BitDataLeftFlag {
+pub struct Asn1BitDataFlag {
     pub data :Vec<u8>,
-    pub flag :u8,
+    pub flag :u64,
 }
 
 
-impl Asn1Op for Asn1BitDataLeftFlag {
+impl Asn1Op for Asn1BitDataFlag {
 
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let mut cs :String = "".to_string();
@@ -1040,14 +1040,14 @@ impl Asn1Op for Asn1BitDataLeftFlag {
             let k = k.unwrap();
             if k.is_i64() {
                 let ival = k.as_i64().unwrap() as u8;
-                self.flag = ival ;
+                self.flag = ival as u64 ;
             }
         }
         return Ok(1);
     }
 
     fn init_asn1() -> Self {
-        Asn1BitDataLeftFlag {
+        Asn1BitDataFlag {
             data : Vec::new(),
             flag : 0,
         }
@@ -1073,7 +1073,7 @@ impl Asn1Op for Asn1BitDataLeftFlag {
         }
         asn1obj_log_trace!("totallen [{}]",totallen);
 
-        self.flag = code[hdrlen] & 0x7;
+        self.flag = (code[hdrlen] & 0xff) as u64;
         self.data = Vec::new();
         for i in 1..totallen {
             self.data.push(code[hdrlen + i]);
@@ -1089,7 +1089,7 @@ impl Asn1Op for Asn1BitDataLeftFlag {
         let bits :u8;
 
         retv = asn1obj_format_header(ASN1_BIT_STRING_FLAG as u64,llen);
-        bits = self.flag & 0x7;
+        bits = (self.flag & 0xff) as u8;
 
         retv.push(bits);
         for i in 0..self.data.len() {
@@ -1099,7 +1099,7 @@ impl Asn1Op for Asn1BitDataLeftFlag {
     }
 
     fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {     
-        let mut s = asn1_format_line(tab,&(format!("{}: ASN1_BIT_DATA len[0x{:x}:{}] leftflag [0x{:x}]", name,self.data.len(),self.data.len(),self.flag)));
+        let mut s = asn1_format_line(tab,&(format!("{}: ASN1_BIT_DATA len[0x{:x}:{}] flag [0x{:x}]", name,self.data.len(),self.data.len(),self.flag)));
         let mut idx :usize = 0;
         let mut lasti :usize = 0;
 

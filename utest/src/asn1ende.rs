@@ -46,10 +46,11 @@ extargs_error_class!{EcAsn1Error}
 
 
 
-fn asn1bitdataleftflagenc_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSetImpl>>>,_ctx :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
+fn asn1bitdataflagenc_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSetImpl>>>,_ctx :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
 	let sarr :Vec<String>;
 	let mut sout = std::io::stdout();
-	let mut bitdata :Asn1BitDataLeftFlag = Asn1BitDataLeftFlag::init_asn1();
+	let mut bitdata :Asn1BitDataFlag = Asn1BitDataFlag::init_asn1();
+	let flag :i64 = ns.get_int("asn1bitflag");
 	init_log(ns.clone())?;
 	sarr = ns.get_array("subnargs");
 	if sarr.len() < 1 {
@@ -60,20 +61,26 @@ fn asn1bitdataleftflagenc_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell
 		let bn = parse_to_bigint(f)?;
 		let (_,vecs) = bn.to_bytes_be();
 		bitdata.data = vecs.clone();
+		bitdata.flag = flag as u64;
 		let odata = bitdata.encode_asn1()?;
+		let mut cv :serde_json::value::Value = serde_json::json!({});
+		let _ = bitdata.encode_json("",&mut cv)?;
+		let s = serde_json::to_string_pretty(&cv)?;
 		debug_buffer_trace!(odata.as_ptr(),odata.len(),"outdata");
 		bitdata.print_asn1("Asn1BitDataLeftFlag",0,&mut sout)?;
+		println!("data\n{}", s);
 	}
 	Ok(())
 }
 
 
 
-#[extargs_map_function(asn1bitdataleftflagenc_handler)]
+#[extargs_map_function(asn1bitdataflagenc_handler)]
 pub fn load_asn1_parser(parser :ExtArgsParser) -> Result<(),Box<dyn Error>> {
 	let cmdline = format!(r#"
 	{{
-		"asn1bitdataleftflagenc<asn1bitdataleftflagenc_handler>##hexval to make Asn1BitDataLeftFlag##" : {{
+		"asn1bitflag" : 0,
+		"asn1bitdataflagenc<asn1bitdataflagenc_handler>##hexval to make Asn1BitDataLeftFlag##" : {{
 			"$" : "+"
 		}}
 	}}
