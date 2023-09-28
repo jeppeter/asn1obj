@@ -703,6 +703,45 @@ impl Asn1Op for Asn1BitString {
         for i in 0..retv {
             self.data.push(code[i]);
         }
+        let mut idx :usize;
+        let vcode = self.data.clone();
+        let bits :u8;
+        let checkbits :u8;
+        idx = vcode.len() - 1;
+
+        checkbits = code[hdrlen];
+
+        while idx > 0 {
+            if vcode[idx] != 0 {
+                break;
+            }
+            idx -= 1;
+        }
+
+        if vcode[idx] == 0  || (vcode[idx] & 0x1) != 0{
+            bits = 0;
+        } else if (vcode[idx] & 0x2)  != 0 {
+            bits = 1;
+        } else if (vcode[idx] & 0x4) != 0 {
+            bits = 2;
+        } else if (vcode[idx] & 0x8) != 0 {
+            bits = 3;
+        } else if (vcode[idx] & 0x10) != 0 {
+            bits = 4;
+        } else if (vcode[idx] & 0x20) != 0 {
+            bits = 5;
+        } else if (vcode[idx] & 0x40) != 0 {
+            bits = 6;
+        } else if (vcode[idx] & 0x80) != 0 {
+            bits = 7;
+        } else {
+            bits = 0;
+        }
+
+        if bits != checkbits {
+            asn1obj_new_error!{Asn1ObjBaseError,"bits [0x{:x}] != checkbits [0x{:x}]",bits,checkbits}
+        }
+
         Ok(retv)
     }
 
@@ -837,6 +876,9 @@ impl Asn1Op for Asn1BitData {
             asn1obj_new_error!{Asn1ObjBaseError,"len [{}] < 2", code.len()}
         }
         let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+        let bits :u8;
+        let checkbits :u8;
+        let mut idx :usize;
 
         if flag != ASN1_BIT_STRING_FLAG as u64 {
             asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != ASN1_BIT_STRING_FLAG [0x{:02x}]", flag,ASN1_BIT_STRING_FLAG}
@@ -851,10 +893,49 @@ impl Asn1Op for Asn1BitData {
         }
         asn1obj_log_trace!("totallen [{}]",totallen);
 
+
         self.data = Vec::new();
         for i in 1..totallen {
             self.data.push(code[hdrlen + i]);
         }
+
+        if self.data.len() > 0 {
+            idx = self.data.len() -1;
+            while idx > 0 {
+                if self.data[idx] != 0 {
+                    break;
+                }
+                idx -= 1;
+            }
+
+            if self.data[idx] == 0  || (self.data[idx] & 0x1) != 0 {
+                bits = 0;
+            } else if (self.data[idx] & 0x2)  != 0 {
+                bits = 1;
+            } else if (self.data[idx] & 0x4) != 0 {
+                bits = 2;
+            } else if (self.data[idx] & 0x8) != 0 {
+                bits = 3;
+            } else if (self.data[idx] & 0x10) != 0 {
+                bits = 4;
+            } else if (self.data[idx] & 0x20) != 0 {
+                bits = 5;
+            } else if (self.data[idx] & 0x40) != 0 {
+                bits = 6;
+            } else if (self.data[idx] & 0x80) != 0 {
+                bits = 7;
+            } else {
+                bits = 0;
+            }           
+        } else {
+            bits = 0;
+        }
+
+        checkbits = code[hdrlen];
+        if checkbits != bits {
+            asn1obj_new_error!{Asn1ObjBaseError,"checkbits [0x{:x}] != calcbits [0x{:x}]",checkbits,bits}
+        }
+
         asn1obj_debug_buffer_trace!(self.data.as_ptr(), self.data.len(),"Asn1BitData");
         retv = hdrlen + totallen;
         Ok(retv)

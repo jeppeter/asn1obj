@@ -93,8 +93,44 @@ fn asn1bitdataflagdec_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn
 	Ok(())
 }
 
+fn asn1bitdatacheck_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSetImpl>>>,_ctx :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
+	let sarr :Vec<String>;
+	let mut sout = std::io::stdout();
+	init_log(ns.clone())?;
+	sarr = ns.get_array("subnargs");
+	if sarr.len() < 1 {
+		extargs_new_error!{EcAsn1Error,"no file specified"}
+	}
 
-#[extargs_map_function(asn1bitdataflagenc_handler,asn1bitdataflagdec_handler)]
+	for f in sarr.iter() {
+		let s :String = read_file(f)?;
+		let cv :serde_json::value::Value;
+		cv = serde_json::from_str(&s)?;
+		let mut bitdata :Asn1BitDataFlag = Asn1BitDataFlag::init_asn1();
+		bitdata.decode_json("",&cv)?;
+		bitdata.print_asn1("Asn1BitDataFlag",0,&mut sout)?;
+		let mut bitd :Asn1BitData = Asn1BitData::init_asn1();
+		let vdata = bitdata.encode_asn1()?;
+		let ores = bitd.decode_asn1(&vdata);
+		if ores.is_err() {
+			println!("decode Asn1BitData error {}", ores.err().unwrap());
+		} else {
+			bitd.print_asn1("Asn1BitData",0,&mut sout)?;
+		}
+
+		let mut bits :Asn1BitString = Asn1BitString::init_asn1();
+		let ores = bits.decode_asn1(&vdata);
+		if ores.is_err() {
+			println!("decode Asn1BitString error {}", ores.err().unwrap());
+		} else {
+			bits.print_asn1("Asn1BitString",0,&mut sout)?;
+		}
+	}
+	Ok(())
+}
+
+
+#[extargs_map_function(asn1bitdataflagenc_handler,asn1bitdataflagdec_handler,asn1bitdatacheck_handler)]
 pub fn load_asn1_parser(parser :ExtArgsParser) -> Result<(),Box<dyn Error>> {
 	let cmdline = format!(r#"
 	{{
@@ -103,6 +139,9 @@ pub fn load_asn1_parser(parser :ExtArgsParser) -> Result<(),Box<dyn Error>> {
 			"$" : "+"
 		}},
 		"asn1bitdataflagdec<asn1bitdataflagdec_handler>##jsonfile ... to make Asn1BitDataLeftFlag##" : {{
+			"$" : "+"
+		}},
+		"asn1bitdatacheck<asn1bitdatacheck_handler>##jsonfile ... to load in Asn1BitDataFlag then check Asn1BitData and Asn1BitString##" : {{
 			"$" : "+"
 		}}
 	}}
