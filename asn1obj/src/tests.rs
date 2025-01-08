@@ -2564,3 +2564,28 @@ fn test_a053() {
 		"bbv" : "22ddee0000000222"
 	}]));
 }
+
+#[test]
+fn test_a054() {
+	let mut a1 :IntTestautoSeq = IntTestautoSeq::init_asn1();
+	let s = format!(r#"
+		{{
+			"seltype" : 1,
+			"ccv" : "1.7.222"
+		}}
+		"#);
+	let s2 = format!(r#"
+		{{
+			"seltype" : 1,
+			"ccv" : "1.7.299"
+		}}
+		"#);
+	let val = serde_json::from_str(&s).unwrap();
+	let _ = a1.decode_json("",&val).unwrap();
+	let mut a2 :IntTestautoSeq = IntTestautoSeq::init_asn1();
+	let _ = a2.decode_json("",&val).unwrap();
+	assert!(a1.equal_asn1(&a2));
+	let val = serde_json::from_str(&s2).unwrap();
+	let _ = a2.decode_json("",&val).unwrap();
+	assert!(!a1.equal_asn1(&a2));	
+}

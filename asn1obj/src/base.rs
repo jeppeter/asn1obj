@@ -327,6 +327,14 @@ impl Asn1Integer {
 
 impl Asn1Op for Asn1Integer {
 
+    fn equal_asn1(&self, other :&Self) -> bool {
+        if self.val != other.val {
+            return false;
+        }
+        return true;
+    }
+
+
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
         if key.len() > 0 {
@@ -531,6 +539,13 @@ pub struct Asn1Boolean {
 }
 
 impl Asn1Op for Asn1Boolean {
+    fn equal_asn1(&self, other :&Self) -> bool {
+        if self.val != other.val {
+            return false;
+        }
+        return true;
+    }
+
 
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
