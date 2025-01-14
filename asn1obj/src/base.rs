@@ -2992,7 +2992,12 @@ impl Asn1Op for Asn1Time {
         let (year,mon,mday,hour,min,sec) = self.extract_date_value(&self.val)?;
         let s;
         if self.origval.len() == 0 {
-            s = format!("{:04}{:02}{:02}{:02}{:02}{:02}Z",year,mon,mday,hour,min,sec);
+            if self.utag == ASN1_GENERALTIME_FLAG {
+                s = format!("{:04}{:02}{:02}{:02}{:02}{:02}Z",year,mon,mday,hour,min,sec);    
+            } else {
+                s = format!("{:02}{:02}{:02}{:02}{:02}{:02}Z",year % 100,mon,mday,hour,min,sec);
+            }
+            
         } else {
             s = format!("{}",self.origval);
         }        
