@@ -1,7 +1,7 @@
 
 
 use std::error::Error;
-use chrono::{Utc,DateTime,Datelike,Timelike,Duration};
+use chrono::{Utc,Local,DateTime,Datelike,Timelike,Duration};
 use chrono::prelude::*;
 use crate::asn1impl::{Asn1Op};
 //use crate::consts::{ASN1_PRIMITIVE_TAG,ASN1_CONSTRUCTED,ASN1_INTEGER_FLAG,ASN1_BOOLEAN_FLAG,ASN1_MAX_INT,ASN1_MAX_LONG,ASN1_MAX_INT_1,ASN1_MAX_INT_2,ASN1_MAX_INT_3,ASN1_MAX_INT_4,ASN1_MAX_INT_NEG_1,ASN1_MAX_INT_NEG_2,ASN1_MAX_INT_NEG_3,ASN1_MAX_INT_NEG_4,ASN1_MAX_INT_NEG_5,ASN1_MAX_INT_5,ASN1_BIT_STRING_FLAG,ASN1_OCT_STRING_FLAG,ASN1_NULL_FLAG,ASN1_OBJECT_FLAG,ASN1_ENUMERATED_FLAG,ASN1_UTF8STRING_FLAG,ASN1_PRINTABLE_FLAG,ASN1_UTCTIME_FLAG,ASN1_GENERALTIME_FLAG,ASN1_TIME_DEFAULT_STR,ASN1_OBJECT_DEFAULT_STR,ASN1_PRINTABLE2_FLAG};
@@ -2838,10 +2838,20 @@ impl Asn1Time {
         return format!("{}",self.val);
     }
 
+    pub fn set_value_time_local(&mut self,dt :&DateTime<Local>) -> Result<(),Box<dyn Error>> {
+        let (year,mon,mday,hour,min,sec) = (dt.year(),dt.month(),dt.day(),dt.hour(),dt.minute(), dt.second());
+        let _ = self.check_data_valid(year as i64,mon as i64,mday as i64,hour as i64,min as i64,sec as i64)?;
+        self.val = self.format_time_str(year as i64,mon as i64,mday as i64,hour as i64,min as i64,sec as i64);
+        self.utag = ASN1_GENERALTIME_FLAG;
+        self.origval = "".to_string();
+        Ok(())
+    }
+
     pub fn set_value_time(&mut self,dt :&DateTime<Utc>) -> Result<(),Box<dyn Error>> {
         let (year,mon,mday,hour,min,sec) = (dt.year(),dt.month(),dt.day(),dt.hour(),dt.minute(), dt.second());
         let _ = self.check_data_valid(year as i64,mon as i64,mday as i64,hour as i64,min as i64,sec as i64)?;
         self.val = self.format_time_str(year as i64,mon as i64,mday as i64,hour as i64,min as i64,sec as i64);
+        self.utag = ASN1_UTCTIME_FLAG;
         self.origval = "".to_string();
         Ok(())
     }
@@ -2852,6 +2862,14 @@ impl Asn1Time {
         let dt :DateTime<Utc> = Utc.ymd(year as i32,mon as u32,mday as u32).and_hms(hour as u32,min as u32,sec as u32);
         Ok(dt)
     }
+
+    #[allow(deprecated)]
+    pub fn get_value_time_local(&self) -> Result<DateTime<Local>,Box<dyn Error>> {
+        let (year,mon,mday,hour,min,sec) = self.extract_date_value(&self.val)?;
+        let dt :DateTime<Local> = Local.ymd(year as i32,mon as u32,mday as u32).and_hms(hour as u32,min as u32,sec as u32);
+        Ok(dt)
+    }
+
 
     pub fn set_utag(&mut self,utag :u8) -> Result<u8,Box<dyn Error>> {
         let rettag :u8 = self.utag;

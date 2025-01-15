@@ -9,7 +9,7 @@ use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 use crate::asn1impl::{Asn1Op,Asn1Selector};
 use crate::consts::*;
 use crate::strop::*;
-use chrono::{Utc,DateTime,Datelike,Timelike};
+use chrono::{Utc,Local,DateTime,Datelike,Timelike};
 use chrono::prelude::*;
 
 use num_bigint::{BigUint};
@@ -1243,10 +1243,21 @@ fn test_a022() {
 	assert!(dt.second() == 33);
 	let dt : DateTime<Utc> = Utc.ymd(2021,7,8).and_hms(22,21,0);
 	let _ = a1.set_value_time(&dt).unwrap();
+	assert!(ASN1_UTCTIME_FLAG == a1.get_utag());
+
+	let ldt : DateTime<Local> = a1.get_value_time_local().unwrap();
+	assert!(ldt.year() == 2021);
+	assert!(ldt.month() == 7);
+	assert!(ldt.day() == 8);
+	assert!(ldt.hour() == 22);
+	assert!(ldt.minute() == 21);
+	assert!(ldt.second() == 0);
+
 	assert!(a1.get_value_str() == "2021-07-08 22:21:00");
 	v1 = vec![0x18,0x0d,0x30,0x37,0x30,0x36,0x30,0x35,0x32,0x32,0x30,0x33,0x32,0x31,0x5a];
 	let c = a1.decode_asn1(&v1).unwrap();
 	assert!(c == v1.len());
+	assert!(ASN1_GENERALTIME_FLAG == a1.get_utag());
 	assert!(a1.get_value_str() == "2007-06-05 22:03:21");
 	v1 = vec![0x18,0x0d,0x31,0x32,0x30,0x36,0x30,0x35,0x32,0x32,0x31,0x33,0x32,0x31,0x5a];
 	let c = a1.decode_asn1(&v1).unwrap();
