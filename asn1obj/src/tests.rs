@@ -2838,3 +2838,28 @@ fn test_a054() {
 	let _ = a2.decode_json("",&val).unwrap();
 	assert!(!a1.equal_asn1(&a2));	
 }
+
+#[test]
+fn test_a055() {
+	let mut a1 :Asn1BMPString = Asn1BMPString::init_asn1();
+	let s = format!(r#""ccv""#);
+	let val = serde_json::from_str(&s).unwrap();
+	a1.decode_json("",&val).unwrap();
+	assert!(a1.val == "ccv");
+	let code = a1.encode_asn1().unwrap();
+	let v1 = vec![0x1e,0x4,0x63,0x63,0x76,0x00];
+	assert!(check_equal_u8(&code,&v1));
+	let s = format!(r#""ccvb""#);
+	let val = serde_json::from_str(&s).unwrap();
+	a1.decode_json("",&val).unwrap();
+	assert!(a1.val == "ccvb");
+	let code = a1.encode_asn1().unwrap();
+	let v1 = vec![0x1e,0x4,0x63,0x63,0x76,0x62];
+	assert!(check_equal_u8(&code,&v1));
+	let v1 = vec![0x1e,0x4,0x63,0x63,0x76,0x63];
+	a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == "ccvc");
+	let v1 = vec![0x1e,0x4,0x63,0x63,0x76,0x00];
+	a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val == "ccv");
+}

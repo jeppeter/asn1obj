@@ -3209,3 +3209,111 @@ impl Asn1Op for Asn1BigNum {
     }
 }
 
+pub struct Asn1BMPString {
+    pub val :String,
+}
+
+
+
+impl Asn1Op for Asn1BMPString {
+    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let s = format!("\"{}\"",self.val);
+        let setjson :serde_json::value::Value = serde_json::from_str(&s).unwrap();
+        if key.len() > 0 {
+            val[key] = setjson;    
+        } else {
+            *val = setjson;
+        }
+        
+        Ok(1)
+    }
+
+    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+        let vmap :serde_json::value::Value;
+        if key.len() > 0 {
+            let ores = val.get(key);
+            if ores.is_none() {
+                self.val = "".to_string();
+                return Ok(0);
+            }
+            vmap =serde_json::json!(ores.unwrap());
+        } else {
+            vmap = val.clone();
+        }
+        if  !vmap.is_string() {
+            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
+        }
+
+        if vmap.is_string() {
+            let c = vmap.as_str().unwrap();
+            self.val = format!("{}",c);
+        }
+        return Ok(1);
+    }
+
+    fn init_asn1() -> Self {
+        Self {
+            val : "".to_string(),
+        }
+    }
+
+    fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
+        let retv :usize;
+        if code.len() < 2 {
+            asn1obj_new_error!{Asn1ObjBaseError,"len [{}] < 2", code.len()}
+        }
+        let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+
+        if flag != ASN1_BMPSTRING_FLAG as u64 {
+            asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != ASN1_BMPSTRING_FLAG [0x{:02x}]", flag,ASN1_BMPSTRING_FLAG}
+        }
+
+        if (totallen % 2) != 0 {
+            asn1obj_new_error!{Asn1ObjBaseError,"len {} % 2 != 0",totallen}
+        }
+
+        if code.len() < (hdrlen + totallen) {
+            asn1obj_new_error!{Asn1ObjBaseError,"code len[0x{:x}] < (hdrlen [0x{:x}] + totallen [0x{:x}])", code.len(),hdrlen,totallen}
+        }
+
+
+        let mut retm = BytesMut::with_capacity(totallen);
+        for i in 0..totallen {
+            if code[hdrlen+i] != 0 {
+                retm.put_u8(code[hdrlen + i]);    
+            }
+            
+        }
+        let a = retm.freeze();
+        self.val = String::from_utf8_lossy(&a).to_string();
+        retv= hdrlen + totallen;
+        Ok(retv)
+    }
+
+    fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+        let mut retv :Vec<u8> ;
+        let v8 :Vec<u8>;
+        let mut clen :usize ;
+        v8 = self.val.as_bytes().to_vec().clone();
+        clen = v8.len();
+        if (clen % 2) != 0 {
+            clen += 1;
+        }
+        retv = asn1obj_format_header(ASN1_BMPSTRING_FLAG as u64, clen as u64);
+        for v in v8.iter() {
+            retv.push(*v);
+        }
+
+        if retv.len() < ( 2 + clen) {
+            retv.push(0);
+        }
+        Ok(retv)
+    }
+
+    fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> { 
+        let s :String;
+        s = asn1_format_line(tab, &(format!("{}: ASN1_BMPSTRING {}", name, self.val)));
+        iowriter.write(s.as_bytes())?;
+        Ok(())
+    }
+}

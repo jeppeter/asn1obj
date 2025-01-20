@@ -2,6 +2,7 @@
 > rust parse ASN.1 format code
 
 ### Release History
+* Jan 20th 2025 to make Asn1BMPString set for 0.1.16 version
 * Jan 17th 2025 to make Asn1ImpA0 with 0xa0 mask set for 0.1.14 version
 * Jan 14th 2025 to make Asn1Time with set_value_time_local and set_value_time for 0.1.12 version
 * Jan 14th 2025 to make Asn1Time to ASN1_UTCTIME_FLAG for 0.1.10 version

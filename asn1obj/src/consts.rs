@@ -14,6 +14,7 @@ pub const ASN1_PRINTABLE_FLAG :u8 = 0x13;
 pub const ASN1_T61STRING_FLAG :u8 = 0x14;
 pub const ASN1_PRINTABLE2_FLAG :u8 = 0x16;
 pub const ASN1_UTCTIME_FLAG : u8 = 0x17;
+pub const ASN1_BMPSTRING_FLAG :u8 = 0x1e;
 pub const ASN1_GENERALTIME_FLAG : u8 = 0x18;
 pub const ASN1_IMP_FLAG_MASK :u8 = 0x80;
 pub const ASN1_SEQ_MASK :u8 = 0x30;
