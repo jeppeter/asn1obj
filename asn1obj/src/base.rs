@@ -3209,6 +3209,7 @@ impl Asn1Op for Asn1BigNum {
     }
 }
 
+#[derive(Clone)]
 pub struct Asn1BMPString {
     pub val :String,
 }
@@ -3277,36 +3278,30 @@ impl Asn1Op for Asn1BMPString {
         }
 
 
-        let mut retm = BytesMut::with_capacity(totallen);
-        for i in 0..totallen {
-            if code[hdrlen+i] != 0 {
-                retm.put_u8(code[hdrlen + i]);    
-            }
-            
+        let mut a :Vec<u16> = vec![];
+        let mut i :usize = 0;
+        while i < totallen {
+            a.push((code[hdrlen+i] as u16) << 8 | code[hdrlen+i+1] as u16);
+            i += 2;
         }
-        let a = retm.freeze();
-        self.val = String::from_utf8_lossy(&a).to_string();
+        self.val = String::from_utf16_lossy(&a).to_string();
         retv= hdrlen + totallen;
         Ok(retv)
     }
 
     fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
         let mut retv :Vec<u8> ;
-        let v8 :Vec<u8>;
-        let mut clen :usize ;
-        v8 = self.val.as_bytes().to_vec().clone();
-        clen = v8.len();
-        if (clen % 2) != 0 {
-            clen += 1;
+        let mut uv16:Vec<u16> = vec![];
+        for c in self.val.encode_utf16() {
+            uv16.push(c);
         }
+        let clen = uv16.len() * 2;
         retv = asn1obj_format_header(ASN1_BMPSTRING_FLAG as u64, clen as u64);
-        for v in v8.iter() {
-            retv.push(*v);
+        for c in uv16.iter() {
+            retv.push(((*c >> 8 ) & 0xff) as u8);
+            retv.push((*c  & 0xff) as u8);
         }
 
-        if retv.len() < ( 2 + clen) {
-            retv.push(0);
-        }
         Ok(retv)
     }
 
