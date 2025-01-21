@@ -896,6 +896,7 @@ impl Asn1Op for Asn1BitData {
         let mut idx :usize;
 
         if flag != ASN1_BIT_STRING_FLAG as u64 {
+            asn1obj_debug_buffer_trace!(code.as_ptr(),code.len(),"decode buffer error");
             asn1obj_new_error!{Asn1ObjBaseError,"flag [0x{:02x}] != ASN1_BIT_STRING_FLAG [0x{:02x}]", flag,ASN1_BIT_STRING_FLAG}
         }
 

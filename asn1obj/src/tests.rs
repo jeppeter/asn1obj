@@ -953,7 +953,7 @@ fn test_a011() {
 
 #[test]
 fn test_a011_ex() {
-	let mut a1 :Asn1ImpA0<Asn1Integer,1> = Asn1ImpA0::init_asn1();
+	let mut a1 :Asn1Exp<Asn1Integer,1> = Asn1Exp::init_asn1();
 	let mut v1 :Vec<u8>;
 	a1.val.val = -2;
 	let c = a1.encode_asn1().unwrap();
@@ -964,7 +964,7 @@ fn test_a011_ex() {
 	assert!(a1.val.val == -2);
 	assert!(s == 3);
 
-	let mut a1 :Asn1ImpA0<Asn1Integer,2> = Asn1ImpA0::init_asn1();
+	let mut a1 :Asn1Exp<Asn1Integer,2> = Asn1Exp::init_asn1();
 	a1.val.val = -256;
 	let c = a1.encode_asn1().unwrap();
 	v1 = vec![0xa2,0x2,0xff,0x00];

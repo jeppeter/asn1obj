@@ -565,19 +565,24 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1Imp<T,TAG> {
 		asn1obj_log_trace!("flag [0x{:x}]", flag);
 		if ((flag as u8) & ASN1_IMP_FILTER_MASK) != ASN1_IMP_FLAG_MASK {
 			/*we do have any type*/
+			asn1obj_log_trace!("flag [0x{:02x}] & ASN1_IMP_FILTER_MASK[0x{:02x}] != ASN1_IMP_FLAG_MASK [0x{:02x}]", flag, ASN1_IMP_FILTER_MASK,ASN1_IMP_FLAG_MASK);
 			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] & ASN1_IMP_FILTER_MASK[0x{:02x}] != ASN1_IMP_FLAG_MASK [0x{:02x}]", flag, ASN1_IMP_FILTER_MASK,ASN1_IMP_FLAG_MASK}
 		}
 
 		let ctag = code[0] & ASN1_PRIMITIVE_TAG;
 		if ctag != self.tag {
+			asn1obj_log_trace!("tag [0x{:02x}] != self.tag [0x{:02x}]", ctag, self.tag);
 			asn1obj_new_error!{Asn1ComplexError,"tag [0x{:02x}] != self.tag [0x{:02x}]", ctag, self.tag}
 		}
 
+		asn1obj_debug_buffer_trace!(code.as_ptr(),hdrlen + totallen,"will add decode_asn1");
 		retv += hdrlen;
 		encv = self.val.encode_asn1()?;
 		if encv.len() < 1 {
+			asn1obj_log_trace!("{} < 1",encv.len());
 			asn1obj_new_error!{Asn1ComplexError,"{} < 1",encv.len()}
 		}
+		asn1obj_debug_buffer_trace!(encv.as_ptr(),encv.len(),"encv value");
 		parsevec = Vec::new();
 		/*to make first tag*/
 		parsevec.push(encv[0]);
@@ -626,14 +631,14 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1Imp<T,TAG> {
 }
 
 #[derive(Clone)]
-pub struct Asn1ImpA0<T : Asn1Op,const TAG:u8=0> {
+pub struct Asn1Exp<T : Asn1Op,const TAG:u8=0> {
 	pub val : T,
 	tag : u8,
 	data : Vec<u8>,
 }
 
 
-impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpA0<T,TAG> {
+impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1Exp<T,TAG> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		return self.val.encode_json(key,val);
 	}
