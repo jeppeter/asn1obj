@@ -585,6 +585,7 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1Imp<T,TAG> {
 			parsevec.push(code[i]);
 		}
 
+		asn1obj_debug_buffer_trace!(parsevec.as_ptr(), parsevec.len(),"Asn1Imp decode buffer");
 		let _ = self.val.decode_asn1(&parsevec)?;
 		retv += totallen;
 		self.data = Vec::new();
