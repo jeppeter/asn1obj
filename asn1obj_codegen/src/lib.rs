@@ -13,12 +13,14 @@ use syn;
 use std::collections::HashMap;
 use lazy_static::lazy_static;
 
+mod consts;
 #[macro_use]
 mod errors;
 #[macro_use]
 mod logger;
 
 use crate::logger::*;
+use crate::consts::*;
 
 mod randv;
 
@@ -28,6 +30,8 @@ use randv::{get_random_bytes};
 struct ProcVar {
 	debuglevel :i32,
 }
+
+
 
 fn asn1_gen_proc_var_init(prefix :&str) -> ProcVar {
 	let getv :String;
@@ -124,6 +128,7 @@ fn format_tab_line(tabs :i32, c :&str) -> String {
 	rets
 }
 
+include!("kv.rs");
 
 include!("selector.rs");
 
@@ -1833,12 +1838,45 @@ pub fn asn1_sequence(_attr :TokenStream,item :TokenStream) -> TokenStream {
 			match _vv.fields {
 				syn::Fields::Named(ref _n) => {
 					for _v in _n.named.iter() {
+						let mut callfn :Option<String> = None;
+						let mut omitname :Option<String> = None;
+						let mut n :String = "".to_string();
+						let mut tn :String = "".to_string();
 						let res = get_name_type(_v.clone());
 						if res.is_err() {
 							asn1_syn_error_fmt!("{:?}",res.err().unwrap());
 						}
-						let (n,tn) = res.unwrap();
-						cs.set_name(&n,&tn);
+						(n,tn) = res.unwrap();
+						asn1_gen_log_trace!("[{}]=[{}]",n,tn);
+						for _a in &_v.attrs {
+							let v = format!("{}",_a.path.get_ident().unwrap().to_string());
+							if v != ASN1_EXTMACRO {
+								continue;
+
+							}
+							asn1_gen_log_trace!("[{}]=[{}][{}]",n,_a.path.get_ident().unwrap().to_string(),_a.tokens.to_string());
+
+							let ntoks =proc_macro::TokenStream::from(_a.tokens.clone());
+							let kv :SynKV = syn::parse_macro_input!(ntoks as SynKV);
+							let oinitfn = kv.get_value(ASN1_INITFN);
+							if oinitfn.is_some() {
+								omitname = Some(format!("{}",n));
+								callfn = Some(format!("{}",oinitfn.unwrap()));
+							}
+						}
+						if callfn.is_none() {
+							asn1_gen_log_trace!("callfn.is_none");	
+						} else {
+							asn1_gen_log_trace!("callfn [{}]",callfn.as_ref().unwrap());
+						}
+
+						if callfn.is_none() && n.len() > 0 && tn.len() > 0 {
+							asn1_gen_log_trace!("set name [{}]=[{}]",n,tn);
+							cs.set_name(&n,&tn);
+						} else if callfn.is_some() && omitname.is_some() {
+							asn1_gen_log_trace!("n[{}]=[{}]",omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
+							cs.set_init_func(omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
+						}
 					}
 				},
 				_ => {
@@ -1860,4 +1898,11 @@ pub fn asn1_sequence(_attr :TokenStream,item :TokenStream) -> TokenStream {
     cc.push_str(&(cs.format_asn1_code().unwrap()));
     asn1_gen_log_trace!("CODE\n{}",cc);
     cc.parse().unwrap()
+}
+
+
+#[proc_macro_attribute]
+pub fn asn1_ext(_attr :TokenStream,item :TokenStream) -> TokenStream {
+	asn1_gen_log_trace!("asn1_ext\n{}",item.to_string());
+	item
 }

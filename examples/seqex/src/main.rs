@@ -1,4 +1,4 @@
-use asn1obj_codegen::{asn1_sequence};
+use asn1obj_codegen::{asn1_sequence,asn1_ext};
 use asn1obj::{asn1obj_error_class,asn1obj_new_error};
 use asn1obj::base::*;
 use asn1obj::complex::*;
@@ -14,10 +14,14 @@ use serde_json;
 #[asn1_sequence()]
 #[derive(Clone)]
 pub struct Asn1RsaPubkeyElem {
-	#[asn1_ext(noasn1)]
+	#[asn1_ext(initfn=c_default)]
 	pub c :Asn1BigNum,
 	pub n :Asn1BigNum,
 	pub e :Asn1BigNum,
+}
+
+fn c_default() -> Asn1BigNum {
+	Asn1BigNum::init_asn1()
 }
 
 #[asn1_sequence()]

@@ -8,6 +8,7 @@ struct SequenceSyn {
 	omitnames :Vec<String>,
 	parsenames :Vec<String>,
 	kmap :HashMap<String,String>,
+	komitinitfns :HashMap<String,String>,
 }
 
 impl SequenceSyn {
@@ -25,6 +26,7 @@ impl SequenceSyn {
 			omitnames :Vec::new(),
 			parsenames : Vec::new(),
 			kmap : HashMap::new(),
+			komitinitfns :HashMap::new(),
 		}
 	}
 
@@ -56,13 +58,24 @@ impl SequenceSyn {
 		return;
 	}
 
+	pub fn set_init_func(&mut self, n :&str ,initfn :&str) {
+		self.omitnames.push(format!("{}",n));
+		self.komitinitfns.insert(format!("{}",n),format!("{}",initfn));
+		return;
+	}
+
 	fn format_init_asn1(&self,tab :i32) -> String {
 		let mut rets :String = "".to_string();
+		asn1_gen_log_trace!("parsenames {:?}",self.parsenames);
 		rets.push_str(&format_tab_line(tab , "fn init_asn1() -> Self {"));
 		rets.push_str(&format_tab_line(tab + 1, &format!("{} {{",self.sname)));
 		for k in self.parsenames.iter() {
 			let v = self.kmap.get(k).unwrap();
 			rets.push_str(&format_tab_line(tab + 2, &format!("{} : {}::init_asn1(),", k,extract_type_name(v))));
+		}
+		for k in self.omitnames.iter() {
+			let v = self.komitinitfns.get(k).unwrap();
+			rets.push_str(&format_tab_line(tab + 2,&format!("{} : {}(),",k,v)));
 		}
 		rets.push_str(&format_tab_line(tab + 1,"}"));
 		rets.push_str(&format_tab_line(tab,"}"));
