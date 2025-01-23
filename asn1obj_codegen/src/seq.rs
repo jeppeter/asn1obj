@@ -817,36 +817,12 @@ pub fn asn1_sequence(_attr :TokenStream,item :TokenStream) -> TokenStream {
 						let mut omitname :Option<String> = None;
 						let n :String;
 						let tn :String;
-						let res = get_name_type(_v.clone());
-						if res.is_err() {
-							asn1_syn_error_fmt!("{:?}",res.err().unwrap());
-						}
-						(n,tn) = res.unwrap();
-						asn1_gen_log_trace!("[{}]=[{}]",n,tn);
-						let mut removed :Vec<usize> = vec![];
-						let mut idx:usize = 0;
-						while idx < _v.attrs.len() {
-							let _a = &_v.attrs[idx];
-
-							let v = format!("{}",_a.path.get_ident().unwrap().to_string());
-							if v == ASN1_EXTMACRO {
-								removed.push(idx);
-								asn1_gen_log_trace!("[{}]=[{}][{}]",n,_a.path.get_ident().unwrap().to_string(),_a.tokens.to_string());
-
-								let ntoks =proc_macro::TokenStream::from(_a.tokens.clone());
-								let kv :SynKV = syn::parse_macro_input!(ntoks as SynKV);
-								let oinitfn = kv.get_value(ASN1_INITFN);
-								if oinitfn.is_some() {
-									omitname = Some(format!("{}",n));
-									callfn = Some(format!("{}",oinitfn.unwrap()));
-								}
-							}
-							idx += 1;
-						}
-						if callfn.is_none() {
-							asn1_gen_log_trace!("callfn.is_none");	
-						} else {
-							asn1_gen_log_trace!("callfn [{}]",callfn.as_ref().unwrap());
+						let retkv :SynKV;
+						(n,tn,retkv)= filter_attrib(_v).unwrap();
+						let ores = retkv.get_value(ASN1_INITFN);
+						if ores.is_some() {
+							callfn = Some(format!("{}",ores.unwrap()));
+							omitname = Some(format!("{}",n));
 						}
 
 						if callfn.is_none() && n.len() > 0 && tn.len() > 0 {
@@ -855,17 +831,6 @@ pub fn asn1_sequence(_attr :TokenStream,item :TokenStream) -> TokenStream {
 						} else if callfn.is_some() && omitname.is_some() {
 							asn1_gen_log_trace!("n[{}]=[{}]",omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
 							cs.set_init_func(omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
-						}
-
-						if removed.len() > 0 {
-							idx = removed.len() - 1;
-							loop {
-								_v.attrs.remove(removed[idx]);
-								if idx == 0 {
-									break;
-								}
-								idx -= 1;
-							}
 						}
 					}
 				},
@@ -890,3 +855,5 @@ pub fn asn1_sequence(_attr :TokenStream,item :TokenStream) -> TokenStream {
     asn1_gen_log_trace!("CODE\n{}",cc);
     cc.parse().unwrap()
 }
+
+

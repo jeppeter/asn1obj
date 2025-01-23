@@ -14,6 +14,8 @@ struct ObjSelectorSyn {
 	parsenames : Vec<String>,
 	parsemap : HashMap<String,String>,
 	kmap :HashMap<String,Vec<String>>,
+	omitnames :Vec<String>,
+	komitfns :HashMap<String,String>,
 }
 
 //#[allow(unused_variables)]
@@ -35,6 +37,8 @@ impl ObjSelectorSyn {
 			parsenames : Vec::new(),
 			parsemap : HashMap::new(),
 			kmap : HashMap::new(),
+			omitnames :vec![],
+			komitfns :HashMap::new(),
 		}
 	}
 
@@ -84,9 +88,18 @@ impl ObjSelectorSyn {
 			let v = self.parsemap.get(k).unwrap();
 			rets.push_str(&format_tab_line(tab + 2, &format!("{} : {}::init_asn1(),", k,extract_type_name(v))));
 		}
+		for k in self.omitnames.iter() {
+			let v = self.komitfns.get(k).unwrap();
+			rets.push_str(&format_tab_line(tab + 2, &format!("{} : {}(),", k,v)));
+		}
 		rets.push_str(&format_tab_line(tab + 1,"}"));
 		rets.push_str(&format_tab_line(tab,"}"));
 		return rets;
+	}
+
+	pub fn set_init_func(&mut self,k:&str,v:&str) {
+		self.omitnames.push(format!("{}",k));
+		self.komitfns.insert(format!("{}",k),format!("{}",v));
 	}
 
 	fn format_decode_asn1(&self, tab :i32) -> String {
@@ -575,4 +588,82 @@ impl syn::parse::Parse for ObjSelectorSyn {
 		}
 		Ok(retv)
 	}
+}
+
+///  macro for asn1_choice
+///  please see the example of asn1_choice
+#[proc_macro_attribute]
+pub fn asn1_obj_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
+	//asn1_gen_log_trace!("item\n{}",item.to_string());
+	let nargs = _attr.clone();
+	let mut co :syn::DeriveInput;
+	let sname :String;
+	let mut selcs :ObjSelectorSyn = syn::parse_macro_input!(nargs as ObjSelectorSyn);
+
+	match syn::parse::<syn::DeriveInput>(item.clone()) {
+		Ok(v) => {
+			co = v.clone();
+		},
+		Err(_e) => {
+			asn1_syn_error_fmt!("not parse \n{}",item.to_string());
+		}
+	}
+
+	sname = format!("{}",co.ident);
+	//asn1_gen_log_trace!("sname [{}]",sname);
+	selcs.set_sname(&sname);
+
+
+	match co.data {
+		syn::Data::Struct(ref mut _vv) => {
+			match _vv.fields {
+				syn::Fields::Named(ref mut _n) => {
+					for _v in _n.named.iter_mut() {
+						let mut callfn :Option<String> = None;
+						let mut omitname :Option<String> = None;
+						let n :String;
+						let tn :String;
+						let retkv :SynKV;
+						let ores = filter_attrib(_v);
+						if ores.is_err() {
+							asn1_syn_error_fmt!("{:?}",ores.err().unwrap());
+						}
+						(n,tn,retkv)= ores.unwrap();
+						let ores = retkv.get_value(ASN1_INITFN);
+						if ores.is_some() {
+							callfn = Some(format!("{}",ores.unwrap()));
+							omitname = Some(format!("{}",n));
+						}
+
+						if callfn.is_none() && n.len() > 0 && tn.len() > 0 {
+							asn1_gen_log_trace!("set name [{}]=[{}]",n,tn);
+							let ores = selcs.set_member(&n,&tn);
+							if ores.is_err() {
+								asn1_syn_error_fmt!("{:?}",ores.err().unwrap());
+							}
+						} else if callfn.is_some() && omitname.is_some() {
+							asn1_gen_log_trace!("n[{}]=[{}]",omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
+							selcs.set_init_func(omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
+						}
+
+					}
+				},
+				_ => {
+					asn1_syn_error_fmt!("not Named structure\n{}",item.to_string());
+				}
+			}
+		},
+		_ => {
+			asn1_syn_error_fmt!("not struct format\n{}",item.to_string());
+		}
+	}
+
+	/*now to compile ok*/
+    //let cc = format_code(&sname,names.clone(),structnames.clone());
+    let ntok  = co.to_token_stream();
+    let mut cc = ntok.to_string();
+    cc.push_str("\n");
+    cc.push_str(&(selcs.format_asn1_code().unwrap()));
+    asn1_gen_log_trace!("CODE\n{}",cc);
+    cc.parse().unwrap()
 }

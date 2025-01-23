@@ -14,7 +14,7 @@ use serde_json;
 #[asn1_sequence()]
 #[derive(Clone)]
 pub struct Asn1RsaPubkeyElem {
-	#[asn1_ext(initfn=c_default)]
+	#[asn1_gen(initfn=c_default)]
 	pub c :Asn1BigNum,
 	pub n :Asn1BigNum,
 	pub e :Asn1BigNum,

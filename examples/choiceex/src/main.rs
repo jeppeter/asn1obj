@@ -29,16 +29,28 @@ pub struct Asn1RsaPubkey {
 #[asn1_obj_selector(selector=val,any=default,rsa="1.2.840.113549.1.1.1")]
 #[derive(Clone)]
 pub struct Asn1X509PubkeySelector {
+	#[asn1_gen(initfn=obji_default)]
+	pub obji :i32,
 	pub val : Asn1Object,
 	pub padded : Asn1Any,
+}
+
+fn obji_default() -> i32 {
+	0
 }
 
 #[asn1_choice(selector=valid)]
 #[derive(Clone)]
 pub struct Asn1X509PubkeyElem {
+	#[asn1_gen(initfn=vv_default)]
+	pub vv :i32,
 	pub valid : Asn1SeqSelector<Asn1X509PubkeySelector>,
 	pub rsa : Asn1BitSeq<Asn1RsaPubkey>,
 	pub any : Asn1Any,
+}
+
+fn vv_default() -> i32 {
+	0
 }
 
 #[asn1_sequence()]
