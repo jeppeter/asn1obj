@@ -14,6 +14,8 @@ use serde_json;
 #[asn1_sequence()]
 #[derive(Clone)]
 pub struct Asn1RsaPubkeyElem {
+	#[asn1_ext(noasn1)]
+	pub c :Asn1BigNum,
 	pub n :Asn1BigNum,
 	pub e :Asn1BigNum,
 }

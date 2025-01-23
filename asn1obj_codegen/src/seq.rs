@@ -5,6 +5,7 @@ struct SequenceSyn {
 	debugenable : bool,
 	sname :String,
 	errname :String,
+	omitnames :Vec<String>,
 	parsenames :Vec<String>,
 	kmap :HashMap<String,String>,
 }
@@ -21,6 +22,7 @@ impl SequenceSyn {
 			debugenable : dbgval,
 			sname : "".to_string(),
 			errname : "".to_string(),
+			omitnames :Vec::new(),
 			parsenames : Vec::new(),
 			kmap : HashMap::new(),
 		}

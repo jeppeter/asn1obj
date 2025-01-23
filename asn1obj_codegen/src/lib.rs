@@ -1823,6 +1823,10 @@ pub fn asn1_sequence(_attr :TokenStream,item :TokenStream) -> TokenStream {
 	//asn1_gen_log_trace!("sname [{}]",sname);
 	cs.set_struct_name(&sname);
 
+	for a in &co.attrs {
+		asn1_gen_log_trace!("path [{}]",a.path.get_ident().unwrap().to_string());
+	}
+
 
 	match co.data {
 		syn::Data::Struct(ref _vv) => {
