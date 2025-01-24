@@ -1,4 +1,4 @@
-use asn1obj_codegen::{asn1_sequence,asn1_ext};
+use asn1obj_codegen::{asn1_sequence};
 use asn1obj::{asn1obj_error_class,asn1obj_new_error};
 use asn1obj::base::*;
 use asn1obj::complex::*;

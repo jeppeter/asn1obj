@@ -12,13 +12,13 @@ macro_rules! asn1_gen_error_class {
 		}
 	}
 
-	impl fmt::Display for $type {
-		fn fmt(&self,f :&mut fmt::Formatter) -> fmt::Result {
+	impl std::fmt::Display for $type {
+		fn fmt(&self,f :&mut std::fmt::Formatter) -> std::fmt::Result {
 			write!(f,"{}",self.msg)
 		}
 	}
 
-	impl Error for $type {}
+	impl std::error::Error for $type {}
 	};
 }
 
@@ -32,3 +32,14 @@ macro_rules! asn1_gen_new_error {
 	};
 }
 
+macro_rules! asn1_syn_error_fmt {
+	($($a:expr),*) => {
+		let cerr = format!($($a),*);
+		asn1_gen_log_error!("{}",cerr);
+		return cerr.parse().unwrap();
+		//return syn::Error::new(
+        //            Span::call_site(),
+        //            $cerr,
+        //        ).to_compile_error().to_string().parse().unwrap();
+    }
+}

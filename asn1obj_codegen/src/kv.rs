@@ -1,22 +1,26 @@
+use std::collections::HashMap;
+use std::error::Error;
+#[allow(unused_imports)]
+use crate::*;
+use crate::logger::{asn1_gen_debug_out};
 
-
-struct SynKV {
+pub (crate) struct SynKV {
 	kmap :HashMap<String,String>,
 }
 
 impl SynKV {
-	fn new() -> Self {
+	pub fn new() -> Self {
 		Self {
 			kmap :HashMap::new(),
 		}
 	}
 
-	fn set_attr(&mut self,k :&str, v:&str) -> Result<(),Box<dyn Error>> {
+	pub fn set_attr(&mut self,k :&str, v:&str) -> Result<(),Box<dyn Error>> {
 		self.kmap.insert(format!("{}",k),format!("{}",v));
 		Ok(())
 	}
 
-	fn get_value(&self,k :&str) -> Option<String> {
+	pub fn get_value(&self,k :&str) -> Option<String> {
 		match self.kmap.get(k) {
 			Some(_v) => {
 				return Some(format!("{}",_v));
@@ -27,7 +31,7 @@ impl SynKV {
 		}
 	}
 
-	fn get_keys(&self) -> Vec<String> {
+	pub fn get_keys(&self) -> Vec<String> {
 		let mut retv :Vec<String> = vec![];
 		for (k,_) in self.kmap.iter() {
 			retv.push(format!("{}",k));

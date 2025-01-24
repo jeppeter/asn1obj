@@ -1,4 +1,13 @@
 
+#[allow(unused_imports)]
+use crate::*;
+use crate::logger::{asn1_gen_debug_out};
+use crate::kv::{SynKV};
+use crate::consts::{ASN1_EXTMACRO};
+use std::error::Error;
+use crate::utils::{get_name_type};
+
+
 asn1_gen_error_class!{Asn1ExtError}
 
 fn _get_synkv(ntoks :proc_macro::TokenStream) -> Result<SynKV,Box<dyn Error>> {
@@ -9,7 +18,7 @@ fn _get_synkv(ntoks :proc_macro::TokenStream) -> Result<SynKV,Box<dyn Error>> {
 	Ok(ores.unwrap())
 }
 
-fn filter_attrib(_v :&mut syn::Field) -> Result<(String,String,SynKV),Box<dyn Error>> {
+pub (crate) fn filter_attrib(_v :&mut syn::Field) -> Result<(String,String,SynKV),Box<dyn Error>> {
 	let mut retv :SynKV = SynKV::new();
 	let n :String;
 	let tn :String;
@@ -51,4 +60,9 @@ fn filter_attrib(_v :&mut syn::Field) -> Result<(String,String,SynKV),Box<dyn Er
 	}
 
 	return Ok((n,tn,retv));
+}
+
+pub (crate) fn asn1_ext(_attr :proc_macro::TokenStream,item :proc_macro::TokenStream) -> proc_macro::TokenStream {
+	asn1_gen_log_trace!("asn1_ext\n{}",item.to_string());
+	item
 }

@@ -1,3 +1,17 @@
+
+#[allow(unused_imports)]
+use crate::*;
+use std::collections::HashMap;
+use crate::vars::{asn1_gen_debug_level};
+use crate::logger::{asn1_gen_debug_out};
+use crate::randv::{get_random_bytes};
+use crate::kv::{SynKV};
+use crate::asn1ext::{filter_attrib};
+use crate::consts::{ASN1_INITFN};
+use std::error::Error;
+use crate::utils::{format_tab_line,extract_type_name};
+use quote::{ToTokens};
+
 asn1_gen_error_class!{SelectorSynError}
 
 //struct TypeSelectorSyn {
@@ -23,7 +37,7 @@ struct ObjSelectorSyn {
 impl ObjSelectorSyn {
 	pub fn new() -> Self {
 		let dbgval : bool;
-		if ASN1_GEN_PROC_VAR.debuglevel > 0 {
+		if asn1_gen_debug_level() > 0 {
 			dbgval = true;
 		} else {
 			dbgval = false;
@@ -590,10 +604,7 @@ impl syn::parse::Parse for ObjSelectorSyn {
 	}
 }
 
-///  macro for asn1_choice
-///  please see the example of asn1_choice
-#[proc_macro_attribute]
-pub fn asn1_obj_selector(_attr :TokenStream,item :TokenStream) -> TokenStream {
+pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenStream) -> proc_macro::TokenStream {
 	//asn1_gen_log_trace!("item\n{}",item.to_string());
 	let nargs = _attr.clone();
 	let mut co :syn::DeriveInput;
