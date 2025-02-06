@@ -181,6 +181,11 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpSet<T,TAG> {
 			asn1obj_new_error!(Asn1ComplexError,"tag [0x{:02x}] != self.tag [0x{:02x}]", ctag,self.tag)
 		}
 
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ComplexError,"code len [{}] < ( {} + {})", code.len(),hdrlen,totallen}
+		}
+
+
 		retv += hdrlen;
 		while retv < (totallen + hdrlen) {
 			let mut v :T = T::init_asn1();
@@ -315,6 +320,11 @@ impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
 			/*we do have any type*/
 			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] != ASN1_SEQ_MASK [0x{:02x}]", flag, ASN1_SEQ_MASK}
 		}
+
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ComplexError,"code len [{}] < ( {} + {})", code.len(),hdrlen,totallen}
+		}
+
 
 		retv += hdrlen;
 		asn1obj_log_trace!("totallen {}",totallen);
@@ -476,6 +486,10 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] != ASN1_SET_MASK [0x{:02x}]", flag, ASN1_SET_MASK}
 		}
 
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ComplexError,"code len [{}] < ( {} + {})", code.len(),hdrlen,totallen}
+		}
+
 		retv += hdrlen;
 		asn1obj_log_trace!("totallen [{}]", totallen);
 		while retv < (totallen + hdrlen) {
@@ -575,6 +589,11 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1Imp<T,TAG> {
 			asn1obj_new_error!{Asn1ComplexError,"tag [0x{:02x}] != self.tag [0x{:02x}]", ctag, self.tag}
 		}
 
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ComplexError,"code len [{}] < ( {} + {})", code.len(),hdrlen,totallen}
+		}
+
+
 		asn1obj_debug_buffer_trace!(code.as_ptr(),hdrlen + totallen,"will add decode_asn1");
 		retv += hdrlen;
 		encv = self.val.encode_asn1()?;
@@ -662,6 +681,11 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1Exp<T,TAG> {
 		if ctag != self.tag {
 			asn1obj_new_error!{Asn1ComplexError,"tag [0x{:02x}] != self.tag [0x{:02x}]", ctag, self.tag}
 		}
+
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ComplexError,"code len [{}] < ( {} + {})", code.len(),hdrlen,totallen}
+		}
+
 
 		retv += hdrlen;
 		encv = self.val.encode_asn1()?;
@@ -757,6 +781,10 @@ impl<T: Asn1Op + Clone, const TAG:u8> Asn1Op for Asn1Ndef<T,TAG> {
 			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] & ASN1_IMP_SET_MASK[0x{:02x}] != ASN1_IMP_SET_MASK [0x{:02x}]", flag, ASN1_IMP_SET_MASK,ASN1_IMP_SET_MASK}
 		}
 
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ComplexError,"code len [{}] < ( {} + {})", code.len(),hdrlen,totallen}
+		}
+
 		let ctag = code[0] & ASN1_PRIMITIVE_TAG;
 		if ctag != self.tag {
 			asn1obj_new_error!{Asn1ComplexError,"tag [0x{:02x}] != self.tag [0x{:02x}]",ctag,self.tag}
@@ -849,6 +877,10 @@ impl<T: Asn1Op + Asn1Selector + Clone> Asn1Op for Asn1SeqSelector<T> {
 			asn1obj_new_error!{Asn1ComplexError,"flag [0x{:02x}] != ASN1_SEQ_MASK [0x{:02x}]", flag, ASN1_SEQ_MASK}
 		}
 
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ComplexError,"code len [{}] < ( {} + {})", code.len(),hdrlen,totallen}
+		}
+
 		retv += hdrlen;
 		asn1obj_log_trace!("totallen {}",totallen);
 		while retv < (totallen + hdrlen) {
@@ -934,6 +966,11 @@ impl<T: Asn1Op> Asn1Op for Asn1BitSeq<T> {
 		if totallen < 1 {
 			asn1obj_new_error!{Asn1ComplexError,"totallen [{}] < 1", totallen}
 		}
+
+		if code.len() < (hdrlen + totallen) {
+			asn1obj_new_error!{Asn1ComplexError,"code len [{}] < ( {} + {})", code.len(),hdrlen,totallen}
+		}
+
 
 		retv += hdrlen + 1;
 

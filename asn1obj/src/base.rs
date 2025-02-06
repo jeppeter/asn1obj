@@ -1168,6 +1168,11 @@ impl Asn1Op for Asn1BitDataFlag {
         if totallen < 1 {
             asn1obj_new_error!{Asn1ObjBaseError,"totallen [{}] < 1", totallen}
         }
+
+        if code.len() < (hdrlen + totallen) {
+            asn1obj_new_error!{Asn1ObjBaseError,"code len [{}] < ( {} + {})", code.len(),hdrlen,totallen}
+        }
+
         asn1obj_log_trace!("totallen [{}]",totallen);
 
         self.flag = (code[hdrlen] & 0xff) as u64;
