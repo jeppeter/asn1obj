@@ -34,14 +34,81 @@ use std::io::Write;
 
 
 #[allow(unused_imports)]
-use asn1obj_codegen::*;
+use asn1obj_codegen::{asn1_choice,asn1_obj_selector,asn1_sequence,asn1_int_choice};
 #[allow(unused_imports)]
 use asn1obj::base::*;
 use asn1obj::asn1impl::*;
+use asn1obj::complex::{Asn1ImpSet,Asn1Opt,Asn1Seq,Asn1Set};
+use asn1obj::strop::asn1_format_line;
 #[allow(unused_imports)]
 use asn1obj::{asn1obj_error_class,asn1obj_new_error};
 
 extargs_error_class!{JsonLoadError}
+
+//#[asn1_sequence(debug=enable)]
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct Asn1X509AttributeElem {
+	pub object :Asn1Object,
+	pub set :Asn1Any,
+}
+
+//#[asn1_sequence(debug=enable)]
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct Asn1X509Attribute {
+	pub elem : Asn1Seq<Asn1X509AttributeElem>,
+}
+
+
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct Asn1X509AlgorElem {
+	pub algorithm : Asn1Object,
+	pub parameters : Asn1Opt<Asn1Any>,
+}
+
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct Asn1X509Algor {
+	pub elem : Asn1Seq<Asn1X509AlgorElem>,
+}
+
+
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct Asn1X509SigElem {
+	pub algor : Asn1X509Algor,
+	pub digest : Asn1OctData,
+}
+
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct Asn1X509Sig {
+	pub elem : Asn1Seq<Asn1X509SigElem>,
+}
+
+#[asn1_obj_selector(selector=val,any=default,x509cert="1.2.840.113549.1.9.22.1")]
+#[derive(Clone)]
+pub struct Asn1Pkcs12BagsSelector {
+	pub val : Asn1Object,
+}
+
+
+#[asn1_choice(selector=valid)]
+#[derive(Clone)]
+pub struct Asn1Pkcs12BagsElem {
+	pub valid : Asn1Pkcs12BagsSelector,
+	pub x509cert : Asn1ImpSet<Asn1OctData,0>,
+	pub any :Asn1Any,
+}
+
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct Asn1Pkcs12Bags {
+	pub elem :Asn1Seq<Asn1Pkcs12BagsElem>,
+}
+
 
 
 #[asn1_obj_selector(selector=val,other=default,shkeybag="1.2.840.113549.1.12.10.1.2",bag=["1.2.840.113549.1.12.10.1.3","1.2.840.113549.1.12.10.1.4","1.2.840.113549.1.12.10.1.5"],safes="1.2.840.113549.1.12.10.1.6")]
@@ -82,7 +149,7 @@ fn safebagjsondec_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn Arg
 
 	for f in sarr.iter() {
 		let code = read_file_bytes(f)?;
-		let mut bag :Asn1Pkcs12Bags = Asn1Pkcs12Bags::init_asn1();
+		let mut bag :Asn1Pkcs12SafeBag = Asn1Pkcs12SafeBag::init_asn1();
 		bag.decode_asn1(&code)?;
 		let mut jval :serde_json::Value = serde_json::from_str("{}")?;
 		bag.encode_json("",&mut jval)?;
@@ -102,16 +169,16 @@ fn safebagjsonenc_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn Arg
 	}
 
 	let jsons = read_file(&sarr[0])?;
-	let jval :serde_json::Value = serde_json::from_str(&jsoncontent)?;
-	let mut bag :Asn1Pkcs12Bags = Asn1Pkcs12Bags::init_asn1();
+	let jval :serde_json::Value = serde_json::from_str(&jsons)?;
+	let mut bag :Asn1Pkcs12SafeBag = Asn1Pkcs12SafeBag::init_asn1();
 	let _ = bag.decode_json("",&jval)?;
-	let cstr = format!("[{}] format Asn1Pkcs12Bags\n",sarr[0]);
+	let cstr = format!("[{}] format Asn1Pkcs12SafeBag\n",sarr[0]);
 	let mut outf = std::io::stdout();
 	let _ = bag.print_asn1(&cstr,0,&mut outf)?;
 	let output = ns.get_string("output");
 	if output.len() > 0 {
 		let code = bag.encode_asn1()?;
-		write_file_bytes(&code,&output)?;
+		write_file_bytes(&output,&code)?;
 	}
 	Ok(())
 }

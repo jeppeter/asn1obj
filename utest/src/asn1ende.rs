@@ -40,6 +40,7 @@ use asn1obj::base::*;
 use asn1obj::asn1impl::*;
 #[allow(unused_imports)]
 use asn1obj::{asn1obj_error_class,asn1obj_new_error};
+use asn1obj::strop::asn1_format_line;
 
 extargs_error_class!{EcAsn1Error}
 
@@ -47,7 +48,6 @@ extargs_error_class!{EcAsn1Error}
 #[derive(Clone)]
 pub struct BaseAsn1 {
 	pub val :Asn1BigNum,
-	#[asn1_gen(jsonalias="type")]
 	pub types :Asn1Object,
 }
 
