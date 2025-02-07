@@ -95,6 +95,21 @@ impl syn::parse::Parse for SynKV {
 					}
 				}
 				asn1_gen_log_trace!("before ntoks [{}]",input.to_string());
+			} else if input.peek(syn::LitStr) {
+				let c :syn::LitStr = input.parse()?;
+				if k.len() == 0 {
+					k.push_str(&format!("{}",c.value()));
+				} else {
+					v = format!("{}",c.value());
+					let ov = retv.set_attr(&k,&v);
+					if ov.is_err() {
+						let e = ov.err().unwrap();
+						let c = format!("{:?}", e);
+						asn1_gen_log_error!("{}",c);
+						return Err(syn::Error::new(input.span(),&c));
+					}
+				}
+
 			} else {
 				if input.is_empty() {
 					break;

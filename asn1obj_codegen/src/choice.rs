@@ -6,7 +6,7 @@ use crate::randv::{get_random_bytes};
 use crate::logger::{asn1_gen_debug_out};
 use crate::kv::{SynKV};
 use crate::asn1ext::{filter_attrib};
-use crate::consts::{ASN1_INITFN};
+use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS};
 use crate::utils::{format_tab_line,extract_type_name};
 use quote::{ToTokens};
 
@@ -19,6 +19,7 @@ struct ChoiceSyn {
 	typemap :HashMap<String,String>,
 	omitnames :Vec<String>,
 	komitfns :HashMap<String,String>,
+	mapjsonalias :HashMap<String,String>,
 }
 
 asn1_gen_error_class!{ChoiceSynError}
@@ -40,6 +41,7 @@ impl ChoiceSyn {
 			typemap : HashMap::new(),
 			omitnames : vec![],
 			komitfns :HashMap::new(),
+			mapjsonalias :HashMap::new(),
 		}
 	}
 
@@ -68,6 +70,11 @@ impl ChoiceSyn {
 	pub fn set_init_func(&mut self,k:&str,v:&str) {
 		self.omitnames.push(format!("{}",k));
 		self.komitfns.insert(format!("{}",k),format!("{}",v));
+	}
+
+	pub fn set_json_alias(&mut self,n :&str, aliasname :&str) {
+		self.mapjsonalias.insert(format!("{}",n),format!("{}",aliasname));
+		return;
 	}
 
 	pub fn set_name(&mut self,_k :&str,_v :&str) {
@@ -260,6 +267,18 @@ impl ChoiceSyn {
 		return rets;
 	}
 
+	fn _get_json_alias(&self,k :&str) -> String {
+		match self.mapjsonalias.get(k) {
+			Some(v) => {
+				return format!("{}",v);
+			}
+			_ => {
+				return format!("{}",k);
+			}
+		}
+	}
+
+
 	fn format_encode_json(&self,tab :i32) -> String {
 		let mut rets :String = "".to_string();
 		let mut idx :usize;
@@ -268,18 +287,20 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1, "let mut mainv :serde_json::value::Value = serde_json::json!({});"));
 		rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32 = 0;"));
 		rets.push_str(&format_tab_line(tab + 1, " "));
-		rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",self.selname,self.selname)));
+		let jsonk = self._get_json_alias(&self.selname);
+		rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",self.selname,jsonk)));
 		rets.push_str(&format_tab_line(tab + 1, &format!("let c :String = self.{}.encode_select()?;",self.selname)));
 		idx = 0;
 		sidx = 0;
 		while idx < self.parsenames.len() {
+			let jsonk :String = self._get_json_alias(&self.parsenames[idx]);
 			if self.parsenames[idx] != self.selname {
 				if sidx > 0 {
 					rets.push_str(&format_tab_line(tab+1,&format!("}} else if c == \"{}\" {{",self.parsenames[idx])));
 				} else {
 					rets.push_str(&format_tab_line(tab+1,&format!("if c == \"{}\" {{",self.parsenames[idx])));
 				}
-				rets.push_str(&format_tab_line(tab + 2,&format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",self.parsenames[idx],self.parsenames[idx])));
+				rets.push_str(&format_tab_line(tab + 2,&format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",self.parsenames[idx],jsonk)));
 				sidx += 1;
 			}
 			idx += 1;
@@ -330,7 +351,8 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 2,&format!("asn1obj_new_error!{{{},\"not object to decode\"}}",self.errname)));
 		rets.push_str(&format_tab_line(tab + 1,"}"));
 		rets.push_str(&format_tab_line(tab + 1," "));
-		rets.push_str(&format_tab_line(tab + 1,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.selname,self.selname)));
+		let jsonk = self._get_json_alias(&self.selname);
+		rets.push_str(&format_tab_line(tab + 1,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.selname,jsonk)));
 		idx = 0;
 		while idx < self.parsenames.len() {
 			if self.parsenames[idx] != self.selname {
@@ -345,13 +367,14 @@ impl ChoiceSyn {
 		idx = 0;
 		sidx = 0;
 		while idx < self.parsenames.len() {
+			let jsonk :String = self._get_json_alias(&self.parsenames[idx]);
 			if self.parsenames[idx] != self.selname {
 				if sidx > 0 {
 					rets.push_str(&format_tab_line(tab + 1,&format!("}} else if c == \"{}\" {{", self.parsenames[idx])));
 				} else {
 					rets.push_str(&format_tab_line(tab + 1,&format!("if c == \"{}\" {{", self.parsenames[idx])));
 				}
-				rets.push_str(&format_tab_line(tab + 2,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.parsenames[idx],self.parsenames[idx])));
+				rets.push_str(&format_tab_line(tab + 2,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.parsenames[idx],jsonk)));
 				sidx += 1;
 			}
 			idx += 1;
@@ -483,6 +506,7 @@ struct IntChoiceSyn {
 	debugenable :i32,
 	omitnames :Vec<String>,
 	komitfns :HashMap<String,String>,
+	mapjsonalias :HashMap<String,String>,
 }
 
 impl IntChoiceSyn {
@@ -497,6 +521,7 @@ impl IntChoiceSyn {
 			debugenable : asn1_gen_debug_level(),
 			omitnames :vec![],
 			komitfns :HashMap::new(),
+			mapjsonalias :HashMap::new(),
 		}
 	}
 
@@ -516,6 +541,10 @@ impl IntChoiceSyn {
 		self.komitfns.insert(format!("{}",k),format!("{}",v));
 	}
 
+	pub fn set_json_alias(&mut self,n :&str, aliasname :&str) {
+		self.mapjsonalias.insert(format!("{}",n),format!("{}",aliasname));
+		return;
+	}
 
 	fn parse_value(&self, s :&str) -> Result<i64,Box<dyn Error>> {
 		match i64::from_str_radix(s,10) {
@@ -725,6 +754,18 @@ impl IntChoiceSyn {
 		return Ok(rets);
 	}
 
+	fn _get_json_alias(&self,k :&str) -> String {
+		match self.mapjsonalias.get(k) {
+			Some(v) => {
+				return format!("{}",v);
+			}
+			_ => {
+				return format!("{}",k);
+			}
+		}
+	}
+
+
 	fn format_encode_json(&self,tab :i32) -> Result<String,Box<dyn Error>> {
 		let mut rets :String = "".to_string();
 		let mut idx :usize;
@@ -734,16 +775,18 @@ impl IntChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1, "let mut cint :Asn1Integer = Asn1Integer::init_asn1();"));
 		rets.push_str(&format_tab_line(tab + 1, " "));
 		rets.push_str(&format_tab_line(tab + 1, &format!("cint.val = self.{} as i64;",self.seltypename)));
-		rets.push_str(&format_tab_line(tab + 1, &format!("idx += cint.encode_json(\"{}\",&mut mainv)?;",self.seltypename)));
+		let jsonk :String = self._get_json_alias(&self.seltypename);
+		rets.push_str(&format_tab_line(tab + 1, &format!("idx += cint.encode_json(\"{}\",&mut mainv)?;",jsonk)));
 		rets.push_str(&format_tab_line(tab + 1, " "));
 		idx = 0;
 		for (k,v) in self.typmaps.iter() { 
+			let jsonk = self._get_json_alias(&k);
 			if idx > 0 {
 				rets.push_str(&format_tab_line(tab + 1,&format!("}} else if self.{} == {} {{",self.seltypename,v)));
 			} else {
 				rets.push_str(&format_tab_line(tab + 1,&format!("if self.{} == {} {{",self.seltypename,v)));
 			}
-			rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,k)));	
+			rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,jsonk)));	
 			idx += 1;
 		}
 		if idx > 0 {
@@ -801,17 +844,19 @@ impl IntChoiceSyn {
 		rets.push_str(&format_tab_line(tab+2,&format!("asn1obj_new_error!{{{},\"not object to decode\"}}",self.errname)));
 		rets.push_str(&format_tab_line(tab+1,"}"));
 		rets.push_str(&format_tab_line(tab+1," "));
-		rets.push_str(&format_tab_line(tab+1,&format!("idx += cint.decode_json(\"{}\",&mainv)?;",self.seltypename)));
+		let jsonk = self._get_json_alias(&self.seltypename);
+		rets.push_str(&format_tab_line(tab+1,&format!("idx += cint.decode_json(\"{}\",&mainv)?;",jsonk)));
 		rets.push_str(&format_tab_line(tab+1,&format!("self.{} = cint.val as i32;",self.seltypename)));
 		rets.push_str(&format_tab_line(tab+1," "));
 		idx = 0;
 		for (k,v) in self.typmaps.iter() { 
+			let jsonk = self._get_json_alias(&k);
 			if idx > 0 {
 				rets.push_str(&format_tab_line(tab + 1,&format!("}} else if self.{} == {} {{",self.seltypename,v)));
 			} else {
 				rets.push_str(&format_tab_line(tab + 1,&format!("if self.{} == {} {{",self.seltypename,v)));
 			}
-			rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,k)));	
+			rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,jsonk)));	
 			idx += 1;
 		}
 		if idx > 0 {
@@ -974,6 +1019,13 @@ pub fn asn1_choice(_attr : proc_macro::TokenStream,item : proc_macro::TokenStrea
 							omitname = Some(format!("{}",n));
 						}
 
+						let ores = retkv.get_value(ASN1_JSON_ALIAS);
+						if ores.is_some() {
+							let jsonk = ores.unwrap();
+							asn1_gen_log_trace!("n {} jsonk {}",n,jsonk);
+							cs.set_json_alias(&n,&jsonk);
+						}
+
 						if callfn.is_none() && n.len() > 0 && tn.len() > 0 {
 							asn1_gen_log_trace!("set name [{}]=[{}]",n,tn);
 							cs.set_name(&n,&tn);
@@ -1039,6 +1091,13 @@ pub fn asn1_int_choice(_attr : proc_macro::TokenStream, item : proc_macro::Token
 						if ores.is_some() {
 							callfn = Some(format!("{}",ores.unwrap()));
 							omitname = Some(format!("{}",n));
+						}
+
+						let ores = retkv.get_value(ASN1_JSON_ALIAS);
+						if ores.is_some() {
+							let jsonk = ores.unwrap();
+							asn1_gen_log_trace!("n {} jsonk {}",n,jsonk);
+							cs.set_json_alias(&n,&jsonk);
 						}
 
 						if callfn.is_none() && n.len() > 0 && tn.len() > 0 {

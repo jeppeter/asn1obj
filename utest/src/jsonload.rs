@@ -120,6 +120,7 @@ pub struct Asn1Pkcs12SafeBagSelector {
 #[asn1_choice(selector=valid)]
 #[derive(Clone)]
 pub struct Asn1Pkcs12SafeBagSelectElem {
+	#[asn1_gen(jsonalias="type")]
 	pub valid : Asn1Pkcs12SafeBagSelector,
 	pub shkeybag : Asn1ImpSet<Asn1X509Sig,0>,
 	pub bag : Asn1ImpSet<Asn1Pkcs12Bags,0>,
