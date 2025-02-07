@@ -6,7 +6,7 @@ use crate::logger::{asn1_gen_debug_out};
 use crate::randv::{get_random_bytes};
 use crate::kv::{SynKV};
 use crate::asn1ext::{filter_attrib};
-use crate::consts::{ASN1_INITFN};
+use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS};
 use std::error::Error;
 use crate::utils::{format_tab_line,extract_type_name};
 use quote::{ToTokens};
@@ -512,7 +512,11 @@ pub fn asn1_sequence(_attr :proc_macro::TokenStream,item :proc_macro::TokenStrea
 							omitname = Some(format!("{}",n));
 						}
 
-						let ores = retkv.get_value(ASN)
+						let ores = retkv.get_value(ASN1_JSON_ALIAS);
+						if ores.is_some() {
+							let aliasname = format!("{}",ores.unwrap());
+							cs.set_json_alias(&n,&aliasname);
+						}
 
 						if callfn.is_none() && n.len() > 0 && tn.len() > 0 {
 							asn1_gen_log_trace!("set name [{}]=[{}]",n,tn);
