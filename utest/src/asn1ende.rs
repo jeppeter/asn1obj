@@ -43,6 +43,13 @@ use asn1obj::{asn1obj_error_class,asn1obj_new_error};
 
 extargs_error_class!{EcAsn1Error}
 
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct BaseAsn1 {
+	pub val :Asn1BigNum,
+	#[asn1_gen(jsonalias="type")]
+	pub types :Asn1Object,
+}
 
 
 
@@ -143,7 +150,8 @@ pub fn load_asn1_parser(parser :ExtArgsParser) -> Result<(),Box<dyn Error>> {
 		}},
 		"asn1bitdatacheck<asn1bitdatacheck_handler>##jsonfile ... to load in Asn1BitDataFlag then check Asn1BitData and Asn1BitString##" : {{
 			"$" : "+"
-		}}
+		}},
+		""
 	}}
 	"#);
 	extargs_load_commandline!(parser,&cmdline)?;

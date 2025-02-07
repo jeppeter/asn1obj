@@ -324,7 +324,7 @@ impl SequenceSyn {
 			rets.push_str(&format_tab_line(tab + 1, ""));
 			for k in self.parsenames.iter() {
 				let jsonk :String = self._get_json_alias(k);
-				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",jsonk,k)));
+				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,jsonk)));
 			}
 			rets.push_str(&format_tab_line(tab + 1, ""));
 			rets.push_str(&format_tab_line(tab + 1, "if key.len() > 0 {"));
@@ -368,7 +368,7 @@ impl SequenceSyn {
 			rets.push_str(&format_tab_line(tab + 1, ""));
 			for k in self.parsenames.iter() {
 				let jsonk :String = self._get_json_alias(k);
-				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",jsonk,k)));
+				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,jsonk)));
 			}
 			rets.push_str(&format_tab_line(tab + 1, ""));
 			rets.push_str(&format_tab_line(tab + 1, "return Ok(idx);"));

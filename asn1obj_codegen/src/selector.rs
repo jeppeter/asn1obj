@@ -30,6 +30,8 @@ struct ObjSelectorSyn {
 	kmap :HashMap<String,Vec<String>>,
 	omitnames :Vec<String>,
 	komitfns :HashMap<String,String>,
+	mapjsonalias :HashMap<String,String>,
+
 }
 
 //#[allow(unused_variables)]
@@ -53,6 +55,7 @@ impl ObjSelectorSyn {
 			kmap : HashMap::new(),
 			omitnames :vec![],
 			komitfns :HashMap::new(),
+			mapjsonalias :HashMap::new(),
 		}
 	}
 
@@ -277,7 +280,8 @@ impl ObjSelectorSyn {
 
 			rets.push_str(&format_tab_line(tab + 1, " "));
 			for k in self.parsenames.iter() {
-				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,k)));
+				let jsonalias = self._get_json_alias(k);
+				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,jsonalias)));
 			}
 			rets.push_str(&format_tab_line(tab + 1, " "));
 			rets.push_str(&format_tab_line(tab + 1,"if key.len() > 0 {"));
@@ -324,7 +328,8 @@ impl ObjSelectorSyn {
 
 			rets.push_str(&format_tab_line(tab + 1, " "));
 			for k in self.parsenames.iter() {
-				rets.push_str(&format_tab_line(tab + 1,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,k)));
+				let jsonalias = self._get_json_alias(k);
+				rets.push_str(&format_tab_line(tab + 1,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,jsonalias)));
 			}
 			rets.push_str(&format_tab_line(tab + 1, " "));
 			rets.push_str(&format_tab_line(tab + 1, "return Ok(idx);"));
@@ -333,6 +338,23 @@ impl ObjSelectorSyn {
 		rets.push_str(&format_tab_line(tab + 1, ""));
 		rets.push_str(&format_tab_line(tab,"}"));
 		return rets;
+	}
+
+	pub fn set_json_alias(&mut self,n :&str, aliasname :&str) {
+		self.mapjsonalias.insert(format!("{}",n),format!("{}",aliasname));
+		return;
+	}
+
+
+	fn _get_json_alias(&self,k :&str) -> String {
+		match self.mapjsonalias.get(k) {
+			Some(v) => {
+				return format!("{}",v);
+			}
+			_ => {
+				return format!("{}",k);
+			}
+		}
 	}
 
 	fn foramt_select_func(&self,tab :i32) -> String {
