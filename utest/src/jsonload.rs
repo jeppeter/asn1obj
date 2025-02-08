@@ -98,7 +98,7 @@ pub struct Asn1Pkcs12BagsSelector {
 #[asn1_choice(selector=valid)]
 #[derive(Clone)]
 pub struct Asn1Pkcs12BagsElem {
-	#[asn1_gen(jsonskip="true",jsonalias="type")]
+	#[asn1_gen(jsonalias="type")]
 	pub valid : Asn1Pkcs12BagsSelector,
 	pub x509cert : Asn1ImpSet<Asn1OctData,0>,
 	pub other :Asn1ImpSet<Asn1Any,0>,

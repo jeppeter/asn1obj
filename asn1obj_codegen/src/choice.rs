@@ -6,7 +6,7 @@ use crate::randv::{get_random_bytes};
 use crate::logger::{asn1_gen_debug_out};
 use crate::kv::{SynKV};
 use crate::asn1ext::{filter_attrib};
-use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS};
+use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS,ASN1_JSON_SKIP};
 use crate::utils::{format_tab_line,extract_type_name};
 use quote::{ToTokens};
 
@@ -20,6 +20,7 @@ struct ChoiceSyn {
 	omitnames :Vec<String>,
 	komitfns :HashMap<String,String>,
 	mapjsonalias :HashMap<String,String>,
+	mapjsonskip :HashMap<String,bool>,	
 }
 
 asn1_gen_error_class!{ChoiceSynError}
@@ -42,6 +43,7 @@ impl ChoiceSyn {
 			omitnames : vec![],
 			komitfns :HashMap::new(),
 			mapjsonalias :HashMap::new(),
+			mapjsonskip :HashMap::new(),
 		}
 	}
 
@@ -74,6 +76,11 @@ impl ChoiceSyn {
 
 	pub fn set_json_alias(&mut self,n :&str, aliasname :&str) {
 		self.mapjsonalias.insert(format!("{}",n),format!("{}",aliasname));
+		return;
+	}
+
+	pub fn set_json_skip(&mut self, n:&str, skip :bool) {
+		self.mapjsonskip.insert(format!("{}",n),skip);
 		return;
 	}
 
@@ -268,11 +275,23 @@ impl ChoiceSyn {
 	}
 
 	fn _get_json_alias(&self,k :&str) -> String {
+		match self.mapjsonskip.get(k) {
+			Some(v) => {
+				/*to skip for this*/
+				if *v {
+					return format!("");
+				}
+			},
+			_ => {}
+		}
+
 		match self.mapjsonalias.get(k) {
 			Some(v) => {
 				return format!("{}",v);
 			}
 			_ => {
+
+
 				return format!("{}",k);
 			}
 		}
@@ -507,6 +526,7 @@ struct IntChoiceSyn {
 	omitnames :Vec<String>,
 	komitfns :HashMap<String,String>,
 	mapjsonalias :HashMap<String,String>,
+	mapjsonskip :HashMap<String,bool>,
 }
 
 impl IntChoiceSyn {
@@ -522,6 +542,7 @@ impl IntChoiceSyn {
 			omitnames :vec![],
 			komitfns :HashMap::new(),
 			mapjsonalias :HashMap::new(),
+			mapjsonskip : HashMap::new(),
 		}
 	}
 
@@ -543,6 +564,11 @@ impl IntChoiceSyn {
 
 	pub fn set_json_alias(&mut self,n :&str, aliasname :&str) {
 		self.mapjsonalias.insert(format!("{}",n),format!("{}",aliasname));
+		return;
+	}
+
+	pub fn set_json_skip(&mut self, n:&str, skip :bool) {
+		self.mapjsonskip.insert(format!("{}",n),skip);
 		return;
 	}
 
@@ -755,11 +781,23 @@ impl IntChoiceSyn {
 	}
 
 	fn _get_json_alias(&self,k :&str) -> String {
+		match self.mapjsonskip.get(k) {
+			Some(v) => {
+				/*to skip for this*/
+				if *v {
+					return format!("");
+				}
+			},
+			_ => {}
+		}
+
 		match self.mapjsonalias.get(k) {
 			Some(v) => {
 				return format!("{}",v);
 			}
 			_ => {
+
+
 				return format!("{}",k);
 			}
 		}
@@ -1026,6 +1064,15 @@ pub fn asn1_choice(_attr : proc_macro::TokenStream,item : proc_macro::TokenStrea
 							cs.set_json_alias(&n,&jsonk);
 						}
 
+						let ores = retkv.get_value(ASN1_JSON_SKIP);
+						if ores.is_some() {
+							let val = format!("{}",ores.unwrap());
+							asn1_gen_log_trace!("jsonskip {}",val);
+							if val == "true" {
+								cs.set_json_skip(&n,true);
+							}
+						}
+
 						if callfn.is_none() && n.len() > 0 && tn.len() > 0 {
 							asn1_gen_log_trace!("set name [{}]=[{}]",n,tn);
 							cs.set_name(&n,&tn);
@@ -1098,6 +1145,15 @@ pub fn asn1_int_choice(_attr : proc_macro::TokenStream, item : proc_macro::Token
 							let jsonk = ores.unwrap();
 							asn1_gen_log_trace!("n {} jsonk {}",n,jsonk);
 							cs.set_json_alias(&n,&jsonk);
+						}
+
+						let ores = retkv.get_value(ASN1_JSON_SKIP);
+						if ores.is_some() {
+							let val = format!("{}",ores.unwrap());
+							asn1_gen_log_trace!("jsonskip {}",val);
+							if val == "true" {
+								cs.set_json_skip(&n,true);
+							}
 						}
 
 						if callfn.is_none() && n.len() > 0 && tn.len() > 0 {

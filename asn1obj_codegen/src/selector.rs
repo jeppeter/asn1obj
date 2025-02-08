@@ -7,7 +7,7 @@ use crate::logger::{asn1_gen_debug_out};
 use crate::randv::{get_random_bytes};
 use crate::kv::{SynKV};
 use crate::asn1ext::{filter_attrib};
-use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS};
+use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS,ASN1_JSON_SKIP};
 use std::error::Error;
 use crate::utils::{format_tab_line,extract_type_name};
 use quote::{ToTokens};
@@ -31,7 +31,7 @@ struct ObjSelectorSyn {
 	omitnames :Vec<String>,
 	komitfns :HashMap<String,String>,
 	mapjsonalias :HashMap<String,String>,
-
+	mapjsonskip :HashMap<String,bool>,
 }
 
 //#[allow(unused_variables)]
@@ -56,6 +56,7 @@ impl ObjSelectorSyn {
 			omitnames :vec![],
 			komitfns :HashMap::new(),
 			mapjsonalias :HashMap::new(),
+			mapjsonskip : HashMap::new(),
 		}
 	}
 
@@ -118,6 +119,17 @@ impl ObjSelectorSyn {
 		self.omitnames.push(format!("{}",k));
 		self.komitfns.insert(format!("{}",k),format!("{}",v));
 	}
+
+	pub fn set_json_alias(&mut self,n :&str, aliasname :&str) {
+		self.mapjsonalias.insert(format!("{}",n),format!("{}",aliasname));
+		return;
+	}
+
+	pub fn set_json_skip(&mut self, n:&str, skip :bool) {
+		self.mapjsonskip.insert(format!("{}",n),skip);
+		return;
+	}
+
 
 	fn format_decode_asn1(&self, tab :i32) -> String {
 		let mut rets :String = "".to_string();
@@ -340,18 +352,25 @@ impl ObjSelectorSyn {
 		return rets;
 	}
 
-	pub fn set_json_alias(&mut self,n :&str, aliasname :&str) {
-		self.mapjsonalias.insert(format!("{}",n),format!("{}",aliasname));
-		return;
-	}
-
 
 	fn _get_json_alias(&self,k :&str) -> String {
+		match self.mapjsonskip.get(k) {
+			Some(v) => {
+				/*to skip for this*/
+				if *v {
+					return format!("");
+				}
+			},
+			_ => {}
+		}
+
 		match self.mapjsonalias.get(k) {
 			Some(v) => {
 				return format!("{}",v);
 			}
 			_ => {
+
+
 				return format!("{}",k);
 			}
 		}
@@ -672,6 +691,15 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 						if ores.is_some() {
 							let alias = ores.unwrap();
 							selcs.set_json_alias(&n,&alias);
+						}
+
+						let ores = retkv.get_value(ASN1_JSON_SKIP);
+						if ores.is_some() {
+							let val = format!("{}",ores.unwrap());
+							asn1_gen_log_trace!("jsonskip {}",val);
+							if val == "true" {
+								selcs.set_json_skip(&n,true);
+							}
 						}
 
 						if callfn.is_none() && n.len() > 0 && tn.len() > 0 {

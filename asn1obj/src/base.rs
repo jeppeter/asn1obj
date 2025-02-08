@@ -1874,7 +1874,7 @@ impl Asn1Op for Asn1Object {
             vmap = val.clone();
         }
         if !vmap.is_string() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
+            asn1obj_new_error!{Asn1ObjBaseError,"[{}] not valid string {:?}",key,vmap}
         }
         let c = vmap.as_str().unwrap();
         let _ = self.set_value(c)?;
