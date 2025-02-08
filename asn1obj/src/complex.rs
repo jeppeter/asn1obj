@@ -183,6 +183,7 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpSet<T,TAG> {
 		let mut retv :usize = 0;
 		self.val = Vec::new();
 		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+		let mut zeros :usize = 0;
 		asn1obj_log_trace!("flag [0x{:x}]", flag);
 		if ((flag as u8) & ASN1_IMP_SET_MASK ) != ASN1_IMP_SET_MASK {
 			/*we do have any type*/
@@ -203,6 +204,14 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpSet<T,TAG> {
 		while retv < (totallen + hdrlen) {
 			let mut v :T = T::init_asn1();
 			let c = v.decode_asn1(&(code[retv..(hdrlen+totallen)]))?;
+			if c == 0 {
+				zeros += 1;
+			} else {
+				zeros = 0;
+			}
+			if zeros > ASN1_MAX_ZERO_MATCH {
+				asn1obj_new_error!{Asn1ComplexError,"so many zeros on Asn1ImpSet"}
+			}
 			retv += c;
 			self.val.push(v);
 		}
@@ -365,8 +374,7 @@ impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
 			}
 			if zeros > ASN1_MAX_ZERO_MATCH {
 				/*if we do not handle this ,so just skip it*/
-				retv = totallen + hdrlen;
-				break;
+				asn1obj_new_error!{Asn1ComplexError,"so many errors on Asn1Seq"}
 			}
 			retv += c;
 			if c > 0 {
@@ -524,6 +532,7 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 		let mut retv :usize = 0;
 		self.val = Vec::new();
 		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+		let mut zeros :usize = 0;
 		asn1obj_log_trace!("flag [0x{:x}]", flag);
 		if (flag as u8) != ASN1_SET_MASK {
 			/*we do have any type*/
@@ -546,6 +555,14 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 			let mut v :T = T::init_asn1();
 			let c = v.decode_asn1(&(code[retv..(hdrlen+totallen)]))?;
 			asn1obj_log_trace!("passed [{}]", c);
+			if c == 0 {
+				zeros += 1;
+			} else {
+				zeros = 0;
+			}
+			if zeros > ASN1_MAX_ZERO_MATCH {
+				asn1obj_new_error!{Asn1ComplexError,"so many zeros on Asn1Set"}
+			}
 			retv += c;
 			self.val.push(v);
 		}
