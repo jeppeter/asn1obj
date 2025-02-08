@@ -50,7 +50,7 @@ extargs_error_class!{JsonLoadError}
 #[derive(Clone)]
 pub struct Asn1X509AttributeElem {
 	pub object :Asn1Object,
-	pub set :Asn1Any,
+	pub set :Asn1Set<Asn1Any>,
 }
 
 //#[asn1_sequence(debug=enable)]
@@ -111,8 +111,24 @@ pub struct Asn1Pkcs12Bags {
 }
 
 
+//#[asn1_sequence(debug=enable)]
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct Asn1Pkcs8PrivKeyInfoElem {
+	pub version :Asn1Integer,
+	pub pkeyalg : Asn1X509Algor,
+	pub pkey : Asn1OctData,
+	pub attributes : Asn1Opt<Asn1ImpSet<Asn1X509Attribute,0>>,
+}
 
-#[asn1_obj_selector(selector=val,other=default,shkeybag="1.2.840.113549.1.12.10.1.2",bag=["1.2.840.113549.1.12.10.1.3","1.2.840.113549.1.12.10.1.4","1.2.840.113549.1.12.10.1.5"],safes="1.2.840.113549.1.12.10.1.6")]
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct Asn1Pkcs8PrivKeyInfo {
+	pub elem : Asn1Seq<Asn1Pkcs8PrivKeyInfoElem>,
+}
+
+
+#[asn1_obj_selector(selector=val,other=default,keybag="1.2.840.113549.1.12.10.1.1",shkeybag="1.2.840.113549.1.12.10.1.2",bag=["1.2.840.113549.1.12.10.1.3","1.2.840.113549.1.12.10.1.4","1.2.840.113549.1.12.10.1.5"],safes="1.2.840.113549.1.12.10.1.6")]
 #[derive(Clone)]
 pub struct Asn1Pkcs12SafeBagSelector {
 	pub val : Asn1Object,
@@ -123,6 +139,7 @@ pub struct Asn1Pkcs12SafeBagSelector {
 pub struct Asn1Pkcs12SafeBagSelectElem {
 	#[asn1_gen(jsonalias="type")]
 	pub valid : Asn1Pkcs12SafeBagSelector,
+	pub keybag :Asn1ImpSet<Asn1Pkcs8PrivKeyInfo,0>,
 	pub shkeybag : Asn1ImpSet<Asn1X509Sig,0>,
 	pub bag : Asn1ImpSet<Asn1Pkcs12Bags,0>,
 	pub safes :Asn1ImpSet<Asn1Seq<Asn1Pkcs12SafeBag>,0>,
