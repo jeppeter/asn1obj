@@ -6,7 +6,7 @@ use crate::logger::{asn1_gen_debug_out};
 use crate::randv::{get_random_bytes};
 use crate::kv::{SynKV};
 use crate::asn1ext::{filter_attrib};
-use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS};
+use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS,ASN1_JSON_SKIP};
 use std::error::Error;
 use crate::utils::{format_tab_line,extract_type_name};
 use quote::{ToTokens};
@@ -22,6 +22,7 @@ struct SequenceSyn {
 	kmap :HashMap<String,String>,
 	komitinitfns :HashMap<String,String>,
 	mapjsonalias :HashMap<String,String>,
+	mapjsonskip :HashMap<String,bool>,
 }
 
 impl SequenceSyn {
@@ -41,6 +42,7 @@ impl SequenceSyn {
 			kmap : HashMap::new(),
 			komitinitfns :HashMap::new(),
 			mapjsonalias :HashMap::new(),
+			mapjsonskip : HashMap::new(),
 		}
 	}
 
@@ -80,6 +82,11 @@ impl SequenceSyn {
 
 	pub fn set_json_alias(&mut self,n :&str, aliasname :&str) {
 		self.mapjsonalias.insert(format!("{}",n),format!("{}",aliasname));
+		return;
+	}
+
+	pub fn set_json_skip(&mut self, n:&str, skip :bool) {
+		self.mapjsonskip.insert(format!("{}",n),skip);
 		return;
 	}
 
@@ -303,11 +310,24 @@ impl SequenceSyn {
 	}
 
 	fn _get_json_alias(&self,k :&str) -> String {
+
+		match self.mapjsonskip.get(k) {
+			Some(v) => {
+				/*to skip for this*/
+				if *v {
+					return format!("");
+				}
+			},
+			_ => {}
+		}
+
 		match self.mapjsonalias.get(k) {
 			Some(v) => {
 				return format!("{}",v);
 			}
 			_ => {
+
+
 				return format!("{}",k);
 			}
 		}
@@ -516,6 +536,15 @@ pub fn asn1_sequence(_attr :proc_macro::TokenStream,item :proc_macro::TokenStrea
 						if ores.is_some() {
 							let aliasname = format!("{}",ores.unwrap());
 							cs.set_json_alias(&n,&aliasname);
+						}
+
+						let ores = retkv.get_value(ASN1_JSON_SKIP);
+						if ores.is_some() {
+							let val = format!("{}",ores.unwrap());
+							asn1_gen_log_trace!("jsonskip {}",val);
+							if val == "true" {
+								cs.set_json_skip(&n,true);
+							}
 						}
 
 						if callfn.is_none() && n.len() > 0 && tn.len() > 0 {

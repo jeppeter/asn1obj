@@ -150,8 +150,7 @@ pub fn load_asn1_parser(parser :ExtArgsParser) -> Result<(),Box<dyn Error>> {
 		}},
 		"asn1bitdatacheck<asn1bitdatacheck_handler>##jsonfile ... to load in Asn1BitDataFlag then check Asn1BitData and Asn1BitString##" : {{
 			"$" : "+"
-		}},
-		""
+		}}
 	}}
 	"#);
 	extargs_load_commandline!(parser,&cmdline)?;

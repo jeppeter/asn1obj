@@ -210,14 +210,26 @@ impl Asn1Op for Asn1Any {
         }
         let tagv = ores.unwrap();
         let conv = ores2.unwrap();
-        if !tagv.is_i64() {
+        if !tagv.is_i64() && !tagv.is_string() {
             asn1obj_new_error!{Asn1ObjBaseError,"{} not i64", ASN1_JSON_TAG}
         }
         if !conv.is_array() {
             asn1obj_new_error!{Asn1ObjBaseError,"{} not array",ASN1_JSON_CONTENT}
         }
-        let c = tagv.as_i64().unwrap();
-        self.tag = c as u64;
+        if tagv.is_i64() {
+            let c = tagv.as_i64().unwrap();
+            self.tag = c as u64;
+        } else if tagv.is_string() {
+            let c = tagv.as_str().unwrap();
+            match c.parse::<i64>() {
+                Ok(fi) => {
+                    self.tag = fi as u64;
+                },
+                Err(e) => {
+                    asn1obj_new_error!{Asn1ObjBaseError,"{} val {} error {:?}", ASN1_JSON_TAG,c,e}
+                }
+            }
+        }
         self.content = Vec::new();
         for v in conv.as_array().unwrap().iter() {
             let c = v.as_u64().unwrap();

@@ -27,7 +27,7 @@ pub const ASN1_OBJECT_DEFAULT_STR :&str = "1.1.1";
 
 
 pub const ASN1_JSON_TAG :&str = "tag";
-pub const ASN1_JSON_CONTENT :&str = "content";
+pub const ASN1_JSON_CONTENT :&str = "data";
 pub const ASN1_JSON_PRINTABLE_STRING :&str = "printablestring";
 pub const ASN1_JSON_IA5STRING :&str = "ia5string";
 pub const ASN1_JSON_INNER_FLAG :&str = "_flag";

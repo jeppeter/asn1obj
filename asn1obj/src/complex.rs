@@ -117,16 +117,29 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpSet<T,TAG> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		let mut mainv :Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
 		let mut idx :i32 = 0;
-		for v in &self.val {
-			let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-			let _ = v.encode_json("", &mut cv)?;
-			mainv.push(cv.clone());
-			idx += 1;			
-		}
-		if key.len() > 0 {
-			val[key] = serde_json::json!(mainv);	
+		if self.val.len() == 1 {
+			let mut cvv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+			self.val[0].encode_json("",&mut cvv)?;
+			if key.len() > 0 {
+				val[key] = serde_json::json!(cvv);	
+			} else {
+				*val = serde_json::json!(cvv);
+			}
+
+			idx += 1;
 		} else {
-			*val = serde_json::json!(mainv.clone());
+			for v in &self.val {
+				let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+				let _ = v.encode_json("", &mut cv)?;
+				mainv.push(cv.clone());
+				idx += 1;			
+			}
+			if key.len() > 0 {
+				val[key] = serde_json::json!(mainv);	
+			} else {
+				*val = serde_json::json!(mainv.clone());
+			}
+
 		}
 		return Ok(idx);
 	}
@@ -265,16 +278,28 @@ impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		let mut mainv :Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
 		let mut idx :i32 = 0;
-		for v in &self.val {
-			let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-			let _ = v.encode_json("", &mut cv)?;
-			mainv.push(cv.clone());
-			idx += 1;			
-		}
-		if key.len() > 0 {
-			val[key] = serde_json::json!(mainv);	
+		if self.val.len() == 1 {
+			let mut cvv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+			self.val[0].encode_json("", &mut cvv)?;
+			if key.len() > 0 {
+				val[key] = serde_json::json!(cvv);
+			} else {
+				*val = serde_json::json!(cvv);
+			}
+			idx += 1;
 		} else {
-			*val = serde_json::json!(mainv);
+			for v in &self.val {
+				let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+				let _ = v.encode_json("", &mut cv)?;
+				mainv.push(cv.clone());
+				idx += 1;			
+			}
+			if key.len() > 0 {
+				val[key] = serde_json::json!(mainv);	
+			} else {
+				*val = serde_json::json!(mainv);
+			}
+
 		}
 		
 		return Ok(idx);
@@ -425,17 +450,29 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		let mut mainv : Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
 		let mut idx :i32 = 0;
-		for v in &self.val {
-			let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-			let _ = v.encode_json(ASN1_JSON_DUMMY, &mut cv)?;
-			mainv.push(cv[ASN1_JSON_DUMMY].clone());
-			idx += 1;			
-		}
-		if key.len() > 0 {
-			val[key] = serde_json::json!(mainv);	
+		if self.val.len() == 1 {
+			let mut cvv :serde_json::value::Value = serde_json::from_str("{}")?;
+			self.val[0].encode_json("",&mut cvv)?;
+			if key.len() > 0 {
+				val[key] = serde_json::json!(cvv);	
+			} else {
+				*val = serde_json::json!(cvv);
+			}		
+			idx += 1;
 		} else {
-			*val = serde_json::json!(mainv);
-		}		
+			for v in &self.val {
+				let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+				let _ = v.encode_json(ASN1_JSON_DUMMY, &mut cv)?;
+				mainv.push(cv[ASN1_JSON_DUMMY].clone());
+				idx += 1;			
+			}
+			if key.len() > 0 {
+				val[key] = serde_json::json!(mainv);	
+			} else {
+				*val = serde_json::json!(mainv);
+			}		
+
+		}
 		return Ok(idx);
 	}
 

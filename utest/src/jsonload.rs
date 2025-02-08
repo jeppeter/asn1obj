@@ -88,7 +88,7 @@ pub struct Asn1X509Sig {
 	pub elem : Asn1Seq<Asn1X509SigElem>,
 }
 
-#[asn1_obj_selector(selector=val,any=default,x509cert="1.2.840.113549.1.9.22.1")]
+#[asn1_obj_selector(selector=val,other=default,x509cert="1.2.840.113549.1.9.22.1")]
 #[derive(Clone)]
 pub struct Asn1Pkcs12BagsSelector {
 	pub val : Asn1Object,
@@ -98,9 +98,10 @@ pub struct Asn1Pkcs12BagsSelector {
 #[asn1_choice(selector=valid)]
 #[derive(Clone)]
 pub struct Asn1Pkcs12BagsElem {
+	#[asn1_gen(jsonskip="true",jsonalias="type")]
 	pub valid : Asn1Pkcs12BagsSelector,
 	pub x509cert : Asn1ImpSet<Asn1OctData,0>,
-	pub any :Asn1Any,
+	pub other :Asn1ImpSet<Asn1Any,0>,
 }
 
 #[asn1_sequence()]
@@ -125,12 +126,13 @@ pub struct Asn1Pkcs12SafeBagSelectElem {
 	pub shkeybag : Asn1ImpSet<Asn1X509Sig,0>,
 	pub bag : Asn1ImpSet<Asn1Pkcs12Bags,0>,
 	pub safes :Asn1ImpSet<Asn1Seq<Asn1Pkcs12SafeBag>,0>,
-	pub other :Asn1Any,
+	pub other :Asn1ImpSet<Asn1Seq<Asn1Any>,0>,
 }
 
 #[asn1_sequence()]
 #[derive(Clone)]
 pub struct Asn1Pkcs12SafeBagElem {
+	#[asn1_gen(jsonskip="true")]
 	pub selectelem : Asn1Pkcs12SafeBagSelectElem,
 	pub attrib : Asn1Opt<Asn1Set<Asn1X509Attribute>>,
 }
@@ -155,6 +157,9 @@ fn safebagjsondec_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn Arg
 		let mut jval :serde_json::Value = serde_json::from_str("{}")?;
 		bag.encode_json("",&mut jval)?;
 		let s = serde_json::to_string_pretty(&jval)?;
+		let cstr = format!("{} Bag\n",f);
+		let mut outf = std::io::stdout();
+		let _ = bag.print_asn1(&cstr,0,&mut outf)?;
 		println!("{} out\n{}", f,s);
 	}
 
