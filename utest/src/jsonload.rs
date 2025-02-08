@@ -88,7 +88,7 @@ pub struct Asn1X509Sig {
 	pub elem : Asn1Seq<Asn1X509SigElem>,
 }
 
-#[asn1_obj_selector(selector=val,other=default,x509cert="1.2.840.113549.1.9.22.1")]
+#[asn1_obj_selector(selector=val,other=default,x509cert="1.2.840.113549.1.9.22.1",sdsicert="1.2.840.113549.1.9.22.2",x509crl="1.2.840.113549.1.9.23.1")]
 #[derive(Clone)]
 pub struct Asn1Pkcs12BagsSelector {
 	pub val : Asn1Object,
@@ -101,6 +101,8 @@ pub struct Asn1Pkcs12BagsElem {
 	#[asn1_gen(jsonalias="type")]
 	pub valid : Asn1Pkcs12BagsSelector,
 	pub x509cert : Asn1ImpSet<Asn1OctData,0>,
+	pub x509crl :Asn1ImpSet<Asn1OctData,0>,
+	pub sdsicert :Asn1ImpSet<Asn1IA5String,0>,
 	pub other :Asn1ImpSet<Asn1Any,0>,
 }
 

@@ -340,6 +340,7 @@ impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
 		let mut retv :usize = 0;
 		self.val = Vec::new();
 		let (flag,hdrlen,totallen) = asn1obj_extract_header(code)?;
+		let mut zeros :usize = 0;
 		asn1obj_log_trace!("flag [0x{:x}]", flag);
 		if (flag as u8) != ASN1_SEQ_MASK {
 			/*we do have any type*/
@@ -357,8 +358,20 @@ impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
 			let mut v :T = T::init_asn1();
 			let c = v.decode_asn1(&(code[retv..(hdrlen+totallen)]))?;
 			asn1obj_log_trace!("c [{}]",c);
+			if c == 0 {
+				zeros += 1;
+			} else {
+				zeros = 0;
+			}
+			if zeros > ASN1_MAX_ZERO_MATCH {
+				/*if we do not handle this ,so just skip it*/
+				retv = totallen + hdrlen;
+				break;
+			}
 			retv += c;
-			self.val.push(v);
+			if c > 0 {
+				self.val.push(v);	
+			}			
 		}
 
 		self.data = Vec::new();
