@@ -307,6 +307,9 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32 = 0;"));
 		rets.push_str(&format_tab_line(tab + 1, " "));
 		let jsonk = self._get_json_alias(&self.selname);
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.selname)));
+		}
 		rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",self.selname,jsonk)));
 		rets.push_str(&format_tab_line(tab + 1, &format!("let c :String = self.{}.encode_select()?;",self.selname)));
 		idx = 0;
@@ -318,6 +321,9 @@ impl ChoiceSyn {
 					rets.push_str(&format_tab_line(tab+1,&format!("}} else if c == \"{}\" {{",self.parsenames[idx])));
 				} else {
 					rets.push_str(&format_tab_line(tab+1,&format!("if c == \"{}\" {{",self.parsenames[idx])));
+				}
+				if self.debugenable {
+					rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
 				}
 				rets.push_str(&format_tab_line(tab + 2,&format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",self.parsenames[idx],jsonk)));
 				sidx += 1;
@@ -371,6 +377,9 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1,"}"));
 		rets.push_str(&format_tab_line(tab + 1," "));
 		let jsonk = self._get_json_alias(&self.selname);
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.selname,jsonk)));
+		}
 		rets.push_str(&format_tab_line(tab + 1,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.selname,jsonk)));
 		idx = 0;
 		while idx < self.parsenames.len() {
@@ -392,6 +401,9 @@ impl ChoiceSyn {
 					rets.push_str(&format_tab_line(tab + 1,&format!("}} else if c == \"{}\" {{", self.parsenames[idx])));
 				} else {
 					rets.push_str(&format_tab_line(tab + 1,&format!("if c == \"{}\" {{", self.parsenames[idx])));
+				}
+				if self.debugenable {
+					rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
 				}
 				rets.push_str(&format_tab_line(tab + 2,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.parsenames[idx],jsonk)));
 				sidx += 1;
@@ -516,13 +528,13 @@ impl syn::parse::Parse for ChoiceSyn {
 
 #[allow(dead_code)]
 struct IntChoiceSyn {
+	debugenable : bool,
 	seltypename :String,
 	valarr :Vec<String>,
 	errname :String,
 	valmaps :HashMap<String,String>,
 	typmaps :HashMap<String,i32>,
 	sname :String,
-	debugenable :i32,
 	omitnames :Vec<String>,
 	komitfns :HashMap<String,String>,
 	mapjsonalias :HashMap<String,String>,
@@ -531,14 +543,20 @@ struct IntChoiceSyn {
 
 impl IntChoiceSyn {
 	pub fn new() -> IntChoiceSyn {
+		let dbgval : bool;
+		if asn1_gen_debug_level() > 0 {
+			dbgval = true;
+		} else {
+			dbgval = false;
+		}
 		IntChoiceSyn {
+			debugenable : dbgval,
 			seltypename : "".to_string(),
 			valarr : Vec::new(),
 			valmaps : HashMap::new(),
 			typmaps : HashMap::new(),
 			sname : "".to_string(),
 			errname : "".to_string(),
-			debugenable : asn1_gen_debug_level(),
 			omitnames :vec![],
 			komitfns :HashMap::new(),
 			mapjsonalias :HashMap::new(),
@@ -585,10 +603,13 @@ impl IntChoiceSyn {
 
 	pub fn set_attr_name(&mut self, _k :&str, _v :&str) -> Result<(),Box<dyn Error>> {
 		let iv :i64;
-		if _k.eq("debug") {
-			iv = self.parse_value(_v)?;
-			self.debugenable = iv as i32;
-		} else if _k.eq("selector") {
+		if _k == "debug" && (_v == "enable" || _v == "disable") {
+			if _v == "enable" {
+				self.debugenable = true;
+			} else {
+				self.debugenable = false;
+			}
+		}else if _k.eq("selector") {
 			self.seltypename = format!("{}",_v);
 		} else if _k.eq("error") {
 			self.errname = format!("{}",_v);
@@ -689,13 +710,13 @@ impl IntChoiceSyn {
 		let mut rets :String = "".to_string();
 		rets.push_str(&format_tab_line(tab, "fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {"));
 		rets.push_str(&format_tab_line(tab+1, "let mut ores : Result<usize,Box<dyn Error>>;"));
-		if self.debugenable > 0 {
+		if self.debugenable {
 			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
 			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
 		}
 		rets.push_str(&format_tab_line(tab+1, " "));
 		for (k,v) in self.typmaps.iter() {
-			if self.debugenable > 0 {
+			if self.debugenable  {
 				rets.push_str(&(format_tab_line(tab+1,&(format!("_outs = format!(\"will decode {}\\n\");",k)))));
 				rets.push_str(&(format_tab_line(tab+1,&(format!("_outf.write(_outs.as_bytes())?;")))));
 			}
@@ -814,6 +835,9 @@ impl IntChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1, " "));
 		rets.push_str(&format_tab_line(tab + 1, &format!("cint.val = self.{} as i64;",self.seltypename)));
 		let jsonk :String = self._get_json_alias(&self.seltypename);
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.encode_json(\\\"{}\\\",val)\");",self.sname,jsonk)));
+		}
 		rets.push_str(&format_tab_line(tab + 1, &format!("idx += cint.encode_json(\"{}\",&mut mainv)?;",jsonk)));
 		rets.push_str(&format_tab_line(tab + 1, " "));
 		idx = 0;
@@ -823,6 +847,9 @@ impl IntChoiceSyn {
 				rets.push_str(&format_tab_line(tab + 1,&format!("}} else if self.{} == {} {{",self.seltypename,v)));
 			} else {
 				rets.push_str(&format_tab_line(tab + 1,&format!("if self.{} == {} {{",self.seltypename,v)));
+			}
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\",key);",self.sname,k,jsonk)));
 			}
 			rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,jsonk)));	
 			idx += 1;
@@ -883,6 +910,9 @@ impl IntChoiceSyn {
 		rets.push_str(&format_tab_line(tab+1,"}"));
 		rets.push_str(&format_tab_line(tab+1," "));
 		let jsonk = self._get_json_alias(&self.seltypename);
+		if self.debugenable {
+			rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.decode_json(\\\"{}\\\",val)\",key);",self.sname,jsonk)));
+		}
 		rets.push_str(&format_tab_line(tab+1,&format!("idx += cint.decode_json(\"{}\",&mainv)?;",jsonk)));
 		rets.push_str(&format_tab_line(tab+1,&format!("self.{} = cint.val as i32;",self.seltypename)));
 		rets.push_str(&format_tab_line(tab+1," "));
@@ -893,6 +923,9 @@ impl IntChoiceSyn {
 				rets.push_str(&format_tab_line(tab + 1,&format!("}} else if self.{} == {} {{",self.seltypename,v)));
 			} else {
 				rets.push_str(&format_tab_line(tab + 1,&format!("if self.{} == {} {{",self.seltypename,v)));
+			}
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\",key);",self.sname,k,jsonk)));
 			}
 			rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,jsonk)));	
 			idx += 1;

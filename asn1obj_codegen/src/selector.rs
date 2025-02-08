@@ -285,6 +285,9 @@ impl ObjSelectorSyn {
 		let mut rets :String = "".to_string();
 		rets.push_str(&format_tab_line(tab , "fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
 		if self.parsenames.len() == 1 {
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
+			}
 			rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.encode_json(key,val);",self.parsenames[0])));
 		} else if self.parsenames.len() > 1 {
 			rets.push_str(&format_tab_line(tab + 1, "let mut mainv = serde_json::json!({});"));
@@ -293,6 +296,9 @@ impl ObjSelectorSyn {
 			rets.push_str(&format_tab_line(tab + 1, " "));
 			for k in self.parsenames.iter() {
 				let jsonalias = self._get_json_alias(k);
+				if self.debugenable {
+					rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,k,jsonalias)));
+				}
 				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,jsonalias)));
 			}
 			rets.push_str(&format_tab_line(tab + 1, " "));
@@ -314,6 +320,9 @@ impl ObjSelectorSyn {
 		let mut rets :String = "".to_string();
 		rets.push_str(&format_tab_line(tab , "fn decode_json(&mut self, key :&str,val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
 		if self.parsenames.len() == 1 {
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
+			}
 			rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.decode_json(key,val);",self.parsenames[0])));
 		} else if self.parsenames.len() > 1 {
 			rets.push_str(&format_tab_line(tab + 1, "let mainv : serde_json::value::Value;"));
@@ -341,6 +350,9 @@ impl ObjSelectorSyn {
 			rets.push_str(&format_tab_line(tab + 1, " "));
 			for k in self.parsenames.iter() {
 				let jsonalias = self._get_json_alias(k);
+				if self.debugenable {
+					rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,k,jsonalias)));
+				}
 				rets.push_str(&format_tab_line(tab + 1,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,jsonalias)));
 			}
 			rets.push_str(&format_tab_line(tab + 1, " "));
