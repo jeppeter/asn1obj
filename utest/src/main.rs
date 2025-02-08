@@ -36,8 +36,9 @@ mod loglib;
 mod strop;
 mod fileop;
 mod pemlib;
-mod asn1ende;
-mod jsonload;
+//mod asn1ende;
+//mod jsonload;
+mod ecload;
 
 
 
@@ -51,8 +52,9 @@ fn main() -> Result<(),Box<dyn Error>> {
 	}}"#);
 	extargs_load_commandline!(parser,&commandline)?;
 	loglib::prepare_log(parser.clone())?;
-	asn1ende::load_asn1_parser(parser.clone())?;
-	jsonload::load_json_parser(parser.clone())?;
+	//asn1ende::load_asn1_parser(parser.clone())?;
+	//jsonload::load_json_parser(parser.clone())?;
+	ecload::load_ec_parser(parser.clone())?;
 	let ores = parser.parse_commandline_ex(None,None,None,None);
 	if ores.is_err() {
 		let e = ores.err().unwrap();

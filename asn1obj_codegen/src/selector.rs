@@ -175,7 +175,7 @@ impl ObjSelectorSyn {
 				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\"    \");"));
 				rets.push_str(&format_tab_line(tab + 4,"while _lasti != _i {"));
 				rets.push_str(&format_tab_line(tab + 5,"if code[(_lastv + _lasti)] >= 0x20 && code[(_lastv + _lasti)] <= 0x7e {"));
-				rets.push_str(&format_tab_line(tab + 6,"_outs.push(code[(_lastv+_lasti)] as char);"));
+				rets.push_str(&format_tab_line(tab + 6,"_outs.push(code[_lastv+_lasti] as char);"));
 				rets.push_str(&format_tab_line(tab + 5,"} else {"));
 				rets.push_str(&format_tab_line(tab + 6,"_outs.push_str(\".\");"));
 				rets.push_str(&format_tab_line(tab + 5,"}"));
@@ -195,7 +195,7 @@ impl ObjSelectorSyn {
 				rets.push_str(&format_tab_line(tab + 2,"_outs.push_str(\"    \");"));
 				rets.push_str(&format_tab_line(tab + 2,"while _lasti < (retv - _lastv) {"));
 				rets.push_str(&format_tab_line(tab + 3,"if code[(_lastv + _lasti)] >= 0x20 && code[(_lastv + _lasti)] <= 0x7e {"));
-				rets.push_str(&format_tab_line(tab + 4,"_outs.push(code[(_lastv+_lasti)] as char);"));
+				rets.push_str(&format_tab_line(tab + 4,"_outs.push(code[_lastv+_lasti] as char);"));
 				rets.push_str(&format_tab_line(tab + 3,"} else {"));
 				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\".\");"));
 				rets.push_str(&format_tab_line(tab + 3,"}"));

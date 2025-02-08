@@ -632,7 +632,6 @@ impl IntChoiceSyn {
 				}
 			}
 
-
 			if !found {
 				asn1_gen_new_error!{ChoiceSynError,"{} not found in valmaps", k}
 			}
@@ -849,7 +848,7 @@ impl IntChoiceSyn {
 				rets.push_str(&format_tab_line(tab + 1,&format!("if self.{} == {} {{",self.seltypename,v)));
 			}
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\",key);",self.sname,k,jsonk)));
+				rets.push_str(&format_tab_line(tab + 2,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
 			}
 			rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,jsonk)));	
 			idx += 1;
@@ -911,7 +910,7 @@ impl IntChoiceSyn {
 		rets.push_str(&format_tab_line(tab+1," "));
 		let jsonk = self._get_json_alias(&self.seltypename);
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.decode_json(\\\"{}\\\",val)\",key);",self.sname,jsonk)));
+			rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.decode_json(\\\"{}\\\",val)\");",self.sname,jsonk)));
 		}
 		rets.push_str(&format_tab_line(tab+1,&format!("idx += cint.decode_json(\"{}\",&mainv)?;",jsonk)));
 		rets.push_str(&format_tab_line(tab+1,&format!("self.{} = cint.val as i32;",self.seltypename)));
@@ -925,7 +924,7 @@ impl IntChoiceSyn {
 				rets.push_str(&format_tab_line(tab + 1,&format!("if self.{} == {} {{",self.seltypename,v)));
 			}
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\",key);",self.sname,k,jsonk)));
+				rets.push_str(&format_tab_line(tab + 2,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
 			}
 			rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,jsonk)));	
 			idx += 1;
