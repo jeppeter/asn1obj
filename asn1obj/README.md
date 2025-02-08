@@ -2,6 +2,7 @@
 > rust parse ASN.1 format code
 
 ### Release History
+* Feb 8th 2025 to release 0.1.20 version as the Asn1Set Asn1ImpSet Asn1Seq with 1 element object json encode and decode
 * Feb 6th 2025 to check every totallen in complex and base object for 0.1.18 version
 * Jan 21th 2025 to make Asn1ImpA0 to Asn1Exp
 * Jan 20th 2025 to make Asn1BMPString set for 0.1.16 version
