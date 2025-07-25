@@ -40,7 +40,9 @@ use asn1obj::base::*;
 use asn1obj::asn1impl::*;
 #[allow(unused_imports)]
 use asn1obj::{asn1obj_error_class,asn1obj_new_error};
-use asn1obj::strop::asn1_format_line;
+use asn1obj::strop::*;
+#[allow(unused_imports)]
+use asn1obj::*;
 
 extargs_error_class!{EcAsn1Error}
 
@@ -138,11 +140,34 @@ fn asn1bitdatacheck_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn A
 }
 
 
-#[extargs_map_function(asn1bitdataflagenc_handler,asn1bitdataflagdec_handler,asn1bitdatacheck_handler)]
+fn asn1fmt_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSetImpl>>>,_ctx :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
+	let mut vx :Vec<u8> = vec![10,20,30];
+	init_log(ns.clone())?;
+
+	while vx.len() < 35 {
+		vx.push(0);
+	}
+
+	asn1_enter_debug();
+	asn1_format_debug!("debug value {}",1);
+	asn1_format_debug_buffer!(vx.as_ptr(),vx.len(),"vx buffer");
+	asn1_enter_debug();
+	asn1_format_debug!("debug value {}",1);
+	asn1_format_debug_buffer!(vx.as_ptr(),vx.len(),"vx buffer");
+
+	asn1_leave_debug();
+	asn1_leave_debug();
+	Ok(())
+}
+
+#[extargs_map_function(asn1bitdataflagenc_handler,asn1bitdataflagdec_handler,asn1bitdatacheck_handler,asn1fmt_handler)]
 pub fn load_asn1_parser(parser :ExtArgsParser) -> Result<(),Box<dyn Error>> {
 	let cmdline = format!(r#"
 	{{
 		"asn1bitflag" : 0,
+		"asn1fmt<asn1fmt_handler>##to give asn1fmt output##" : {{
+			"$" : 0
+		}},
 		"asn1bitdataflagenc<asn1bitdataflagenc_handler>##hexval to make Asn1BitDataLeftFlag##" : {{
 			"$" : "+"
 		}},

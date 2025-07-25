@@ -137,11 +137,14 @@ impl ObjSelectorSyn {
 		rets.push_str(&format_tab_line(tab + 1, "let mut retv :usize = 0;"));
 		rets.push_str(&format_tab_line(tab + 1, "let mut _endsize :usize = code.len();"));
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+			// rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
+			// rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+			// rets.push_str(&format_tab_line(tab + 1, "let mut _lastv :usize = 0;"));
+			// rets.push_str(&format_tab_line(tab + 1, "let mut _i :usize;"));
+			// rets.push_str(&format_tab_line(tab + 1, "let mut _lasti :usize;"));
+
 			rets.push_str(&format_tab_line(tab + 1, "let mut _lastv :usize = 0;"));
-			rets.push_str(&format_tab_line(tab + 1, "let mut _i :usize;"));
-			rets.push_str(&format_tab_line(tab + 1, "let mut _lasti :usize;"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _dumpcode :Vec<u8>;"));
 		}
 		if self.debugenable {
 			rets.push_str(&format_tab_line(tab + 1, "_lastv = retv;"));
@@ -149,15 +152,26 @@ impl ObjSelectorSyn {
 		for k in self.parsenames.iter() {			
 			rets.push_str(&format_tab_line(tab + 1, ""));
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"decode {}.{} will decode at {{}}\\n\",retv);",self.sname,k)));
-				rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+				// rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"decode {}.{} will decode at {{}}\\n\",retv);",self.sname,k)));
+				// rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+
+				rets.push_str(&format_tab_line(tab + 1, &format!("asn1_format_debug!(\"decode {}.{} will decode at {{}}\\n\",retv);",self.sname,k)));
+			}
+
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1, &format!("asn1_enter_debug();")));
 			}
 			rets.push_str(&format_tab_line(tab + 1, &format!("let ro = self.{}.decode_asn1(&code[retv.._endsize]);",k)));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1, &format!("asn1_leave_debug();")));
+			}
 			rets.push_str(&format_tab_line(tab + 1, "if ro.is_err() {"));
 			rets.push_str(&format_tab_line(tab + 2, &format!("let e = ro.err().unwrap();")));
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 2, &format!("_outs = format!(\"decode {}.{} error {{:?}}\",e);",self.sname,k)));
-				rets.push_str(&format_tab_line(tab + 2,"let _ = _outf.write(_outs.as_bytes())?;"));
+				// rets.push_str(&format_tab_line(tab + 2, &format!("_outs = format!(\"decode {}.{} error {{:?}}\",e);",self.sname,k)));
+				// rets.push_str(&format_tab_line(tab + 2,"let _ = _outf.write(_outs.as_bytes())?;"));
+
+				rets.push_str(&format_tab_line(tab + 2, &format!("asn1_format_debug!(\"decode {}.{} error {{:?}}\",e);",self.sname,k)));
 			}
 			rets.push_str(&format_tab_line(tab + 2, "return Err(e);"));
 			rets.push_str(&format_tab_line(tab + 1, "}"));
@@ -166,51 +180,56 @@ impl ObjSelectorSyn {
 			}
 			rets.push_str(&format_tab_line(tab + 1, &format!("retv += ro.unwrap();")));
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"decode {}.{} retv {{}} _lastv {{}}\",retv,_lastv);",self.sname,k)));
-				rets.push_str(&format_tab_line(tab + 1,"_i = 0;"));
-				rets.push_str(&format_tab_line(tab + 1,"_lasti = 0;"));
-				rets.push_str(&format_tab_line(tab + 1,"while _i < (retv - _lastv) {"));
-				rets.push_str(&format_tab_line(tab + 2,"if (_i % 16) == 0 {"));
-				rets.push_str(&format_tab_line(tab + 3,"if _i > 0 {"));
-				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\"    \");"));
-				rets.push_str(&format_tab_line(tab + 4,"while _lasti != _i {"));
-				rets.push_str(&format_tab_line(tab + 5,"if code[(_lastv + _lasti)] >= 0x20 && code[(_lastv + _lasti)] <= 0x7e {"));
-				rets.push_str(&format_tab_line(tab + 6,"_outs.push(code[_lastv+_lasti] as char);"));
-				rets.push_str(&format_tab_line(tab + 5,"} else {"));
-				rets.push_str(&format_tab_line(tab + 6,"_outs.push_str(\".\");"));
-				rets.push_str(&format_tab_line(tab + 5,"}"));
-				rets.push_str(&format_tab_line(tab + 5,"_lasti += 1;"));
-				rets.push_str(&format_tab_line(tab + 4,"}"));
-				rets.push_str(&format_tab_line(tab + 3,"}"));
-				rets.push_str(&format_tab_line(tab + 3,"_outs.push_str(&format!(\"\\n0x{:08x}:\",_i));"));
-				rets.push_str(&format_tab_line(tab + 2,"}"));
-				rets.push_str(&format_tab_line(tab + 2,"_outs.push_str(&format!(\" 0x{:02x}\", code[_lastv + _i]));"));
-				rets.push_str(&format_tab_line(tab + 2,"_i += 1;"));
-				rets.push_str(&format_tab_line(tab + 1,"}"));
-				rets.push_str(&format_tab_line(tab + 1,"if _lasti != _i {"));
-				rets.push_str(&format_tab_line(tab + 2,"while (_i % 16) != 0 {"));
-				rets.push_str(&format_tab_line(tab + 3,"_outs.push_str(\"     \");"));
-				rets.push_str(&format_tab_line(tab + 3,"_i += 1;"));
-				rets.push_str(&format_tab_line(tab + 2,"}"));
-				rets.push_str(&format_tab_line(tab + 2,"_outs.push_str(\"    \");"));
-				rets.push_str(&format_tab_line(tab + 2,"while _lasti < (retv - _lastv) {"));
-				rets.push_str(&format_tab_line(tab + 3,"if code[(_lastv + _lasti)] >= 0x20 && code[(_lastv + _lasti)] <= 0x7e {"));
-				rets.push_str(&format_tab_line(tab + 4,"_outs.push(code[_lastv+_lasti] as char);"));
-				rets.push_str(&format_tab_line(tab + 3,"} else {"));
-				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\".\");"));
-				rets.push_str(&format_tab_line(tab + 3,"}"));
-				rets.push_str(&format_tab_line(tab + 3,"_lasti += 1;"));
-				rets.push_str(&format_tab_line(tab + 2,"}"));
-				rets.push_str(&format_tab_line(tab + 1,"}"));
-				rets.push_str(&format_tab_line(tab + 1,"_outs.push_str(\"\\n\");"));
-				rets.push_str(&format_tab_line(tab + 1,"let _ = _outf.write(_outs.as_bytes())?;"));
+				// rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"decode {}.{} retv {{}} _lastv {{}}\",retv,_lastv);",self.sname,k)));
+				// rets.push_str(&format_tab_line(tab + 1,"_i = 0;"));
+				// rets.push_str(&format_tab_line(tab + 1,"_lasti = 0;"));
+				// rets.push_str(&format_tab_line(tab + 1,"while _i < (retv - _lastv) {"));
+				// rets.push_str(&format_tab_line(tab + 2,"if (_i % 16) == 0 {"));
+				// rets.push_str(&format_tab_line(tab + 3,"if _i > 0 {"));
+				// rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\"    \");"));
+				// rets.push_str(&format_tab_line(tab + 4,"while _lasti != _i {"));
+				// rets.push_str(&format_tab_line(tab + 5,"if code[(_lastv + _lasti)] >= 0x20 && code[(_lastv + _lasti)] <= 0x7e {"));
+				// rets.push_str(&format_tab_line(tab + 6,"_outs.push(code[_lastv+_lasti] as char);"));
+				// rets.push_str(&format_tab_line(tab + 5,"} else {"));
+				// rets.push_str(&format_tab_line(tab + 6,"_outs.push_str(\".\");"));
+				// rets.push_str(&format_tab_line(tab + 5,"}"));
+				// rets.push_str(&format_tab_line(tab + 5,"_lasti += 1;"));
+				// rets.push_str(&format_tab_line(tab + 4,"}"));
+				// rets.push_str(&format_tab_line(tab + 3,"}"));
+				// rets.push_str(&format_tab_line(tab + 3,"_outs.push_str(&format!(\"\\n0x{:08x}:\",_i));"));
+				// rets.push_str(&format_tab_line(tab + 2,"}"));
+				// rets.push_str(&format_tab_line(tab + 2,"_outs.push_str(&format!(\" 0x{:02x}\", code[_lastv + _i]));"));
+				// rets.push_str(&format_tab_line(tab + 2,"_i += 1;"));
+				// rets.push_str(&format_tab_line(tab + 1,"}"));
+				// rets.push_str(&format_tab_line(tab + 1,"if _lasti != _i {"));
+				// rets.push_str(&format_tab_line(tab + 2,"while (_i % 16) != 0 {"));
+				// rets.push_str(&format_tab_line(tab + 3,"_outs.push_str(\"     \");"));
+				// rets.push_str(&format_tab_line(tab + 3,"_i += 1;"));
+				// rets.push_str(&format_tab_line(tab + 2,"}"));
+				// rets.push_str(&format_tab_line(tab + 2,"_outs.push_str(\"    \");"));
+				// rets.push_str(&format_tab_line(tab + 2,"while _lasti < (retv - _lastv) {"));
+				// rets.push_str(&format_tab_line(tab + 3,"if code[(_lastv + _lasti)] >= 0x20 && code[(_lastv + _lasti)] <= 0x7e {"));
+				// rets.push_str(&format_tab_line(tab + 4,"_outs.push(code[_lastv+_lasti] as char);"));
+				// rets.push_str(&format_tab_line(tab + 3,"} else {"));
+				// rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\".\");"));
+				// rets.push_str(&format_tab_line(tab + 3,"}"));
+				// rets.push_str(&format_tab_line(tab + 3,"_lasti += 1;"));
+				// rets.push_str(&format_tab_line(tab + 2,"}"));
+				// rets.push_str(&format_tab_line(tab + 1,"}"));
+				// rets.push_str(&format_tab_line(tab + 1,"_outs.push_str(\"\\n\");"));
+				// rets.push_str(&format_tab_line(tab + 1,"let _ = _outf.write(_outs.as_bytes())?;"));
+
+				rets.push_str(&format_tab_line(tab + 1,&format!("_dumpcode = code[_lastv..retv].to_vec();")));
+				rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug_buffer!(_dumpcode.as_ptr(),_dumpcode.len(),\"decode {}.{} retv {{}} _lastv {{}}\",retv,_lastv);",self.sname,k)));
 			}
 		}
 
 
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"{} total {{}}\\n\",retv);", self.sname)));
-			rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+			// rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"{} total {{}}\\n\",retv);", self.sname)));
+			// rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+
+			rets.push_str(&format_tab_line(tab + 1, &format!("asn1_format_debug!(\"{} total {{}}\\n\",retv);", self.sname)));
 		}
 
 		rets.push_str(&format_tab_line(tab + 1, ""));

@@ -39,7 +39,9 @@ use asn1obj_codegen::{asn1_choice,asn1_obj_selector,asn1_sequence,asn1_int_choic
 use asn1obj::base::*;
 use asn1obj::asn1impl::*;
 use asn1obj::complex::{Asn1ImpSet,Asn1Opt,Asn1Seq,Asn1Set};
-use asn1obj::strop::asn1_format_line;
+use asn1obj::strop::*;
+#[allow(unused_imports)]
+use asn1obj::*;
 #[allow(unused_imports)]
 use asn1obj::{asn1obj_error_class,asn1obj_new_error};
 

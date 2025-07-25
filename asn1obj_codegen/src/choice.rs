@@ -122,22 +122,30 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1,"let mut retv :usize = 0;"));
 		rets.push_str(&format_tab_line(tab + 1,"let mut _endsize :usize = code.len();"));
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+			// rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
+			// rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+
+
+			rets.push_str(&format_tab_line(tab + 1, "asn1_enter_debug();"));
 		}
 
 		rets.push_str(&format_tab_line(tab + 1,""));
 		rets.push_str(&format_tab_line(tab + 1,&format!("retv += self.{}.decode_asn1(&code[retv.._endsize])?;",self.selname)));
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"decode {} retv [{{}}]\\n\",retv);",self.selname)));
-			rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+			// rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"decode {} retv [{{}}]\\n\",retv);",self.selname)));
+			// rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+
+			rets.push_str(&format_tab_line(tab + 1, "asn1_leave_debug();"));
+			rets.push_str(&format_tab_line(tab + 1, &format!("asn1_format_debug!(\"decode {} retv [{{}}]\\n\",retv);",self.selname)));
 		}
 		rets.push_str(&format_tab_line(tab + 1,""));
 		rets.push_str(&format_tab_line(tab + 1,&format!("let k = self.{}.decode_select()?;", self.selname)));
 
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"select {{}}\\n\",k);")));
-			rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+			// rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"select {{}}\\n\",k);")));
+			// rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+
+			rets.push_str(&format_tab_line(tab + 1, &format!("asn1_format_debug!(\"select {{}}\\n\",k);")));
 		}
 		idx = 0;
 		sidx = 0;
@@ -150,10 +158,17 @@ impl ChoiceSyn {
 				} else {
 					rets.push_str(&format_tab_line(tab + 1,&format!("}} else if k == \"{}\" {{", self.parsenames[idx])));
 				}
+				if self.debugenable {
+					rets.push_str(&format_tab_line(tab + 2, &format!("asn1_enter_debug();")));
+				}
+
 				rets.push_str(&format_tab_line(tab + 2,&format!("retv += self.{}.decode_asn1(&code[retv.._endsize])?;", self.parsenames[idx])));
 				if self.debugenable {
-					rets.push_str(&format_tab_line(tab + 2, &format!("_outs = format!(\"decode {} retv [{{}}]\\n\",retv);",self.parsenames[idx])));
-					rets.push_str(&format_tab_line(tab + 2, "let _ = _outf.write(_outs.as_bytes())?;"));
+					// rets.push_str(&format_tab_line(tab + 2, &format!("_outs = format!(\"decode {} retv [{{}}]\\n\",retv);",self.parsenames[idx])));
+					// rets.push_str(&format_tab_line(tab + 2, "let _ = _outf.write(_outs.as_bytes())?;"));
+
+					rets.push_str(&format_tab_line(tab + 2, &format!("asn1_leave_debug();")));
+					rets.push_str(&format_tab_line(tab + 2, &format!("asn1_format_debug!(\"decode {} retv [{{}}]\\n\",retv);",self.parsenames[idx])));
 				}
 				sidx += 1;
 			}
@@ -181,10 +196,10 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab,"fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {"));
 		rets.push_str(&format_tab_line(tab + 1,"let mut retv : Vec<u8>;"));
 		rets.push_str(&format_tab_line(tab + 1,"let mut _encv : Vec<u8>;"));
-		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
-		}
+		// if self.debugenable {
+		// 	rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
+		// 	rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+		// }
 		rets.push_str(&format_tab_line(tab + 1,""));
 		rets.push_str(&format_tab_line(tab + 1,&format!("_encv = self.{}.encode_asn1()?;", self.selname)));
 		rets.push_str(&format_tab_line(tab + 1,""));
@@ -200,8 +215,10 @@ impl ChoiceSyn {
 				}
 				rets.push_str(&format_tab_line(tab + 2, &format!("let vk = self.{}.encode_asn1()?;", self.parsenames[idx])));
 				if self.debugenable {
-					rets.push_str(&format_tab_line(tab + 2, &(format!("_outs = format!(\"format {} output {{:?}}\\n\",vk);", self.parsenames[idx]))));
-					rets.push_str(&format_tab_line(tab + 2, "let _ = _outf.write(_outs.as_bytes())?;"));
+					// rets.push_str(&format_tab_line(tab + 2, &(format!("_outs = format!(\"format {} output {{:?}}\\n\",vk);", self.parsenames[idx]))));
+					// rets.push_str(&format_tab_line(tab + 2, "let _ = _outf.write(_outs.as_bytes())?;"));
+
+					rets.push_str(&format_tab_line(tab + 2, &(format!("asn1_format_debug!(\"format {} output {{:?}}\\n\",vk);", self.parsenames[idx]))));
 				}
 				rets.push_str(&format_tab_line(tab + 2, "for i in 0..vk.len() {"));
 				rets.push_str(&format_tab_line(tab + 3, "_encv.push(vk[i]);"));
@@ -308,7 +325,9 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1, " "));
 		let jsonk = self._get_json_alias(&self.selname);
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.selname)));
+			// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.selname)));
+
+			rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.selname)));
 		}
 		rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",self.selname,jsonk)));
 		rets.push_str(&format_tab_line(tab + 1, &format!("let c :String = self.{}.encode_select()?;",self.selname)));
@@ -323,7 +342,9 @@ impl ChoiceSyn {
 					rets.push_str(&format_tab_line(tab+1,&format!("if c == \"{}\" {{",self.parsenames[idx])));
 				}
 				if self.debugenable {
-					rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
+					// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
+
+					rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
 				}
 				rets.push_str(&format_tab_line(tab + 2,&format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",self.parsenames[idx],jsonk)));
 				sidx += 1;
@@ -378,7 +399,9 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(tab + 1," "));
 		let jsonk = self._get_json_alias(&self.selname);
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.selname,jsonk)));
+			// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.selname,jsonk)));
+
+			rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.selname,jsonk)));
 		}
 		rets.push_str(&format_tab_line(tab + 1,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.selname,jsonk)));
 		idx = 0;
@@ -403,7 +426,9 @@ impl ChoiceSyn {
 					rets.push_str(&format_tab_line(tab + 1,&format!("if c == \"{}\" {{", self.parsenames[idx])));
 				}
 				if self.debugenable {
-					rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
+					// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
+
+					rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
 				}
 				rets.push_str(&format_tab_line(tab + 2,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.parsenames[idx],jsonk)));
 				sidx += 1;

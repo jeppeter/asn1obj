@@ -27,7 +27,7 @@ struct SequenceSyn {
 
 impl SequenceSyn {
 	pub fn new() -> Self {
-		let dbgval : bool;
+		let mut dbgval : bool;
 		if asn1_gen_debug_level() > 0 {
 			dbgval = true;
 		} else {
@@ -114,11 +114,9 @@ impl SequenceSyn {
 		rets.push_str(&format_tab_line(tab + 1, "let mut retv :usize = 0;"));
 		rets.push_str(&format_tab_line(tab + 1, "let mut _endsize :usize = code.len();"));
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
 			rets.push_str(&format_tab_line(tab + 1, "let mut _lastv :usize = 0;"));
-			rets.push_str(&format_tab_line(tab + 1, "let mut _i :usize;"));
-			rets.push_str(&format_tab_line(tab + 1, "let mut _lasti :usize;"));
+			rets.push_str(&format_tab_line(tab + 1, "let mut _dumpcode :Vec<u8>;"));
+
 		}
 		if self.debugenable {
 			rets.push_str(&format_tab_line(tab + 1, "_lastv = retv;"));
@@ -126,51 +124,17 @@ impl SequenceSyn {
 		for k in self.parsenames.iter() {			
 			rets.push_str(&format_tab_line(tab + 1, ""));
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"decode {}.{} will decode at {{}}\\n\",retv);",self.sname,k)));
-				rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+				rets.push_str(&format_tab_line(tab + 1, &format!("asn1_enter_debug();")));
 			}
 			rets.push_str(&format_tab_line(tab + 1, &format!("let ro = self.{}.decode_asn1(&code[retv.._endsize]);",k)));
+			if self.debugenable {
+				rets.push_str(&format_tab_line(tab+1,&format!("asn1_leave_debug();")));
+			}
 			rets.push_str(&format_tab_line(tab + 1, "if ro.is_err() {"));
 			rets.push_str(&format_tab_line(tab + 2, &format!("let e = ro.err().unwrap();")));
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 2,"_i = 0;"));
-				rets.push_str(&format_tab_line(tab + 2,"_lasti = _i;"));
-				rets.push_str(&format_tab_line(tab + 2,&format!("_outs = format!(\"{} decode at [0x{{:x}}:{{}}]\\n\",_lastv,_lastv);",k)));
-				rets.push_str(&format_tab_line(tab + 2,"while (_i + _lastv) < code.len() {"));
-				rets.push_str(&format_tab_line(tab + 3,"if _i >= 16 {"));
-				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\"    \");"));
-				rets.push_str(&format_tab_line(tab + 4,"while _lasti < _i {"));
-				rets.push_str(&format_tab_line(tab + 5,"if code[_lastv + _lasti] >= 0x20 && code[_lastv + _lasti] <= 0x7e {"));
-				rets.push_str(&format_tab_line(tab + 5,"_outs.push(code[_lastv+_lasti] as char);"));
-				rets.push_str(&format_tab_line(tab + 5,"} else {"));
-				rets.push_str(&format_tab_line(tab + 5,"_outs.push_str(\".\");"));
-				rets.push_str(&format_tab_line(tab + 5,"}"));
-				rets.push_str(&format_tab_line(tab + 5,"_lasti += 1;"));
-				rets.push_str(&format_tab_line(tab + 4,"}"));
-				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\"\\n\");"));
-				rets.push_str(&format_tab_line(tab + 4,"break;"));
-				rets.push_str(&format_tab_line(tab + 3,"}"));
-				rets.push_str(&format_tab_line(tab + 3,"_outs.push_str(&format!(\" 0x{:02x}\",code[_i]));"));
-				rets.push_str(&format_tab_line(tab + 3,"_i += 1;"));
-				rets.push_str(&format_tab_line(tab + 2,"}"));
-				rets.push_str(&format_tab_line(tab + 2,"if _i < 16 {"));
-				rets.push_str(&format_tab_line(tab + 3,"while ( _i % 16) != 0 {"));
-				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\"     \");"));
-				rets.push_str(&format_tab_line(tab + 4,"_i += 1;"));
-				rets.push_str(&format_tab_line(tab + 3,"}"));
-				rets.push_str(&format_tab_line(tab + 3,"while (_lasti + _lastv) < code.len() {"));
-				rets.push_str(&format_tab_line(tab + 4,"if code[_lastv + _lasti] >= 0x20 && code[_lastv + _lasti] <= 0x7e {"));
-				rets.push_str(&format_tab_line(tab + 5,"_outs.push(code[_lastv+_lasti] as char);"));
-				rets.push_str(&format_tab_line(tab + 4,"} else {"));
-				rets.push_str(&format_tab_line(tab + 5,"_outs.push_str(\".\");"));
-				rets.push_str(&format_tab_line(tab + 4,"}"));
-				rets.push_str(&format_tab_line(tab + 4,"_lasti += 1;"));
-				rets.push_str(&format_tab_line(tab + 3,"}"));
-				rets.push_str(&format_tab_line(tab + 3,"_outs.push_str(\"\\n\");"));
-				rets.push_str(&format_tab_line(tab + 2,"}"));
-				rets.push_str(&format_tab_line(tab + 2,"let _ = _outf.write(_outs.as_bytes())?;"));
-				rets.push_str(&format_tab_line(tab + 2, &format!("_outs = format!(\"decode {}.{} error {{:?}}\",e);",self.sname,k)));
-				rets.push_str(&format_tab_line(tab + 2,"let _ = _outf.write(_outs.as_bytes())?;"));
+				rets.push_str(&format_tab_line(tab + 2,&format!("_dumpcode = code[retv.._endsize].to_vec();")));
+				rets.push_str(&format_tab_line(tab + 2,&format!("asn1_format_debug_buffer!(_dumpcode.as_ptr(),_dumpcode.len(),\"{} decode at [0x{{:x}}:{{}}] error {{:?}}\",_lastv,_lastv,e);",k)));
 			}
 			rets.push_str(&format_tab_line(tab + 2, "return Err(e);"));
 			rets.push_str(&format_tab_line(tab + 1, "}"));
@@ -179,51 +143,14 @@ impl SequenceSyn {
 			}
 			rets.push_str(&format_tab_line(tab + 1, &format!("retv += ro.unwrap();")));
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"decode {}.{} retv {{}} _lastv {{}}\",retv,_lastv);",self.sname,k)));
-				rets.push_str(&format_tab_line(tab + 1,"_i = 0;"));
-				rets.push_str(&format_tab_line(tab + 1,"_lasti = 0;"));
-				rets.push_str(&format_tab_line(tab + 1,"while _i < (retv - _lastv) {"));
-				rets.push_str(&format_tab_line(tab + 2,"if (_i % 16) == 0 {"));
-				rets.push_str(&format_tab_line(tab + 3,"if _i > 0 {"));
-				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\"    \");"));
-				rets.push_str(&format_tab_line(tab + 4,"while _lasti != _i {"));
-				rets.push_str(&format_tab_line(tab + 5,"if code[_lastv + _lasti] >= 0x20 && code[_lastv + _lasti] <= 0x7e {"));
-				rets.push_str(&format_tab_line(tab + 6,"_outs.push(code[_lastv+_lasti] as char);"));
-				rets.push_str(&format_tab_line(tab + 5,"} else {"));
-				rets.push_str(&format_tab_line(tab + 6,"_outs.push_str(\".\");"));
-				rets.push_str(&format_tab_line(tab + 5,"}"));
-				rets.push_str(&format_tab_line(tab + 5,"_lasti += 1;"));
-				rets.push_str(&format_tab_line(tab + 4,"}"));
-				rets.push_str(&format_tab_line(tab + 3,"}"));
-				rets.push_str(&format_tab_line(tab + 3,"_outs.push_str(&format!(\"\\n0x{:08x}:\",_i));"));
-				rets.push_str(&format_tab_line(tab + 2,"}"));
-				rets.push_str(&format_tab_line(tab + 2,"_outs.push_str(&format!(\" 0x{:02x}\", code[_lastv + _i]));"));
-				rets.push_str(&format_tab_line(tab + 2,"_i += 1;"));
-				rets.push_str(&format_tab_line(tab + 1,"}"));
-				rets.push_str(&format_tab_line(tab + 1,"if _lasti != _i {"));
-				rets.push_str(&format_tab_line(tab + 2,"while (_i % 16) != 0 {"));
-				rets.push_str(&format_tab_line(tab + 3,"_outs.push_str(\"     \");"));
-				rets.push_str(&format_tab_line(tab + 3,"_i += 1;"));
-				rets.push_str(&format_tab_line(tab + 2,"}"));
-				rets.push_str(&format_tab_line(tab + 2,"_outs.push_str(\"    \");"));
-				rets.push_str(&format_tab_line(tab + 2,"while _lasti < (retv - _lastv) {"));
-				rets.push_str(&format_tab_line(tab + 3,"if code[_lastv + _lasti] >= 0x20 && code[_lastv + _lasti] <= 0x7e {"));
-				rets.push_str(&format_tab_line(tab + 4,"_outs.push(code[_lastv+_lasti] as char);"));
-				rets.push_str(&format_tab_line(tab + 3,"} else {"));
-				rets.push_str(&format_tab_line(tab + 4,"_outs.push_str(\".\");"));
-				rets.push_str(&format_tab_line(tab + 3,"}"));
-				rets.push_str(&format_tab_line(tab + 3,"_lasti += 1;"));
-				rets.push_str(&format_tab_line(tab + 2,"}"));
-				rets.push_str(&format_tab_line(tab + 1,"}"));
-				rets.push_str(&format_tab_line(tab + 1,"_outs.push_str(\"\\n\");"));
-				rets.push_str(&format_tab_line(tab + 1,"let _ = _outf.write(_outs.as_bytes())?;"));
+				rets.push_str(&format_tab_line(tab + 1, &format!("_dumpcode = code[_lastv..retv].to_vec();")));
+				rets.push_str(&format_tab_line(tab + 1, &format!("asn1_format_debug_buffer!(_dumpcode.as_ptr(),retv - _lastv,\"decode {}.{} retv {{}} _lastv {{}}\",retv,_lastv);",self.sname,k)))
 			}
 		}
 
 
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"{} total {{}}\\n\",retv);", self.sname)));
-			rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
+			rets.push_str(&format_tab_line(tab + 1, &format!("asn1_format_debug!(\"{} total {{}}\",retv);", self.sname)));
 		}
 
 		rets.push_str(&format_tab_line(tab + 1, ""));
@@ -238,7 +165,9 @@ impl SequenceSyn {
 		rets.push_str(&format_tab_line(tab , "fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {"));
 		rets.push_str(&format_tab_line(tab + 1, "let mut _v8 :Vec<u8> = Vec::new();"));
 		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
+			// rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
+			// rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
+
 			rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
 		}
 		if self.parsenames.len() > 1 {
@@ -255,8 +184,11 @@ impl SequenceSyn {
 			rets.push_str(&format_tab_line(tab + 1, "}"));
 			if self.debugenable {
 				rets.push_str(&format_tab_line(tab + 1,""));
-				rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"format {}.{} {{:?}}\\n\",encv);", self.sname, k)));
-				rets.push_str(&format_tab_line(tab + 1,"_outf.write(_outs.as_bytes())?;"));
+
+				// rets.push_str(&format_tab_line(tab + 1,&format!("_outs = format!(\"format {}.{} {{:?}}\\n\",encv);", self.sname, k)));
+				// rets.push_str(&format_tab_line(tab + 1,"_outf.write(_outs.as_bytes())?;"));
+
+				rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"format {}.{} {{:?}}\\n\",encv);", self.sname, k)));
 			}
 		}
 
@@ -337,7 +269,9 @@ impl SequenceSyn {
 		rets.push_str(&format_tab_line(tab,"fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
 		if self.parsenames.len() == 1 && self.is_asn1_seqname(&self.parsenames[0]) {
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
+				// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
+
+				rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
 			}
 			rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.encode_json(key,val);",self.parsenames[0])));
 		} else {
@@ -347,9 +281,16 @@ impl SequenceSyn {
 			for k in self.parsenames.iter() {
 				let jsonk :String = self._get_json_alias(k);
 				if self.debugenable {
-					rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
+					// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
+
+					rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
+					rets.push_str(&format_tab_line(tab + 1,&format!("asn1_enter_debug();")));
 				}
 				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,jsonk)));
+
+				if self.debugenable {
+					rets.push_str(&format_tab_line(tab + 1,&format!("asn1_leave_debug();")));
+				}
 			}
 			rets.push_str(&format_tab_line(tab + 1, ""));
 			rets.push_str(&format_tab_line(tab + 1, "if key.len() > 0 {"));
@@ -369,7 +310,9 @@ impl SequenceSyn {
 		rets.push_str(&format_tab_line(tab, "fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
 		if self.parsenames.len() == 1 && self.is_asn1_seqname(&(self.parsenames[0])) {
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
+				// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
+
+				rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.decode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
 			}
 			rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.decode_json(key,val);",self.parsenames[0])));
 		} else {
