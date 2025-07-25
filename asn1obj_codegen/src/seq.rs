@@ -27,7 +27,7 @@ struct SequenceSyn {
 
 impl SequenceSyn {
 	pub fn new() -> Self {
-		let mut dbgval : bool;
+		let dbgval : bool;
 		if asn1_gen_debug_level() > 0 {
 			dbgval = true;
 		} else {
