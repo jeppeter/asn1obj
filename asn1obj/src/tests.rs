@@ -1452,7 +1452,7 @@ fn test_a022() {
 	a1.set_utag(ASN1_GENERALTIME_FLAG).unwrap();
 	let c1 = a1.encode_asn1().unwrap();
 	let mut v1 :Vec<u8>;
-	let mut v2 :Vec<u8>;
+	let v2 :Vec<u8>;
 	v1 = vec![0x18,0xf,0x32,0x30,0x32,0x32,0x30,0x32,0x30,0x32,0x30,0x31,0x32,0x30,0x33,0x33,0x5a];
 	assert!(check_equal_u8(&c1,&v1));
 	v1 = vec![0x18,0x13,0x32,0x30,0x32,0x32,0x30,0x32,0x30,0x32,0x30,0x31,0x32,0x30,0x33,0x33,0x2b,0x31,0x30,0x30,0x30];
@@ -1498,7 +1498,7 @@ fn test_a022() {
 	v1 = a1.encode_asn1().unwrap();
 	v2 = vec![0x17,0x0d,0x32,0x31,0x30,0x39,0x30,0x38,0x31,0x33,0x33,0x32,0x32,0x32,0x5a];
 	assert!(check_equal_u8(&v1,&v2));
-	v2 = v2.clone();
+	//v2 = v2.clone();
 	return;
 }
 
@@ -2753,7 +2753,7 @@ fn test_a052() {
 	}]));
 }
 
-#[asn1_int_choice(debug=3,ccv=1,bbv=2,ddv=3,selector=seltype)]
+#[asn1_int_choice(ccv=1,bbv=2,ddv=3,selector=seltype)]
 struct IntTestauto {
 	pub seltype :i32,
 	pub ccv :Asn1Object,
@@ -2862,4 +2862,14 @@ fn test_a055() {
 	let v1 = vec![0x1e,0x6,0x00,0x63,0x00,0x63,0x00,0x76];
 	a1.decode_asn1(&v1).unwrap();
 	assert!(a1.val == "ccv");
+}
+
+#[test]
+fn test_a056() {
+	let mut a1 :Asn1ImpSet<Asn1Integer,0> = Asn1ImpSet::init_asn1();
+	let v1 = vec![0xa0,0];
+	a1.decode_asn1(&v1).unwrap();
+	assert!(a1.val.len() == 0);
+	let v2 = a1.encode_asn1().unwrap();
+	assert!(check_equal_u8(&v2,&v1));
 }

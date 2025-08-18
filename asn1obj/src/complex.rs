@@ -226,15 +226,12 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1ImpSet<T,TAG> {
 	}
 
 	fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
-		let mut retv :Vec<u8> = Vec::new();
+		let mut retv :Vec<u8>;
 		let mut encv :Vec<u8> = Vec::new();
 		let mut idx :usize = 0;
 		let flag :u64;
 
 
-		if self.val.len() == 0{
-			return Ok(retv);
-		}
 		while idx < self.val.len() {
 			let code = self.val[idx].encode_asn1()?;
 			for i in 0..code.len() {
