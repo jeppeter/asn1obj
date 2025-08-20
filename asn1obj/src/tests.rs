@@ -2885,12 +2885,14 @@ fn test_a056() {
 
 */
 
-#[derive(Clone,Serialize,Deserialize)]
-#[asn1_sequence()]
-struct Oany {
-	pub bval :Asn1Opt<Asn1Any>,
-	pub seqval :Asn1ImpSet<Asn1Any,3>,
+//#[derive(Clone,Serialize,Deserialize)]
+#[derive(Clone)]
+struct Oany<'de> {
+	pub bval :Asn1Opt<'de,Asn1Any<'de>>,
+	pub seqval :Asn1ImpSet<'de,Asn1Any<'de>,3>,
 }
+
+
 
 
 #[test]

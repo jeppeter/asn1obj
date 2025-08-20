@@ -15,16 +15,18 @@ use crate::consts::*;
 use serde::{Deserialize, Serialize};
 //use serde::de::{DeserializeOwned};
 use crate::serde_obj::{OptionVisitor,VecVisitor};
+use std::marker::{PhantomData};
 
 asn1obj_error_class!{Asn1ComplexError}
 
 #[derive(Clone)]
-pub struct Asn1Opt<T : Asn1Op + Clone + Serialize + Deserialize<'static>> {
+pub struct Asn1Opt<'de,T : Asn1Op + Clone + Serialize + Deserialize<'de>> {
 	pub val : Option<T>,
 	data : Vec<u8>,
+	_mark :PhantomData<&'de T>,
 }
 
-impl<T: Asn1Op + Clone + Serialize + Deserialize<'static> > Serialize for Asn1Opt<T> {
+impl<'de,T: Asn1Op + Clone + Serialize + Deserialize<'de> > Serialize for Asn1Opt<'de,T> {
 	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
 		if self.val.is_some() {
 			return serializer.serialize_some(self.val.as_ref().unwrap());
@@ -34,11 +36,11 @@ impl<T: Asn1Op + Clone + Serialize + Deserialize<'static> > Serialize for Asn1Op
 	}
 }
 
-impl<T :Asn1Op + Clone + Serialize + Deserialize<'static>> Deserialize<'static> for Asn1Opt<T> {
+impl<'de,T :Asn1Op + Clone + Serialize + Deserialize<'de>> Deserialize<'de> for Asn1Opt<'de,T> {
     fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
-        where D: serde::de::Deserializer<'static> {
+        where D: serde::de::Deserializer<'de> {
         	let mut retv :Asn1Opt<T> = Asn1Opt::init_asn1();
-		    let ores = deserializer.deserialize_option(OptionVisitor::<T>::new());
+		    let ores = deserializer.deserialize_option(OptionVisitor::<'de,T>::new());
 		    if ores.is_ok() {
 		    	retv.val = ores.unwrap();
 		    	return Ok(retv);
@@ -48,7 +50,7 @@ impl<T :Asn1Op + Clone + Serialize + Deserialize<'static>> Deserialize<'static> 
         }
 }
 
-impl<T: Asn1Op + Clone + Serialize + Deserialize<'static>> Asn1Op for Asn1Opt<T> {
+impl<'de,T: Asn1Op + Clone + Serialize + Deserialize<'de>> Asn1Op for Asn1Opt<'de,T> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		if self.val.is_none() {
 			return Ok(0);
@@ -126,30 +128,32 @@ impl<T: Asn1Op + Clone + Serialize + Deserialize<'static>> Asn1Op for Asn1Opt<T>
 		Asn1Opt {
 			data : Vec::new(),
 			val : None,	
+			_mark : PhantomData,
 		}
 	}
 }
 
 #[derive(Clone)]
-pub struct Asn1ImpSet<T : Asn1Op + Clone + Serialize + Deserialize<'static> , const TAG:u8=0> {
+pub struct Asn1ImpSet<'de,T : Asn1Op + Clone + Serialize + Deserialize<'de> , const TAG:u8=0> {
 	pub val : Vec<T>,
 	tag : u8,
 	data : Vec<u8>,
+	_mark :PhantomData<&'de T>,
 }
 
 
-impl<T: Asn1Op + Clone + Serialize + Deserialize<'static>,const TAG:u8> serde::ser::Serialize for Asn1ImpSet<T,TAG>{
+impl<'de,T: Asn1Op + Clone + Serialize + Deserialize<'de>,const TAG:u8> serde::ser::Serialize for Asn1ImpSet<'de,T,TAG>{
 	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
 		serializer.collect_seq(self.val.clone())
 	}
 }
 
-impl<T :Asn1Op + Clone + Serialize + Deserialize<'static>,const TAG:u8> Deserialize<'static> for Asn1ImpSet<T,TAG> {
+impl<'de,T :Asn1Op + Clone + Serialize + Deserialize<'de>,const TAG:u8> Deserialize<'de> for Asn1ImpSet<'de,T,TAG> {
     fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
-        where D: serde::de::Deserializer<'static> {
-        	let vecvis :VecVisitor<T> = VecVisitor::new();
+        where D: serde::de::Deserializer<'de> {
+        	let vecvis :VecVisitor<'de,T> = VecVisitor::new();
         	let val :Vec<T> = deserializer.deserialize_seq(vecvis)?;
-        	let mut retv :Asn1ImpSet<T,TAG> = Asn1ImpSet::init_asn1();
+        	let mut retv :Asn1ImpSet<'de,T,TAG> = Asn1ImpSet::init_asn1();
         	retv.val = val;
         	Ok(retv)
         }
@@ -158,7 +162,7 @@ impl<T :Asn1Op + Clone + Serialize + Deserialize<'static>,const TAG:u8> Deserial
 
 
 
-impl<T: Asn1Op + Clone + Serialize + Deserialize<'static>, const TAG:u8> Asn1Op for Asn1ImpSet<T,TAG> {
+impl<'de,T: Asn1Op + Clone + Serialize + Deserialize<'de>, const TAG:u8> Asn1Op for Asn1ImpSet<'de,T,TAG> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		let mut mainv :Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
 		let mut idx :i32 = 0;
@@ -313,6 +317,7 @@ impl<T: Asn1Op + Clone + Serialize + Deserialize<'static>, const TAG:u8> Asn1Op 
 			data : Vec::new(),
 			tag : TAG,
 			val : Vec::new(),
+			_mark :PhantomData,
 		}
 	}
 }

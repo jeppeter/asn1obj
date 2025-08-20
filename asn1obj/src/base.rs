@@ -26,6 +26,7 @@ use std::cmp::PartialEq;
 use crate::serde_obj::{Asn1AnyVisitor};
 use serde::ser::{SerializeStruct};
 //use serde::de::{DeserializeOwned};
+use std::marker::{PhantomData};
 
 
 asn1obj_error_class!{Asn1ObjBaseError}
@@ -159,12 +160,13 @@ pub fn asn1obj_format_header(tag :u64, length :u64) -> Vec<u8> {
 }
 
 #[derive(Clone)]
-pub struct Asn1Any {
+pub struct Asn1Any<'de> {
     pub content :Vec<u8>,
     pub tag : u64,
+    _mark :PhantomData<&'de u64>,
 }
 
-impl serde::ser::Serialize for Asn1Any{
+impl<'de> serde::ser::Serialize for Asn1Any<'de>{
     fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
         let ores = serializer.serialize_struct("Asn1Any",2);
         match ores {
@@ -181,11 +183,9 @@ impl serde::ser::Serialize for Asn1Any{
 }
 
 
-//impl<'de> serde::de::Deserialize<'de> for Asn1Any {
-impl serde::de::Deserialize<'static> for Asn1Any {
+impl<'de> serde::de::Deserialize<'de> for Asn1Any<'de> {
     fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
-        //where D: serde::de::Deserializer<'de> {
-        where D: serde::de::Deserializer<'static> {
+        where D: serde::de::Deserializer<'de> {
             let visitor :Asn1AnyVisitor = Asn1AnyVisitor::new();
             deserializer.deserialize_map(visitor)
         }
@@ -194,7 +194,7 @@ impl serde::de::Deserialize<'static> for Asn1Any {
 //impl DeserializeOwned for Asn1Any {}
 
 
-impl Asn1Op for Asn1Any {
+impl<'de> Asn1Op for Asn1Any<'de> {
 
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
@@ -274,6 +274,7 @@ impl Asn1Op for Asn1Any {
         Asn1Any {
             tag : 0,
             content : Vec::new(),
+            _mark :PhantomData,
         }
     }
 

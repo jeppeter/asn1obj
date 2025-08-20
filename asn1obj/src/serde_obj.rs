@@ -9,11 +9,11 @@ use crate::asn1impl::{Asn1Op};
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pub struct OptionVisitor<T> {
-	marker: PhantomData<T>,
+pub struct OptionVisitor<'de,T> {
+	marker: PhantomData<&'de T>,
 }
 
-impl<T> OptionVisitor<T> {
+impl<'de,T> OptionVisitor<'de,T> {
 	pub fn new() -> Self {
 		Self {
 			marker: PhantomData,
@@ -21,9 +21,9 @@ impl<T> OptionVisitor<T> {
 	}
 }
 
-impl<T> serde::de::Visitor<'static> for OptionVisitor<T>
+impl<'de,T> serde::de::Visitor<'de> for OptionVisitor<'de,T>
 where
-T: Deserialize<'static>,
+T: Deserialize<'de>,
 {
 	type Value = Option<T>;
 
@@ -50,25 +50,25 @@ T: Deserialize<'static>,
 	#[inline]
 	fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
 	where
-	D: serde::de::Deserializer<'static>,
+	D: serde::de::Deserializer<'de>,
 	{
 		T::deserialize(deserializer).map(Some)
 	}
 
 	fn __private_visit_untagged_option<D>(self, deserializer: D) -> Result<Self::Value, ()>
 	where
-	D: serde::de::Deserializer<'static>,
+	D: serde::de::Deserializer<'de>,
 	{
 		Ok(T::deserialize(deserializer).ok())
 	}
 }
 
 
-pub struct VecVisitor<T> {
-	marker: PhantomData<T>,
+pub struct VecVisitor<'de,T> {
+	marker: PhantomData<&'de T>,
 }
 
-impl<T> VecVisitor<T> {
+impl<'de,T> VecVisitor<'de,T> {
 	pub fn new() -> Self {
 		Self {
 			marker:PhantomData,
@@ -76,9 +76,9 @@ impl<T> VecVisitor<T> {
 	}
 }
 
-impl<T> serde::de::Visitor<'static> for VecVisitor<T>
+impl<'de,T> serde::de::Visitor<'de> for VecVisitor<'de,T>
 where
-T: Deserialize<'static>,
+T: Deserialize<'de>,
 {
 	type Value = Vec<T>;
 
@@ -88,7 +88,7 @@ T: Deserialize<'static>,
 
 	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
 	where
-	A: serde::de::SeqAccess<'static>,
+	A: serde::de::SeqAccess<'de>,
 	{
 		let capacity = seq.size_hint().unwrap_or_else(|| 0);
 		let mut values = Vec::<T>::with_capacity(capacity);
@@ -115,17 +115,20 @@ T: Deserialize<'static>,
 
 
 #[allow(dead_code)]
-pub struct Asn1AnyVisitor {
+pub struct Asn1AnyVisitor<'de> {
+	_mark :PhantomData<&'de u64>,
 }
 
-impl Asn1AnyVisitor {
+impl<'de> Asn1AnyVisitor<'de> {
 	pub fn new() -> Self {
-		Self {}
+		Self {
+			_mark :PhantomData,
+		}
 	}
 }
 
-impl serde::de::Visitor<'static> for Asn1AnyVisitor {
-	type Value = Asn1Any;
+impl<'de> serde::de::Visitor<'de> for Asn1AnyVisitor<'de> {
+	type Value = Asn1Any<'de>;
 
 	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
 		write!(formatter, "a map need")
@@ -133,10 +136,10 @@ impl serde::de::Visitor<'static> for Asn1AnyVisitor {
 
 
 
-	fn visit_map<A>(self, mut mapv: A) -> Result<Asn1Any, A::Error>
-	where A: serde::de::MapAccess<'static>,
+	fn visit_map<A>(self, mut mapv: A) -> Result<Asn1Any<'de>, A::Error>
+	where A: serde::de::MapAccess<'de>,
 	{
-		let mut oany :Asn1Any = Asn1Any::init_asn1();
+		let mut oany :Asn1Any<'de> = Asn1Any::<'de>::init_asn1();
 		let mut tagv :Option<u64> = None;
 		let mut contentv :Option<Vec<u8>> = None;
 
