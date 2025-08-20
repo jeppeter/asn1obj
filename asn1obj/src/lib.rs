@@ -153,6 +153,7 @@ mod errors;
 pub mod consts;
 pub mod asn1impl;
 pub mod strop;
+pub mod serde_obj;
 pub mod base;
 pub mod complex;
 

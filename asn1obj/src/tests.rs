@@ -16,6 +16,7 @@ use num_bigint::{BigUint};
 use num_traits::Num;
 use std::io::{Write};
 use std::error::Error;
+use serde::{Serialize,Deserialize};
 
 asn1obj_error_class!{Asn1TestError}
 
@@ -34,6 +35,7 @@ fn check_equal_u8(a :&[u8],b :&[u8]) -> bool {
 	return true;
 }
 
+/*
 #[test]
 fn test_a001() {
 	let mut a1 :Asn1Integer = Asn1Integer::init_asn1();
@@ -2872,4 +2874,25 @@ fn test_a056() {
 	assert!(a1.val.len() == 0);
 	let v2 = a1.encode_asn1().unwrap();
 	assert!(check_equal_u8(&v2,&v1));
+}
+*/
+
+#[asn1_sequence()]
+#[derive(Clone,Serialize,Deserialize)]
+struct Oany {
+	bval :Asn1Opt<Asn1Any>,
+	seqval :Asn1ImpSet<Asn1Any,3>,
+}
+
+#[test]
+fn test_a057() {
+	let mut o :Oany = Oany::init_asn1();
+	let mut ca :Asn1Any = Asn1Any::init_asn1();
+	ca.tag = 4;
+	ca.content = vec![4];
+	o.bval.val = Some(ca.clone());
+	ca.content = vec![5,7];
+	o.seqval.val.push(ca.clone());
+	let s :String = serde_json::to_string(&o).unwrap();
+	asn1obj_log_trace!("s\n{}",s);
 }

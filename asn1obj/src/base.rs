@@ -23,6 +23,8 @@ use std::ops::Shr;
 use num_bigint::{BigUint};
 use num_traits::{Zero};
 use std::cmp::PartialEq;
+use crate::serde_obj::{Asn1AnyVisitor};
+use serde::ser::{SerializeStruct};
 
 
 asn1obj_error_class!{Asn1ObjBaseError}
@@ -159,6 +161,30 @@ pub fn asn1obj_format_header(tag :u64, length :u64) -> Vec<u8> {
 pub struct Asn1Any {
     pub content :Vec<u8>,
     pub tag : u64,
+}
+
+impl serde::ser::Serialize for Asn1Any{
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        let ores = serializer.serialize_struct("Asn1Any",2);
+        match ores {
+            Err(e) => {
+                return Err(e);
+            },
+            Ok(mut val) => {
+                val.serialize_field("tag",&self.tag)?;
+                val.serialize_field("content",&self.content)?;
+                return val.end();
+            }
+        }
+    }
+}
+
+impl serde::de::Deserialize<'static> for Asn1Any {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'static> {
+            let visitor :Asn1AnyVisitor = Asn1AnyVisitor::new();
+            deserializer.deserialize_map(visitor)
+        }
 }
 
 
