@@ -19,7 +19,7 @@ use crate::serde_obj::{OptionVisitor,VecVisitor};
 asn1obj_error_class!{Asn1ComplexError}
 
 #[derive(Clone)]
-pub struct Asn1Opt<'de,T : Asn1Op + Clone + Serialize + Deserialize<'de>> {
+pub struct Asn1Opt<T : Asn1Op + Clone + Serialize + Deserialize<'static>> {
 	pub val : Option<T>,
 	data : Vec<u8>,
 }
