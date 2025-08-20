@@ -5,6 +5,8 @@ use std::error::Error;
 use crate::base::{Asn1Any};
 use crate::asn1impl::{Asn1Op};
 
+//use serde::de::{DeserializeOwned};
+
 ////////////////////////////////////////////////////////////////////////////////
 
 pub struct OptionVisitor<T> {

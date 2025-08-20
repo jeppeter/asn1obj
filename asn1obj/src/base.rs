@@ -25,6 +25,7 @@ use num_traits::{Zero};
 use std::cmp::PartialEq;
 use crate::serde_obj::{Asn1AnyVisitor};
 use serde::ser::{SerializeStruct};
+//use serde::de::{DeserializeOwned};
 
 
 asn1obj_error_class!{Asn1ObjBaseError}
@@ -179,13 +180,18 @@ impl serde::ser::Serialize for Asn1Any{
     }
 }
 
+
+//impl<'de> serde::de::Deserialize<'de> for Asn1Any {
 impl serde::de::Deserialize<'static> for Asn1Any {
     fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        //where D: serde::de::Deserializer<'de> {
         where D: serde::de::Deserializer<'static> {
             let visitor :Asn1AnyVisitor = Asn1AnyVisitor::new();
             deserializer.deserialize_map(visitor)
         }
 }
+
+//impl DeserializeOwned for Asn1Any {}
 
 
 impl Asn1Op for Asn1Any {

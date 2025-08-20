@@ -13,12 +13,13 @@ use crate::base::{asn1obj_extract_header,asn1obj_format_header};
 
 use crate::consts::*;
 use serde::{Deserialize, Serialize};
+//use serde::de::{DeserializeOwned};
 use crate::serde_obj::{OptionVisitor,VecVisitor};
 
 asn1obj_error_class!{Asn1ComplexError}
 
 #[derive(Clone)]
-pub struct Asn1Opt<T : Asn1Op + Clone + Serialize + Deserialize<'static>> {
+pub struct Asn1Opt<'de,T : Asn1Op + Clone + Serialize + Deserialize<'de>> {
 	pub val : Option<T>,
 	data : Vec<u8>,
 }
@@ -37,7 +38,7 @@ impl<T :Asn1Op + Clone + Serialize + Deserialize<'static>> Deserialize<'static> 
     fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
         where D: serde::de::Deserializer<'static> {
         	let mut retv :Asn1Opt<T> = Asn1Opt::init_asn1();
-		    let ores = deserializer.deserialize_option(OptionVisitor::new());
+		    let ores = deserializer.deserialize_option(OptionVisitor::<T>::new());
 		    if ores.is_ok() {
 		    	retv.val = ores.unwrap();
 		    	return Ok(retv);
@@ -137,18 +138,18 @@ pub struct Asn1ImpSet<T : Asn1Op + Clone + Serialize + Deserialize<'static> , co
 }
 
 
-impl<T: Asn1Op + Clone + Serialize + Deserialize<'static> > serde::ser::Serialize for Asn1ImpSet<T>{
+impl<T: Asn1Op + Clone + Serialize + Deserialize<'static>,const TAG:u8> serde::ser::Serialize for Asn1ImpSet<T,TAG>{
 	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
 		serializer.collect_seq(self.val.clone())
 	}
 }
 
-impl<T :Asn1Op + Clone + Serialize + Deserialize<'static>> serde::de::Deserialize<'static> for Asn1ImpSet<T> {
+impl<T :Asn1Op + Clone + Serialize + Deserialize<'static>,const TAG:u8> Deserialize<'static> for Asn1ImpSet<T,TAG> {
     fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
         where D: serde::de::Deserializer<'static> {
         	let vecvis :VecVisitor<T> = VecVisitor::new();
         	let val :Vec<T> = deserializer.deserialize_seq(vecvis)?;
-        	let mut retv :Asn1ImpSet<T> = Asn1ImpSet::init_asn1();
+        	let mut retv :Asn1ImpSet<T,TAG> = Asn1ImpSet::init_asn1();
         	retv.val = val;
         	Ok(retv)
         }

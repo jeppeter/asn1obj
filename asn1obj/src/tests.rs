@@ -6,13 +6,19 @@ use crate::complex::*;
 #[allow(unused_imports)]
 use crate::{asn1obj_log_trace,asn1obj_log_error,asn1obj_error_class,asn1obj_new_error,asn1obj_debug_buffer_trace,asn1obj_format_buffer_log};
 use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
+#[allow(unused_imports)]
 use crate::asn1impl::{Asn1Op,Asn1Selector};
+#[allow(unused_imports)]
 use crate::consts::*;
 use crate::strop::*;
+#[allow(unused_imports)]
 use chrono::{Utc,Local,DateTime,Datelike,Timelike};
+#[allow(unused_imports)]
 use chrono::prelude::*;
 
+#[allow(unused_imports)]
 use num_bigint::{BigUint};
+#[allow(unused_imports)]
 use num_traits::Num;
 use std::io::{Write};
 use std::error::Error;
@@ -2875,24 +2881,46 @@ fn test_a056() {
 	let v2 = a1.encode_asn1().unwrap();
 	assert!(check_equal_u8(&v2,&v1));
 }
+
+
 */
 
-#[asn1_sequence()]
 #[derive(Clone,Serialize,Deserialize)]
+#[asn1_sequence()]
 struct Oany {
-	bval :Asn1Opt<Asn1Any>,
-	seqval :Asn1ImpSet<Asn1Any,3>,
+	pub bval :Asn1Opt<Asn1Any>,
+	pub seqval :Asn1ImpSet<Asn1Any,3>,
 }
+
 
 #[test]
 fn test_a057() {
-	let mut o :Oany = Oany::init_asn1();
 	let mut ca :Asn1Any = Asn1Any::init_asn1();
+	let mut ba :Asn1Opt<Asn1Any> = Asn1Opt::init_asn1();
+	let mut za :Asn1ImpSet<Asn1Any,3> = Asn1ImpSet::init_asn1();
 	ca.tag = 4;
-	ca.content = vec![4];
-	o.bval.val = Some(ca.clone());
-	ca.content = vec![5,7];
-	o.seqval.val.push(ca.clone());
-	let s :String = serde_json::to_string(&o).unwrap();
-	asn1obj_log_trace!("s\n{}",s);
+	ca.content = vec![3];
+	let mut s :String = serde_json::to_string(&ca).unwrap();
+	let mut fo = std::io::stderr();
+	s.push_str("\n");
+	fo.write_all(s.as_bytes()).unwrap();
+
+	s = serde_json::to_string(&ba).unwrap();
+	s.push_str("\n");
+	fo.write_all(s.as_bytes()).unwrap();
+
+	ba.val = Some(ca.clone());
+	s = serde_json::to_string(&ba).unwrap();
+	s.push_str("\n");
+	fo.write_all(s.as_bytes()).unwrap();
+
+	s = serde_json::to_string(&za).unwrap();
+	s.push_str("\n");
+	fo.write_all(s.as_bytes()).unwrap();
+
+	za.val.push(ca.clone());
+	s = serde_json::to_string(&za).unwrap();
+	s.push_str("\n");
+	fo.write_all(s.as_bytes()).unwrap();
+
 }
