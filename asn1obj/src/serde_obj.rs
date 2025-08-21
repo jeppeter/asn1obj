@@ -5,23 +5,24 @@ use std::error::Error;
 use crate::base::{Asn1Any};
 use crate::asn1impl::{Asn1Op};
 
-//use serde::de::{DeserializeOwned};
+use serde::de::{DeserializeOwned};
+use std::str::FromStr;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pub struct OptionVisitor<'de,T> {
-	marker: PhantomData<&'de T>,
+pub struct OptionVisitor<T> {
+	marker: PhantomData<T>,
 }
 
-impl<'de,T> OptionVisitor<'de,T> {
+impl<T> OptionVisitor<T> {
 	pub fn new() -> Self {
 		Self {
-			marker: PhantomData,
+			marker :PhantomData,
 		}
 	}
 }
 
-impl<'de,T> serde::de::Visitor<'de> for OptionVisitor<'de,T>
+impl<'de,T> serde::de::Visitor<'de> for OptionVisitor<T>
 where
 T: Deserialize<'de>,
 {
@@ -64,21 +65,19 @@ T: Deserialize<'de>,
 }
 
 
-pub struct VecVisitor<'de,T> {
-	marker: PhantomData<&'de T>,
+pub struct VecVisitor<T : DeserializeOwned> {
+	_mark :PhantomData<T>
 }
 
-impl<'de,T> VecVisitor<'de,T> {
+impl<T:DeserializeOwned> VecVisitor<T> {
 	pub fn new() -> Self {
 		Self {
-			marker:PhantomData,
+			_mark : PhantomData,
 		}
 	}
 }
 
-impl<'de,T> serde::de::Visitor<'de> for VecVisitor<'de,T>
-where
-T: Deserialize<'de>,
+impl<'de,T :DeserializeOwned> serde::de::Visitor<'de> for VecVisitor<T>
 {
 	type Value = Vec<T>;
 
@@ -115,20 +114,18 @@ T: Deserialize<'de>,
 
 
 #[allow(dead_code)]
-pub struct Asn1AnyVisitor<'de> {
-	_mark :PhantomData<&'de u64>,
+pub struct Asn1AnyVisitor {
 }
 
-impl<'de> Asn1AnyVisitor<'de> {
+impl Asn1AnyVisitor {
 	pub fn new() -> Self {
 		Self {
-			_mark :PhantomData,
 		}
 	}
 }
 
-impl<'de> serde::de::Visitor<'de> for Asn1AnyVisitor<'de> {
-	type Value = Asn1Any<'de>;
+impl<'de> serde::de::Visitor<'de> for Asn1AnyVisitor {
+	type Value = Asn1Any;
 
 	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
 		write!(formatter, "a map need")
@@ -136,10 +133,10 @@ impl<'de> serde::de::Visitor<'de> for Asn1AnyVisitor<'de> {
 
 
 
-	fn visit_map<A>(self, mut mapv: A) -> Result<Asn1Any<'de>, A::Error>
+	fn visit_map<A>(self, mut mapv: A) -> Result<Asn1Any, A::Error>
 	where A: serde::de::MapAccess<'de>,
 	{
-		let mut oany :Asn1Any<'de> = Asn1Any::<'de>::init_asn1();
+		let mut oany :Asn1Any = Asn1Any::init_asn1();
 		let mut tagv :Option<u64> = None;
 		let mut contentv :Option<Vec<u8>> = None;
 
@@ -177,4 +174,45 @@ impl<'de> serde::de::Visitor<'de> for Asn1AnyVisitor<'de> {
 }
 
 
+#[allow(dead_code)]
+#[derive(Clone,Copy)]
+pub struct I64Visitor {
+}
+
+impl I64Visitor {
+	pub fn new() -> Self {
+		Self {
+		}
+	}
+}
+
+impl<'de> serde::de::Visitor<'de> for I64Visitor {
+	type Value = i64;
+
+	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+		write!(formatter, "i64 ")
+	}
+	fn visit_i64<E>(self, val :i64) -> Result<i64,E> 
+		where E: serde::de::Error {
+		Ok(val)
+	}
+
+	fn visit_str<E>(self,val :&str) -> Result<i64,E> 
+		where E: serde::de::Error {
+			let mut cparse :String = val.to_string();
+			let mut base :u32 = 10;
+		if val.starts_with("0x") || val.starts_with("0X") {
+			cparse = cparse[2..].to_string();
+			base = 16;
+		} else if val.starts_with("x") || val.starts_with("X") {
+			cparse = cparse[1..].to_string();
+			base = 16;
+		}
+		i64::from_str_radix(&cparse,base).map_err(|err| {
+			E::custom(format_args!("{} parse error {}",val,err))
+		})
+	}
+
+
+}
 

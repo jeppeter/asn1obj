@@ -2882,17 +2882,61 @@ fn test_a056() {
 	assert!(check_equal_u8(&v2,&v1));
 }
 
-
 */
 
 //#[derive(Clone,Serialize,Deserialize)]
-#[derive(Clone)]
-struct Oany<'de> {
-	pub bval :Asn1Opt<'de,Asn1Any<'de>>,
-	pub seqval :Asn1ImpSet<'de,Asn1Any<'de>,3>,
+#[derive(Clone,Serialize,Deserialize)]
+#[asn1_sequence()]
+struct Oany {
+	#[serde(default = "bval_default")]
+	pub bval :Asn1Opt<Asn1Any>,
+	#[serde(default = "impset_default")]
+	pub impsetval :Asn1ImpSet<Asn1Any,3>,
+	#[serde(default = "seqval_default")]
+	pub seqval :Asn1Seq<Asn1Any>,
+	#[serde(default = "setval_default")]
+	pub setval :Asn1Set<Asn1Any>,
+	#[serde(default = "imp_default")]
+	pub impval :Asn1Imp<Asn1Any>,
+	#[serde(default = "exp_default")]
+	pub expval :Asn1Exp<Asn1Any>,
+	#[serde(default = "ndef_default")]
+	pub ndefval :Asn1Ndef<Asn1Any>,
+	#[serde(default = "bitseq_default")]
+	pub bitseqval :Asn1BitSeq<Asn1Any>,
 }
 
+fn bval_default() -> Asn1Opt<Asn1Any> {
+	Asn1Opt::init_asn1()
+}
 
+fn impset_default() -> Asn1ImpSet<Asn1Any,3> {
+	Asn1ImpSet::init_asn1()
+}
+
+fn seqval_default() -> Asn1Seq<Asn1Any> {
+	Asn1Seq::init_asn1()
+}
+
+fn setval_default() -> Asn1Set<Asn1Any> {
+	Asn1Set::init_asn1()
+}
+
+fn imp_default() -> Asn1Imp<Asn1Any> {
+	Asn1Imp::init_asn1()
+}
+
+fn exp_default() -> Asn1Exp<Asn1Any> {
+	Asn1Exp::init_asn1()
+}
+
+fn ndef_default() -> Asn1Ndef<Asn1Any> {
+	Asn1Ndef::init_asn1()
+}
+
+fn bitseq_default() -> Asn1BitSeq<Asn1Any> {
+	Asn1BitSeq::init_asn1()
+}
 
 
 #[test]
@@ -2900,6 +2944,7 @@ fn test_a057() {
 	let mut ca :Asn1Any = Asn1Any::init_asn1();
 	let mut ba :Asn1Opt<Asn1Any> = Asn1Opt::init_asn1();
 	let mut za :Asn1ImpSet<Asn1Any,3> = Asn1ImpSet::init_asn1();
+	let mut co :Oany = Oany::init_asn1();
 	ca.tag = 4;
 	ca.content = vec![3];
 	let mut s :String = serde_json::to_string(&ca).unwrap();
@@ -2925,4 +2970,95 @@ fn test_a057() {
 	s.push_str("\n");
 	fo.write_all(s.as_bytes()).unwrap();
 
+	s = serde_json::to_string(&co).unwrap();
+	s.push_str("\n");
+	fo.write_all(s.as_bytes()).unwrap();
+
+	co.bval.val = Some(ca.clone());
+	s = serde_json::to_string(&co).unwrap();
+	s.push_str("\n");
+	fo.write_all(s.as_bytes()).unwrap();
+		
+	s = format!(r#"{{
+		"bval" : {{"tag" : 4 ,"content" : [99,22]}}
+	}}"#);
+	co = serde_json::from_str(&s).unwrap();
+	let _ = co.print_asn1("co",0,&mut fo).unwrap();
+}
+
+#[derive(Clone,Serialize,Deserialize)]
+#[asn1_sequence()]
+struct Iany {
+	#[serde(default = "ibval_default")]
+	pub bval :Asn1Opt<Asn1Integer>,
+	#[serde(default = "iimpset_default")]
+	pub impsetval :Asn1ImpSet<Asn1Integer,3>,
+	#[serde(default = "iseqval_default")]
+	pub seqval :Asn1Seq<Asn1Integer>,
+	#[serde(default = "isetval_default")]
+	pub setval :Asn1Set<Asn1Integer>,
+	#[serde(default = "iimp_default")]
+	pub impval :Asn1Imp<Asn1Integer>,
+	#[serde(default = "iexp_default")]
+	pub expval :Asn1Exp<Asn1Integer>,
+	#[serde(default = "indef_default")]
+	pub ndefval :Asn1Ndef<Asn1Integer>,
+	#[serde(default = "ibitseq_default")]
+	pub bitseqval :Asn1BitSeq<Asn1Integer>,
+}
+
+fn ibval_default() -> Asn1Opt<Asn1Integer> {
+	Asn1Opt::init_asn1()
+}
+
+fn iimpset_default() -> Asn1ImpSet<Asn1Integer,3> {
+	Asn1ImpSet::init_asn1()
+}
+
+fn iseqval_default() -> Asn1Seq<Asn1Integer> {
+	Asn1Seq::init_asn1()
+}
+
+fn isetval_default() -> Asn1Set<Asn1Integer> {
+	Asn1Set::init_asn1()
+}
+
+fn iimp_default() -> Asn1Imp<Asn1Integer> {
+	Asn1Imp::init_asn1()
+}
+
+fn iexp_default() -> Asn1Exp<Asn1Integer> {
+	Asn1Exp::init_asn1()
+}
+
+fn indef_default() -> Asn1Ndef<Asn1Integer> {
+	Asn1Ndef::init_asn1()
+}
+
+fn ibitseq_default() -> Asn1BitSeq<Asn1Integer> {
+	Asn1BitSeq::init_asn1()
+}
+
+
+#[test]
+fn test_a058() {
+	let mut io :Iany = Iany::init_asn1();
+	let mut s :String;
+	let mut fo = std::io::stderr();
+	let mut ival :Asn1Integer = Asn1Integer::init_asn1();
+
+	s = serde_json::to_string(&io).unwrap();
+	s.push_str("\n");
+	fo.write_all(s.as_bytes()).unwrap();
+
+	io.bval.val = Some(ival.clone());
+	s = serde_json::to_string(&io).unwrap();
+	s.push_str("\n");
+	fo.write_all(s.as_bytes()).unwrap();
+		
+	s = format!(r#"{{
+		"bval" :"0x5"
+	}}"#);
+	io = serde_json::from_str(&s).unwrap();
+	let _ = io.print_asn1("co",0,&mut fo).unwrap();
 }

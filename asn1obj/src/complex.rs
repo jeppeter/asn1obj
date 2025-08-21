@@ -13,20 +13,19 @@ use crate::base::{asn1obj_extract_header,asn1obj_format_header};
 
 use crate::consts::*;
 use serde::{Deserialize, Serialize};
-//use serde::de::{DeserializeOwned};
+use serde::de::{DeserializeOwned};
 use crate::serde_obj::{OptionVisitor,VecVisitor};
-use std::marker::{PhantomData};
+//use std::marker::{PhantomData};
 
 asn1obj_error_class!{Asn1ComplexError}
 
 #[derive(Clone)]
-pub struct Asn1Opt<'de,T : Asn1Op + Clone + Serialize + Deserialize<'de>> {
+pub struct Asn1Opt<T : Asn1Op + Clone + Serialize + DeserializeOwned> {
 	pub val : Option<T>,
 	data : Vec<u8>,
-	_mark :PhantomData<&'de T>,
 }
 
-impl<'de,T: Asn1Op + Clone + Serialize + Deserialize<'de> > Serialize for Asn1Opt<'de,T> {
+impl<T: Asn1Op + Clone + Serialize + DeserializeOwned > Serialize for Asn1Opt<T> {
 	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
 		if self.val.is_some() {
 			return serializer.serialize_some(self.val.as_ref().unwrap());
@@ -36,11 +35,11 @@ impl<'de,T: Asn1Op + Clone + Serialize + Deserialize<'de> > Serialize for Asn1Op
 	}
 }
 
-impl<'de,T :Asn1Op + Clone + Serialize + Deserialize<'de>> Deserialize<'de> for Asn1Opt<'de,T> {
+impl<'de,T :Asn1Op + Clone + Serialize + DeserializeOwned> Deserialize<'de> for Asn1Opt<T> {
     fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
         where D: serde::de::Deserializer<'de> {
         	let mut retv :Asn1Opt<T> = Asn1Opt::init_asn1();
-		    let ores = deserializer.deserialize_option(OptionVisitor::<'de,T>::new());
+		    let ores = deserializer.deserialize_option(OptionVisitor::<T>::new());
 		    if ores.is_ok() {
 		    	retv.val = ores.unwrap();
 		    	return Ok(retv);
@@ -50,7 +49,7 @@ impl<'de,T :Asn1Op + Clone + Serialize + Deserialize<'de>> Deserialize<'de> for 
         }
 }
 
-impl<'de,T: Asn1Op + Clone + Serialize + Deserialize<'de>> Asn1Op for Asn1Opt<'de,T> {
+impl<T: Asn1Op + Clone + Serialize + DeserializeOwned> Asn1Op for Asn1Opt<T> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		if self.val.is_none() {
 			return Ok(0);
@@ -128,32 +127,30 @@ impl<'de,T: Asn1Op + Clone + Serialize + Deserialize<'de>> Asn1Op for Asn1Opt<'d
 		Asn1Opt {
 			data : Vec::new(),
 			val : None,	
-			_mark : PhantomData,
 		}
 	}
 }
 
 #[derive(Clone)]
-pub struct Asn1ImpSet<'de,T : Asn1Op + Clone + Serialize + Deserialize<'de> , const TAG:u8=0> {
+pub struct Asn1ImpSet<T : Asn1Op + Clone + Serialize + DeserializeOwned , const TAG:u8=0> {
 	pub val : Vec<T>,
 	tag : u8,
 	data : Vec<u8>,
-	_mark :PhantomData<&'de T>,
 }
 
 
-impl<'de,T: Asn1Op + Clone + Serialize + Deserialize<'de>,const TAG:u8> serde::ser::Serialize for Asn1ImpSet<'de,T,TAG>{
+impl<T: Asn1Op + Clone + Serialize + DeserializeOwned,const TAG:u8> serde::ser::Serialize for Asn1ImpSet<T,TAG>{
 	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
 		serializer.collect_seq(self.val.clone())
 	}
 }
 
-impl<'de,T :Asn1Op + Clone + Serialize + Deserialize<'de>,const TAG:u8> Deserialize<'de> for Asn1ImpSet<'de,T,TAG> {
+impl<'de,T :Asn1Op + Clone + Serialize + DeserializeOwned,const TAG:u8> Deserialize<'de> for Asn1ImpSet<T,TAG> {
     fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
         where D: serde::de::Deserializer<'de> {
-        	let vecvis :VecVisitor<'de,T> = VecVisitor::new();
+        	let vecvis :VecVisitor<T> = VecVisitor::new();
         	let val :Vec<T> = deserializer.deserialize_seq(vecvis)?;
-        	let mut retv :Asn1ImpSet<'de,T,TAG> = Asn1ImpSet::init_asn1();
+        	let mut retv :Asn1ImpSet<T,TAG> = Asn1ImpSet::init_asn1();
         	retv.val = val;
         	Ok(retv)
         }
@@ -162,7 +159,7 @@ impl<'de,T :Asn1Op + Clone + Serialize + Deserialize<'de>,const TAG:u8> Deserial
 
 
 
-impl<'de,T: Asn1Op + Clone + Serialize + Deserialize<'de>, const TAG:u8> Asn1Op for Asn1ImpSet<'de,T,TAG> {
+impl<T: Asn1Op + Clone + Serialize + DeserializeOwned, const TAG:u8> Asn1Op for Asn1ImpSet<T,TAG> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		let mut mainv :Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
 		let mut idx :i32 = 0;
@@ -317,20 +314,35 @@ impl<'de,T: Asn1Op + Clone + Serialize + Deserialize<'de>, const TAG:u8> Asn1Op 
 			data : Vec::new(),
 			tag : TAG,
 			val : Vec::new(),
-			_mark :PhantomData,
 		}
 	}
 }
 
 #[derive(Clone)]
-pub struct Asn1Seq<T : Asn1Op> {
+pub struct Asn1Seq<T : Asn1Op + Clone + Serialize + DeserializeOwned> {
 	pub val : Vec<T>,
 	data : Vec<u8>,
 }
 
+impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned> serde::ser::Serialize for Asn1Seq<T>{
+	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+		serializer.collect_seq(self.val.clone())
+	}
+}
+
+impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for Asn1Seq<T> {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+        	let vecvis :VecVisitor<T> = VecVisitor::new();
+        	let val :Vec<T> = deserializer.deserialize_seq(vecvis)?;
+        	let mut retv :Asn1Seq<T> = Asn1Seq::init_asn1();
+        	retv.val = val;
+        	Ok(retv)
+        }
+}
 
 
-impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
+impl<T: Asn1Op + Clone + Serialize + DeserializeOwned> Asn1Op for Asn1Seq<T> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		let mut mainv :Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
 		let mut idx :i32 = 0;
@@ -482,7 +494,7 @@ impl<T: Asn1Op> Asn1Op for Asn1Seq<T> {
 	}
 }
 
-impl<T: Asn1Op> Asn1Seq<T> {
+impl<T: Asn1Op + Clone + Serialize + DeserializeOwned> Asn1Seq<T> {
 	pub fn make_safe_one(&mut self,note :&str) -> Result<(),Box<dyn Error>> {
 		if self.val.len() != 0 && self.val.len() != 1 {
 			asn1obj_new_error!{Asn1ComplexError,"{} len {} != 1 or 0",note,self.val.len()}
@@ -509,12 +521,30 @@ impl<T: Asn1Op> Asn1Seq<T> {
 }
 
 #[derive(Clone)]
-pub struct Asn1Set<T : Asn1Op> {
+pub struct Asn1Set<T : Asn1Op + Clone + Serialize + DeserializeOwned> {
 	pub val : Vec<T>,
 	data : Vec<u8>,
 }
 
-impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
+impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned> serde::ser::Serialize for Asn1Set<T>{
+	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+		serializer.collect_seq(self.val.clone())
+	}
+}
+
+impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for Asn1Set<T> {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+        	let vecvis :VecVisitor<T> = VecVisitor::new();
+        	let val :Vec<T> = deserializer.deserialize_seq(vecvis)?;
+        	let mut retv :Asn1Set<T> = Asn1Set::init_asn1();
+        	retv.val = val;
+        	Ok(retv)
+        }
+}
+
+
+impl<T: Asn1Op + Clone + Serialize + DeserializeOwned> Asn1Op for Asn1Set<T> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		let mut mainv : Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
 		let mut idx :i32 = 0;
@@ -669,14 +699,35 @@ impl<T: Asn1Op> Asn1Op for Asn1Set<T> {
 
 
 #[derive(Clone)]
-pub struct Asn1Imp<T : Asn1Op,const TAG:u8=0> {
+pub struct Asn1Imp<T : Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:u8=0> {
 	pub val : T,
 	tag : u8,
 	data : Vec<u8>,
 }
 
+impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned> serde::ser::Serialize for Asn1Imp<T>{
+	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+		return serializer.serialize_some(&self.val);
+	}
+}
 
-impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1Imp<T,TAG> {
+impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for Asn1Imp<T> {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+        	let vecvis :OptionVisitor<T> = OptionVisitor::new();
+        	let val :Option<T> = deserializer.deserialize_option(vecvis)?;
+        	if val.is_none() {
+        		let err = serde::de::Error::custom(format!("no some"));
+        		return Err(err);
+        	}
+        	let mut retv :Asn1Imp<T> = Asn1Imp::init_asn1();
+        	retv.val = val.as_ref().unwrap().clone();
+        	Ok(retv)
+        }
+}
+
+
+impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned, const TAG:u8> Asn1Op for Asn1Imp<T,TAG> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		return self.val.encode_json(key,val);
 	}
@@ -764,14 +815,35 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1Imp<T,TAG> {
 }
 
 #[derive(Clone)]
-pub struct Asn1Exp<T : Asn1Op,const TAG:u8=0> {
+pub struct Asn1Exp<T : Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:u8=0> {
 	pub val : T,
 	tag : u8,
 	data : Vec<u8>,
 }
 
+impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned> serde::ser::Serialize for Asn1Exp<T>{
+	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+		return serializer.serialize_some(&self.val);
+	}
+}
 
-impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1Exp<T,TAG> {
+impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for Asn1Exp<T> {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+        	let vecvis :OptionVisitor<T> = OptionVisitor::new();
+        	let val :Option<T> = deserializer.deserialize_option(vecvis)?;
+        	if val.is_none() {
+        		let err = serde::de::Error::custom(format!("no some"));
+        		return Err(err);
+        	}
+        	let mut retv :Asn1Exp<T> = Asn1Exp::init_asn1();
+        	retv.val = val.as_ref().unwrap().clone();
+        	Ok(retv)
+        }
+}
+
+
+impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned, const TAG:u8> Asn1Op for Asn1Exp<T,TAG> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		return self.val.encode_json(key,val);
 	}
@@ -854,13 +926,31 @@ impl<T: Asn1Op, const TAG:u8> Asn1Op for Asn1Exp<T,TAG> {
 
 
 #[derive(Clone)]
-pub struct Asn1Ndef<T : Asn1Op + Clone, const TAG:u8=0> {
+pub struct Asn1Ndef<T : Asn1Op + Clone +  Serialize + DeserializeOwned, const TAG:u8=0> {
 	pub val :Option<T>,
 	tag : u8,
 	data : Vec<u8>,
 }
 
-impl<T: Asn1Op + Clone, const TAG:u8> Asn1Op for Asn1Ndef<T,TAG> {
+impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned> serde::ser::Serialize for Asn1Ndef<T>{
+	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+		return serializer.serialize_some(&self.val);
+	}
+}
+
+impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for Asn1Ndef<T> {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+        	let vecvis :OptionVisitor<T> = OptionVisitor::new();
+        	let val :Option<T> = deserializer.deserialize_option(vecvis)?;
+        	let mut retv :Asn1Ndef<T> = Asn1Ndef::init_asn1();
+        	retv.val = val;
+        	Ok(retv)
+        }
+}
+
+
+impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned, const TAG:u8> Asn1Op for Asn1Ndef<T,TAG> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		if self.val.is_none() {
 			return Ok(0);
@@ -968,12 +1058,34 @@ impl<T: Asn1Op + Clone, const TAG:u8> Asn1Op for Asn1Ndef<T,TAG> {
 }
 
 #[derive(Clone)]
-pub struct Asn1SeqSelector<T : Asn1Op +  Asn1Selector + Clone> {
+pub struct Asn1SeqSelector<T : Asn1Op +  Asn1Selector + Clone + Serialize + DeserializeOwned> {
 	pub val : T,
 	data : Vec<u8>,
 }
 
-impl<T: Asn1Op + Asn1Selector + Clone> Asn1Op for Asn1SeqSelector<T> {
+impl<T: Asn1Op +  Asn1Selector + Clone + Serialize + DeserializeOwned> serde::ser::Serialize for Asn1SeqSelector<T>{
+	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+		return serializer.serialize_some(&self.val);
+	}
+}
+
+impl<'de,T :Asn1Op +  Asn1Selector + Clone + Serialize + DeserializeOwned> Deserialize<'de> for Asn1SeqSelector<T> {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+        	let vecvis :OptionVisitor<T> = OptionVisitor::new();
+        	let val :Option<T> = deserializer.deserialize_option(vecvis)?;
+        	if val.is_none() {
+        		let err = serde::de::Error::custom(format!("no some"));
+        		return Err(err);
+        	}
+        	let mut retv :Asn1SeqSelector<T> = Asn1SeqSelector::init_asn1();
+        	retv.val = val.as_ref().unwrap().clone();
+        	Ok(retv)
+        }
+}
+
+
+impl<T: Asn1Op +  Asn1Selector + Clone + Serialize + DeserializeOwned> Asn1Op for Asn1SeqSelector<T> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		return self.val.encode_json(key,val);
 	}
@@ -1043,7 +1155,7 @@ impl<T: Asn1Op + Asn1Selector + Clone> Asn1Op for Asn1SeqSelector<T> {
 }
 
 
-impl<T: Asn1Op + Asn1Selector + Clone> Asn1Selector for Asn1SeqSelector<T> {
+impl<T: Asn1Op +  Asn1Selector + Clone + Serialize + DeserializeOwned> Asn1Selector for Asn1SeqSelector<T> {
 	fn decode_select(&self) -> Result<String,Box<dyn Error>> {
 		return self.val.decode_select();
 	}
@@ -1053,13 +1165,34 @@ impl<T: Asn1Op + Asn1Selector + Clone> Asn1Selector for Asn1SeqSelector<T> {
 }
 
 #[derive(Clone)]
-pub struct Asn1BitSeq<T : Asn1Op> {
+pub struct Asn1BitSeq<T : Asn1Op +  Clone + Serialize + DeserializeOwned> {
 	pub val : T,
 	data : Vec<u8>,
 }
 
+impl<T: Asn1Op +  Clone + Serialize + DeserializeOwned> serde::ser::Serialize for Asn1BitSeq<T>{
+	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+		return serializer.serialize_some(&self.val);
+	}
+}
 
-impl<T: Asn1Op> Asn1Op for Asn1BitSeq<T> {
+impl<'de,T :Asn1Op +  Clone + Serialize + DeserializeOwned> Deserialize<'de> for Asn1BitSeq<T> {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+        	let vecvis :OptionVisitor<T> = OptionVisitor::new();
+        	let val :Option<T> = deserializer.deserialize_option(vecvis)?;
+        	if val.is_none() {
+        		let err = serde::de::Error::custom(format!("no some"));
+        		return Err(err);
+        	}
+        	let mut retv :Asn1BitSeq<T> = Asn1BitSeq::init_asn1();
+        	retv.val = val.as_ref().unwrap().clone();
+        	Ok(retv)
+        }
+}
+
+
+impl<T: Asn1Op +  Clone + Serialize + DeserializeOwned> Asn1Op for Asn1BitSeq<T> {
 	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 		return self.val.encode_json(key,val);
 	}

@@ -23,10 +23,10 @@ use std::ops::Shr;
 use num_bigint::{BigUint};
 use num_traits::{Zero};
 use std::cmp::PartialEq;
-use crate::serde_obj::{Asn1AnyVisitor};
+use crate::serde_obj::{Asn1AnyVisitor,I64Visitor};
 use serde::ser::{SerializeStruct};
 //use serde::de::{DeserializeOwned};
-use std::marker::{PhantomData};
+//use std::marker::{PhantomData};
 
 
 asn1obj_error_class!{Asn1ObjBaseError}
@@ -160,13 +160,12 @@ pub fn asn1obj_format_header(tag :u64, length :u64) -> Vec<u8> {
 }
 
 #[derive(Clone)]
-pub struct Asn1Any<'de> {
+pub struct Asn1Any {
     pub content :Vec<u8>,
     pub tag : u64,
-    _mark :PhantomData<&'de u64>,
 }
 
-impl<'de> serde::ser::Serialize for Asn1Any<'de>{
+impl serde::ser::Serialize for Asn1Any {
     fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
         let ores = serializer.serialize_struct("Asn1Any",2);
         match ores {
@@ -183,7 +182,7 @@ impl<'de> serde::ser::Serialize for Asn1Any<'de>{
 }
 
 
-impl<'de> serde::de::Deserialize<'de> for Asn1Any<'de> {
+impl<'de> serde::de::Deserialize<'de> for Asn1Any {
     fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
         where D: serde::de::Deserializer<'de> {
             let visitor :Asn1AnyVisitor = Asn1AnyVisitor::new();
@@ -191,10 +190,8 @@ impl<'de> serde::de::Deserialize<'de> for Asn1Any<'de> {
         }
 }
 
-//impl DeserializeOwned for Asn1Any {}
 
-
-impl<'de> Asn1Op for Asn1Any<'de> {
+impl Asn1Op for Asn1Any {
 
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
@@ -274,7 +271,6 @@ impl<'de> Asn1Op for Asn1Any<'de> {
         Asn1Any {
             tag : 0,
             content : Vec::new(),
-            _mark :PhantomData,
         }
     }
 
@@ -359,6 +355,32 @@ impl<'de> Asn1Op for Asn1Any<'de> {
 pub struct Asn1Integer {
     pub val :i64,
     data :Vec<u8>,
+}
+
+impl serde::ser::Serialize for Asn1Integer {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        serializer.serialize_i64(self.val)
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1Integer {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let i64vis :I64Visitor = I64Visitor::new();
+            let val :i64 ;
+            let ores = deserializer.deserialize_i64(i64vis);
+            if ores.is_err() {
+                
+                let ni64 :I64Visitor = I64Visitor::new();
+                val = deserializer.deserialize_str(ni64)?;
+            } else {
+                val = ores.unwrap();
+            }
+            let mut retv :Asn1Integer = Asn1Integer::init_asn1();
+            retv.val = val;
+            Ok(retv)
+        }
 }
 
 
