@@ -23,7 +23,7 @@ use std::ops::Shr;
 use num_bigint::{BigUint};
 use num_traits::{Zero};
 use std::cmp::PartialEq;
-use crate::serde_obj::{Asn1AnyVisitor,I64Visitor,BoolVisitor,StringVisitor,VecVisitor,Asn1BitDataFlagVisitor,NullVisitor,Asn1ObjectVisitor};
+use crate::serde_obj::{Asn1AnyVisitor,I64Visitor,BoolVisitor,StringVisitor,VecVisitor,Asn1BitDataFlagVisitor,NullVisitor,Asn1ObjectVisitor,Asn1PrintableStringVisitor};
 use serde::ser::{SerializeStruct,SerializeSeq};
 //use serde::de::{DeserializeOwned};
 //use std::marker::{PhantomData};
@@ -173,8 +173,8 @@ impl serde::ser::Serialize for Asn1Any {
                 return Err(e);
             },
             Ok(mut val) => {
-                val.serialize_field("tag",&self.tag)?;
-                val.serialize_field("content",&self.content)?;
+                val.serialize_field(ASN1_JSON_TAG,&self.tag)?;
+                val.serialize_field(ASN1_JSON_CONTENT,&self.content)?;
                 return val.end();
             }
         }
@@ -1194,8 +1194,8 @@ impl serde::ser::Serialize for Asn1BitDataFlag {
                 return Err(e);
             },
             Ok(mut val) => {
-                val.serialize_field("flag",&self.flag)?;
-                val.serialize_field("data",&self.data)?;
+                val.serialize_field(ASN1_JSON_INNER_FLAG,&self.flag)?;
+                val.serialize_field(ASN1_JSON_BITDATA,&self.data)?;
                 return val.end();
             }
         }
@@ -2382,6 +2382,26 @@ pub struct Asn1String {
 }
 
 
+impl serde::ser::Serialize for Asn1String {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        serializer.serialize_str(&self.val)
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1String {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let svis :StringVisitor = StringVisitor::new();
+            let val :String ;
+            val = deserializer.deserialize_str(svis)?;
+            let mut retv :Asn1String = Asn1String::init_asn1();
+            retv.val = format!("{}",val);
+            Ok(retv)
+        }
+}
+
+
 
 impl Asn1Op for Asn1String {
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
@@ -2483,6 +2503,32 @@ pub struct Asn1PrintableString {
     pub flag :u8,
     data :Vec<u8>,
 }
+
+impl serde::ser::Serialize for Asn1PrintableString {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        let ores = serializer.serialize_struct("Asn1PrintableString",2);
+        match ores {
+            Err(e) => {
+                return Err(e);
+            },
+            Ok(mut val) => {
+                val.serialize_field(ASN1_JSON_INNER_FLAG,&self.flag)?;
+                val.serialize_field(ASN1_JSON_PRINTABLE_STRING,&self.val)?;
+                return val.end();
+            }
+        }
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1PrintableString {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let visitor :Asn1PrintableStringVisitor = Asn1PrintableStringVisitor::new();
+            deserializer.deserialize_map(visitor)
+        }
+}
+
 
 impl Asn1Op for Asn1PrintableString {
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {

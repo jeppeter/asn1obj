@@ -2980,8 +2980,8 @@ fn test_a057() {
 	fo.write_all(s.as_bytes()).unwrap();
 		
 	s = format!(r#"{{
-		"bval" : {{"tag" : 4 ,"content" : [99,22]}}
-	}}"#);
+		"bval" : {{"{}" : 4 ,"{}" : [99,22]}}
+	}}"#, ASN1_JSON_TAG,ASN1_JSON_CONTENT);
 	co = serde_json::from_str(&s).unwrap();
 	let _ = co.print_asn1("co",0,&mut fo).unwrap();
 }
@@ -3023,6 +3023,10 @@ struct Iany {
 	pub objval :Asn1Object,
 	#[serde(default = "enum_default")]
 	pub enumval :Asn1Enumerated,
+	#[serde(default = "str_default")]
+	pub strval :Asn1String,
+	#[serde(default = "ps_default")]
+	pub psval :Asn1PrintableString,
 }
 
 fn ibval_default() -> Asn1Opt<Asn1Integer> {
@@ -3093,6 +3097,14 @@ fn enum_default() -> Asn1Enumerated {
 	Asn1Enumerated::init_asn1()
 }
 
+fn str_default() -> Asn1String {
+	Asn1String::init_asn1()
+}
+
+fn ps_default() -> Asn1PrintableString {
+	Asn1PrintableString::init_asn1()
+}
+
 
 #[test]
 fn test_a058() {
@@ -3116,15 +3128,20 @@ fn test_a058() {
 		"bisetval" : ["ccss"],
 		"bitdataval" : [33,21],
 		"bitdataflagval" : {{
-			"flag" : 0,
-			"data" : [20,30]
+			"{}" : 0,
+			"{}" : [20,30]
 		}},
 		"octstrval" : "xxs2w2",
 		"octdataval" : [99,123,251],
 		"nulval" : null,
 		"objval" : [2,111019,22,99],
-		"enumval" : "0x29992992"
-	}}"#);
+		"enumval" : "0x29992992",
+		"strval" : "long str value",
+		"psval" : {{
+			"{}" : {},
+			"{}" : "printable string"
+		}}
+	}}"#,ASN1_JSON_INNER_FLAG,ASN1_JSON_BITDATA,ASN1_JSON_INNER_FLAG,ASN1_PRINTABLE2_FLAG,ASN1_JSON_PRINTABLE_STRING);
 	iv = serde_json::from_str(&s).unwrap();
 	let _ = iv.print_asn1("co",0,&mut fo).unwrap();
 

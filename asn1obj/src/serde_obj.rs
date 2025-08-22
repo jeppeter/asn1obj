@@ -2,13 +2,14 @@
 use std::marker::{PhantomData};
 use serde::{Deserialize};
 use std::error::Error;
-use crate::base::{Asn1Any,Asn1BitDataFlag,Asn1Object};
+use crate::base::{Asn1Any,Asn1BitDataFlag,Asn1Object,Asn1PrintableString};
 use crate::asn1impl::{Asn1Op};
 
 use serde::de::{DeserializeOwned};
 use std::str::FromStr;
 use crate::*;
 use crate::logger::*;
+use crate::consts::*;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -144,16 +145,16 @@ impl<'de> serde::de::Visitor<'de> for Asn1AnyVisitor {
 
 		while let Some(key) = mapv.next_key::<String>()? {
 			match key.as_str() {
-				"tag" => {
+				ASN1_JSON_TAG => {
 
 					if tagv.is_some() {
-						return Err(serde::de::Error::duplicate_field("tag"));
+						return Err(serde::de::Error::duplicate_field(ASN1_JSON_TAG));
 					}
 					tagv = Some(mapv.next_value::<u64>()?);
 				},
-				"content" => {
+				ASN1_JSON_CONTENT => {
 					if contentv.is_some() {
-						return Err(serde::de::Error::duplicate_field("content"));
+						return Err(serde::de::Error::duplicate_field(ASN1_JSON_CONTENT));
 					}
 					contentv = Some(mapv.next_value::<Vec<u8>>()?);
 				},
@@ -300,16 +301,16 @@ impl<'de> serde::de::Visitor<'de> for Asn1BitDataFlagVisitor {
 
 		while let Some(key) = mapv.next_key::<String>()? {
 			match key.as_str() {
-				"flag" => {
+				ASN1_JSON_INNER_FLAG => {
 
 					if flagv.is_some() {
-						return Err(serde::de::Error::duplicate_field("flag"));
+						return Err(serde::de::Error::duplicate_field(ASN1_JSON_INNER_FLAG));
 					}
 					flagv = Some(mapv.next_value::<u64>()?);
 				},
-				"data" => {
+				ASN1_JSON_BITDATA => {
 					if datav.is_some() {
-						return Err(serde::de::Error::duplicate_field("data"));
+						return Err(serde::de::Error::duplicate_field(ASN1_JSON_BITDATA));
 					}
 					datav = Some(mapv.next_value::<Vec<u8>>()?);
 				},
@@ -445,4 +446,67 @@ impl<'de> serde::de::Visitor<'de> for Asn1ObjectVisitor {
 	}
 
 
+}
+
+
+#[allow(dead_code)]
+pub struct Asn1PrintableStringVisitor {
+}
+
+impl Asn1PrintableStringVisitor {
+	pub fn new() -> Self {
+		Self {
+		}
+	}
+}
+
+impl<'de> serde::de::Visitor<'de> for Asn1PrintableStringVisitor {
+	type Value = Asn1PrintableString;
+
+	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+		write!(formatter, "a map need")
+	}
+
+
+
+	fn visit_map<A>(self, mut mapv: A) -> Result<Asn1PrintableString, A::Error>
+	where A: serde::de::MapAccess<'de>,
+	{
+		let mut oany :Asn1PrintableString = Asn1PrintableString::init_asn1();
+		let mut tagv :Option<u64> = None;
+		let mut contentv :Option<String> = None;
+
+		while let Some(key) = mapv.next_key::<String>()? {
+			match key.as_str() {
+				ASN1_JSON_INNER_FLAG => {
+
+					if tagv.is_some() {
+						return Err(serde::de::Error::duplicate_field(ASN1_JSON_INNER_FLAG));
+					}
+					tagv = Some(mapv.next_value::<u64>()?);
+				},
+				ASN1_JSON_PRINTABLE_STRING => {
+					if contentv.is_some() {
+						return Err(serde::de::Error::duplicate_field(ASN1_JSON_PRINTABLE_STRING));
+					}
+					let ostr :String = mapv.next_value::<String>()?;
+					contentv = Some(format!("{}",ostr));
+					
+				},
+				_ => {
+
+				},
+			}
+		}
+
+		if tagv.is_some() {
+			oany.flag = (*tagv.as_ref().unwrap()) as u8;
+		}
+
+		if contentv.is_some() {
+			oany.val = format!("{}",contentv.as_ref().unwrap());
+		}
+
+		Ok(oany)
+	}
 }
