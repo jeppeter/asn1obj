@@ -213,6 +213,50 @@ impl<'de> serde::de::Visitor<'de> for I64Visitor {
 		})
 	}
 
+}
+
+pub struct BoolVisitor {}
+
+impl BoolVisitor {
+	pub fn new() -> Self {
+		Self {
+		}
+	}
+}
+
+impl<'de> serde::de::Visitor<'de> for BoolVisitor {
+	type Value = bool;
+
+	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+		write!(formatter, "need bool")
+	}
+	fn visit_bool<E>(self, val :bool) -> Result<bool,E> 
+		where E: serde::de::Error {
+		Ok(val)
+	}
 
 }
 
+
+pub struct StringVisitor {}
+
+impl StringVisitor {
+	pub fn new() -> Self {
+		Self {
+		}
+	}
+}
+
+impl<'de> serde::de::Visitor<'de> for StringVisitor {
+	type Value = String;
+
+	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+		write!(formatter, "need bool")
+	}
+	fn visit_str<E>(self, val :&str) -> Result<String,E> 
+		where E: serde::de::Error {
+		let retv :String = format!("{}",val);
+		Ok(retv)
+	}
+
+}

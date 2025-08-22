@@ -23,7 +23,7 @@ use std::ops::Shr;
 use num_bigint::{BigUint};
 use num_traits::{Zero};
 use std::cmp::PartialEq;
-use crate::serde_obj::{Asn1AnyVisitor,I64Visitor};
+use crate::serde_obj::{Asn1AnyVisitor,I64Visitor,BoolVisitor,StringVisitor};
 use serde::ser::{SerializeStruct};
 //use serde::de::{DeserializeOwned};
 //use std::marker::{PhantomData};
@@ -369,14 +369,7 @@ impl<'de> serde::de::Deserialize<'de> for Asn1Integer {
         where D: serde::de::Deserializer<'de> {
             let i64vis :I64Visitor = I64Visitor::new();
             let val :i64 ;
-            let ores = deserializer.deserialize_i64(i64vis);
-            if ores.is_err() {
-                
-                let ni64 :I64Visitor = I64Visitor::new();
-                val = deserializer.deserialize_str(ni64)?;
-            } else {
-                val = ores.unwrap();
-            }
+            val = deserializer.deserialize_any(i64vis)?;
             let mut retv :Asn1Integer = Asn1Integer::init_asn1();
             retv.val = val;
             Ok(retv)
@@ -605,6 +598,26 @@ pub struct Asn1Boolean {
     data :Vec<u8>,
 }
 
+impl serde::ser::Serialize for Asn1Boolean {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        serializer.serialize_bool(self.val)
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1Boolean {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let bvis :BoolVisitor = BoolVisitor::new();
+            let val :bool ;
+            val = deserializer.deserialize_bool(bvis)?;
+            let mut retv :Asn1Boolean = Asn1Boolean::init_asn1();
+            retv.val = val;
+            Ok(retv)
+        }
+}
+
+
 impl Asn1Op for Asn1Boolean {
     fn equal_asn1(&self, other :&Self) -> bool {
         if self.val != other.val {
@@ -711,6 +724,25 @@ impl Asn1Op for Asn1Boolean {
 pub struct Asn1BitString {
     pub val :String,
     data :Vec<u8>,
+}
+
+impl serde::ser::Serialize for Asn1BitString {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        serializer.serialize_str(&self.val)
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1BitString {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let svis :StringVisitor = StringVisitor::new();
+            let val :String ;
+            val = deserializer.deserialize_str(svis)?;
+            let mut retv :Asn1BitString = Asn1BitString::init_asn1();
+            retv.val = format!("{}",val);
+            Ok(retv)
+        }
 }
 
 

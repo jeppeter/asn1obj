@@ -2990,21 +2990,25 @@ fn test_a057() {
 #[asn1_sequence()]
 struct Iany {
 	#[serde(default = "ibval_default")]
-	pub bval :Asn1Opt<Asn1Integer>,
+	pub ibval :Asn1Opt<Asn1Integer>,
+	#[serde(default = "bbval_default")]
+	pub bbval :Asn1Opt<Asn1Boolean>,
 	#[serde(default = "iimpset_default")]
-	pub impsetval :Asn1ImpSet<Asn1Integer,3>,
+	pub iimpsetval :Asn1ImpSet<Asn1Integer,3>,
 	#[serde(default = "iseqval_default")]
-	pub seqval :Asn1Seq<Asn1Integer>,
+	pub iseqval :Asn1Seq<Asn1Integer>,
 	#[serde(default = "isetval_default")]
-	pub setval :Asn1Set<Asn1Integer>,
+	pub isetval :Asn1Set<Asn1Integer>,
+	#[serde(default = "bisetval_default")]
+	pub bisetval : Asn1Set<Asn1BitString>,
 	#[serde(default = "iimp_default")]
-	pub impval :Asn1Imp<Asn1Integer>,
+	pub iimpval :Asn1Imp<Asn1Integer>,
 	#[serde(default = "iexp_default")]
-	pub expval :Asn1Exp<Asn1Integer>,
+	pub iexpval :Asn1Exp<Asn1Integer>,
 	#[serde(default = "indef_default")]
-	pub ndefval :Asn1Ndef<Asn1Integer>,
+	pub indefval :Asn1Ndef<Asn1Integer>,
 	#[serde(default = "ibitseq_default")]
-	pub bitseqval :Asn1BitSeq<Asn1Integer>,
+	pub ibitseqval :Asn1BitSeq<Asn1Integer>,
 }
 
 fn ibval_default() -> Asn1Opt<Asn1Integer> {
@@ -3039,26 +3043,39 @@ fn ibitseq_default() -> Asn1BitSeq<Asn1Integer> {
 	Asn1BitSeq::init_asn1()
 }
 
+fn bbval_default() -> Asn1Opt<Asn1Boolean> {
+	Asn1Opt::init_asn1()
+}
+
+fn bisetval_default() -> Asn1Set<Asn1BitString> {
+	Asn1Set::init_asn1()
+}
 
 #[test]
 fn test_a058() {
-	let mut io :Iany = Iany::init_asn1();
+	let mut iv :Iany = Iany::init_asn1();
 	let mut s :String;
 	let mut fo = std::io::stderr();
 	let mut ival :Asn1Integer = Asn1Integer::init_asn1();
 
-	s = serde_json::to_string(&io).unwrap();
+	s = serde_json::to_string(&iv).unwrap();
 	s.push_str("\n");
 	fo.write_all(s.as_bytes()).unwrap();
 
-	io.bval.val = Some(ival.clone());
-	s = serde_json::to_string(&io).unwrap();
+	iv.ibval.val = Some(ival.clone());
+	s = serde_json::to_string(&iv).unwrap();
 	s.push_str("\n");
 	fo.write_all(s.as_bytes()).unwrap();
 		
 	s = format!(r#"{{
-		"bval" :"0x5"
+		"ibval" :"0x5",
+		"bbval" : true,
+		"bisetval" : ["ccss"]
 	}}"#);
-	io = serde_json::from_str(&s).unwrap();
-	let _ = io.print_asn1("co",0,&mut fo).unwrap();
+	iv = serde_json::from_str(&s).unwrap();
+	let _ = iv.print_asn1("co",0,&mut fo).unwrap();
+
+	s = format!("ibval {}", iv.ibval.val.as_ref().unwrap().val);
+	s.push_str("\n");
+	fo.write_all(s.as_bytes()).unwrap();
 }
