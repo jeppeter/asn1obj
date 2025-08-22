@@ -3399,12 +3399,9 @@ pub struct Asn1BigNum {
 
 impl serde::ser::Serialize for Asn1BigNum {
     fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
-        let data :Vec<u8> = self.val.to_bytes_be();
-        let mut seq = serializer.serialize_seq(Some(data.len()))?;
-        for v in data.iter() {
-            seq.serialize_element(v)?;
-        }
-        seq.end()
+        //let data :Vec<u8> = self.val.to_bytes_be();
+        let sval :String = format!("0x{:x}",self.val);
+        serializer.serialize_str(&sval)
     }
 }
 
