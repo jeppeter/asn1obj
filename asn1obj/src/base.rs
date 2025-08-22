@@ -3592,6 +3592,26 @@ pub struct Asn1BMPString {
 }
 
 
+impl serde::ser::Serialize for Asn1BMPString {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        serializer.serialize_str(&self.val)
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1BMPString {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let svis :StringVisitor = StringVisitor::new();
+            let val :String ;
+            val = deserializer.deserialize_str(svis)?;
+            let mut retv :Asn1BMPString = Asn1BMPString::init_asn1();
+            retv.val = format!("{}",val);
+            Ok(retv)
+        }
+}
+
+
 
 impl Asn1Op for Asn1BMPString {
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
