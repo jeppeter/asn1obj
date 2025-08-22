@@ -2822,6 +2822,31 @@ pub struct Asn1Time {
     utag :u8,
 }
 
+impl serde::ser::Serialize for Asn1Time {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        let tmstr :String = self.get_value_str();
+        serializer.serialize_str(&tmstr)
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1Time {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let svis :StringVisitor = StringVisitor::new();
+            let val :String ;
+            val = deserializer.deserialize_str(svis)?;
+            let mut retv :Asn1Time = Asn1Time::init_asn1();
+            let ores = retv.set_value_str(&val);
+            if ores.is_err() {
+                let err :D::Error = serde::de::Error::custom(ores.err().unwrap().to_string());
+                return Err(err);
+            }
+            Ok(retv)
+        }
+}
+
+
 
 impl Asn1Time {
 
@@ -2932,7 +2957,7 @@ impl Asn1Time {
 
     }
 
-    #[allow(deprecated)]
+    //#[allow(deprecated)]
     fn extract_encode_value(&self, s :&str) -> Result<(i64,i64,i64,i64,i64,i64),Box<dyn Error>> {
         let mut year :i64;
         let mut mon :i64;
@@ -2989,7 +3014,7 @@ impl Asn1Time {
                 asn1obj_new_error!{Asn1ObjBaseError,"not valid offset [{}]",offstr}
             }
 
-            dt = Utc.ymd(year as i32,mon as u32,mday as u32).and_hms(hour as u32,min as u32,sec as u32);
+            dt = Utc.with_ymd_and_hms(year as i32,mon as u32,mday as u32,hour as u32,min as u32,sec as u32).unwrap();
             if plusorminus == "+" {
                 dt = dt - Duration::hours(voff);
             } else {
@@ -3180,17 +3205,19 @@ impl Asn1Time {
         Ok(())
     }
 
-    #[allow(deprecated)]
+    //#[allow(deprecated)]
     pub fn get_value_time(&self) -> Result<DateTime<Utc>,Box<dyn Error>> {
         let (year,mon,mday,hour,min,sec) = self.extract_date_value(&self.val)?;
-        let dt :DateTime<Utc> = Utc.ymd(year as i32,mon as u32,mday as u32).and_hms(hour as u32,min as u32,sec as u32);
+        let dt :DateTime<Utc> = Utc.with_ymd_and_hms(year as i32,mon as u32,mday as u32,hour as u32,min as u32,sec as u32).unwrap();
+        //let dt :DateTime<Utc> = Utc.ymd(year as i32,mon as u32,mday as u32).and_hms(hour as u32,min as u32,sec as u32);
         Ok(dt)
     }
 
-    #[allow(deprecated)]
+    //#[allow(deprecated)]
     pub fn get_value_time_local(&self) -> Result<DateTime<Local>,Box<dyn Error>> {
         let (year,mon,mday,hour,min,sec) = self.extract_date_value(&self.val)?;
-        let dt :DateTime<Local> = Local.ymd(year as i32,mon as u32,mday as u32).and_hms(hour as u32,min as u32,sec as u32);
+        let dt :DateTime<Local> = Local.with_ymd_and_hms(year as i32,mon as u32,mday as u32,hour as u32,min as u32,sec as u32).unwrap();
+        //let dt :DateTime<Local> = Local.ymd(year as i32,mon as u32,mday as u32).and_hms(hour as u32,min as u32,sec as u32);
         Ok(dt)
     }
 
