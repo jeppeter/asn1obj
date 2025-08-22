@@ -3009,6 +3009,16 @@ struct Iany {
 	pub indefval :Asn1Ndef<Asn1Integer>,
 	#[serde(default = "ibitseq_default")]
 	pub ibitseqval :Asn1BitSeq<Asn1Integer>,
+	#[serde(default = "bitdata_default")]
+	pub bitdataval :Asn1BitData,
+	#[serde(default = "bitdataflag_default")]
+	pub bitdataflagval :Asn1BitDataFlag,
+	#[serde(default = "octstr_default")]
+	pub octstrval : Asn1OctString,
+	#[serde(default = "octdata_default")]
+	pub octdataval : Asn1OctData,
+	#[serde(default = "nul_default")]
+	pub nulval :Asn1Null,
 }
 
 fn ibval_default() -> Asn1Opt<Asn1Integer> {
@@ -3051,6 +3061,27 @@ fn bisetval_default() -> Asn1Set<Asn1BitString> {
 	Asn1Set::init_asn1()
 }
 
+fn bitdata_default() -> Asn1BitData {
+	Asn1BitData::init_asn1()
+}
+
+fn bitdataflag_default() -> Asn1BitDataFlag {
+	Asn1BitDataFlag::init_asn1()
+}
+
+fn octstr_default() -> Asn1OctString {
+	Asn1OctString::init_asn1()
+}
+
+fn octdata_default() -> Asn1OctData {
+	Asn1OctData::init_asn1()
+}
+
+fn nul_default() -> Asn1Null {
+	Asn1Null::init_asn1()
+}
+
+
 #[test]
 fn test_a058() {
 	let mut iv :Iany = Iany::init_asn1();
@@ -3070,7 +3101,15 @@ fn test_a058() {
 	s = format!(r#"{{
 		"ibval" :"0x5",
 		"bbval" : true,
-		"bisetval" : ["ccss"]
+		"bisetval" : ["ccss"],
+		"bitdataval" : [33,21],
+		"bitdataflagval" : {{
+			"flag" : 0,
+			"data" : [20,30]
+		}},
+		"octstrval" : "xxs2w2",
+		"octdataval" : [99,123,251],
+		"nulval" : null
 	}}"#);
 	iv = serde_json::from_str(&s).unwrap();
 	let _ = iv.print_asn1("co",0,&mut fo).unwrap();

@@ -2,7 +2,7 @@
 use std::marker::{PhantomData};
 use serde::{Deserialize};
 use std::error::Error;
-use crate::base::{Asn1Any};
+use crate::base::{Asn1Any,Asn1BitDataFlag,Asn1Object};
 use crate::asn1impl::{Asn1Op};
 
 use serde::de::{DeserializeOwned};
@@ -258,5 +258,182 @@ impl<'de> serde::de::Visitor<'de> for StringVisitor {
 		let retv :String = format!("{}",val);
 		Ok(retv)
 	}
+
+}
+
+
+#[allow(dead_code)]
+pub struct Asn1BitDataFlagVisitor {
+}
+
+impl Asn1BitDataFlagVisitor {
+	pub fn new() -> Self {
+		Self {
+		}
+	}
+}
+
+impl<'de> serde::de::Visitor<'de> for Asn1BitDataFlagVisitor {
+	type Value = Asn1BitDataFlag;
+
+	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+		write!(formatter, "a map need")
+	}
+
+
+
+	fn visit_map<A>(self, mut mapv: A) -> Result<Asn1BitDataFlag, A::Error>
+	where A: serde::de::MapAccess<'de>,
+	{
+		let mut oany :Asn1BitDataFlag = Asn1BitDataFlag::init_asn1();
+		let mut flagv :Option<u64> = None;
+		let mut datav :Option<Vec<u8>> = None;
+
+		while let Some(key) = mapv.next_key::<String>()? {
+			match key.as_str() {
+				"flag" => {
+
+					if flagv.is_some() {
+						return Err(serde::de::Error::duplicate_field("flag"));
+					}
+					flagv = Some(mapv.next_value::<u64>()?);
+				},
+				"data" => {
+					if datav.is_some() {
+						return Err(serde::de::Error::duplicate_field("data"));
+					}
+					datav = Some(mapv.next_value::<Vec<u8>>()?);
+				},
+				_ => {
+
+				},
+			}
+		}
+
+		if flagv.is_some() {
+			oany.flag = flagv.as_ref().unwrap().clone();
+		}
+
+		if datav.is_some() {
+			oany.data = datav.as_ref().unwrap().clone();
+		}
+
+		Ok(oany)
+	}
+}
+
+
+pub struct NullVisitor {
+}
+
+impl NullVisitor {
+	pub fn new() -> Self {
+		Self {
+		}
+	}
+}
+
+impl<'de> serde::de::Visitor<'de> for NullVisitor
+{
+	type Value = Option<i32>;
+
+	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+		formatter.write_str("null")
+	}
+
+	#[inline]
+	fn visit_unit<E>(self) -> Result<Self::Value, E>
+	where
+	E: Error,
+	{
+		Ok(None)
+	}
+
+	#[inline]
+	fn visit_none<E>(self) -> Result<Self::Value, E>
+	where
+	E: Error,
+	{
+		Ok(None)
+	}
+}
+
+
+#[allow(dead_code)]
+#[derive(Clone,Copy)]
+pub struct Asn1ObjectVisitor {
+}
+
+impl Asn1ObjectVisitor {
+	pub fn new() -> Self {
+		Self {
+		}
+	}
+}
+
+impl<'de> serde::de::Visitor<'de> for Asn1ObjectVisitor {
+	type Value = Asn1Object;
+
+	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+		write!(formatter, "asn1object ")
+	}
+
+	fn visit_str<E>(self,val :&str) -> Result<Asn1Object,E> 
+		where E: serde::de::Error {
+		let mut retv :Asn1Object = Asn1Object::init_asn1();
+		let ores = retv.set_value(val);
+		if ores.is_err() {
+			let err = E::custom(format_args!("{:?}",ores.err().unwrap()));
+			return Err(err);
+		}
+		Ok(retv)
+	}
+
+
+	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+	where
+	A: serde::de::SeqAccess<'de>,
+	{
+		let capacity = seq.size_hint().unwrap_or_else(|| 0);
+		let mut values = Vec::<i64>::with_capacity(capacity);
+
+		loop {
+			let ores = seq.next_element();
+			match ores {
+				Ok(val) => {
+					if val.is_none() {
+						break;
+					}
+					let value :i64 = val.unwrap();
+					values.push(value);
+				},
+				Err(e) => {
+					return Err(e);
+				}
+			}
+		}
+
+		/*now to give the string value*/
+		let mut oids :String = "".to_string();
+		let mut idx :usize=0;
+
+		while idx < values.len() {
+			if idx > 0 {
+				oids.push_str(".");
+			}
+			oids.push_str(&format!("{}",values[idx]));
+			idx += 1;
+		}
+
+		let mut retv :Asn1Object = Asn1Object::init_asn1();
+		let ores = retv.set_value(&oids);
+		if ores.is_err() {
+			let err = serde::de::Error::custom(format_args!("{:?}",ores.err().unwrap()));
+			return Err(err);
+		}
+		Ok(retv)
+
+	}
+
 
 }

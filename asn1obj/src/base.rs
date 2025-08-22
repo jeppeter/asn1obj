@@ -23,8 +23,8 @@ use std::ops::Shr;
 use num_bigint::{BigUint};
 use num_traits::{Zero};
 use std::cmp::PartialEq;
-use crate::serde_obj::{Asn1AnyVisitor,I64Visitor,BoolVisitor,StringVisitor};
-use serde::ser::{SerializeStruct};
+use crate::serde_obj::{Asn1AnyVisitor,I64Visitor,BoolVisitor,StringVisitor,VecVisitor,Asn1BitDataFlagVisitor,NullVisitor,Asn1ObjectVisitor};
+use serde::ser::{SerializeStruct,SerializeSeq};
 //use serde::de::{DeserializeOwned};
 //use std::marker::{PhantomData};
 
@@ -919,6 +919,29 @@ pub struct Asn1BitData {
     pub data :Vec<u8>,
 }
 
+impl serde::ser::Serialize for Asn1BitData {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        let mut seq = serializer.serialize_seq(Some(self.data.len()))?;
+        for v in self.data.iter() {
+            seq.serialize_element(v)?;
+        }
+        seq.end()
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1BitData {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let vecvis :VecVisitor<u8> = VecVisitor::new();
+            let val :Vec<u8> = deserializer.deserialize_seq(vecvis)?;
+            let mut retv :Asn1BitData = Asn1BitData::init_asn1();
+            retv.data = val;
+            Ok(retv)
+        }
+}
+
+
 
 impl Asn1Op for Asn1BitData {
 
@@ -1163,6 +1186,31 @@ pub struct Asn1BitDataFlag {
     pub flag :u64,
 }
 
+impl serde::ser::Serialize for Asn1BitDataFlag {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        let ores = serializer.serialize_struct("Asn1BitDataFlag",2);
+        match ores {
+            Err(e) => {
+                return Err(e);
+            },
+            Ok(mut val) => {
+                val.serialize_field("flag",&self.flag)?;
+                val.serialize_field("data",&self.data)?;
+                return val.end();
+            }
+        }
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1BitDataFlag {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let visitor :Asn1BitDataFlagVisitor = Asn1BitDataFlagVisitor::new();
+            deserializer.deserialize_map(visitor)
+        }
+}
+
 
 impl Asn1Op for Asn1BitDataFlag {
 
@@ -1360,6 +1408,26 @@ pub struct Asn1OctString {
     data :Vec<u8>,
 }
 
+impl serde::ser::Serialize for Asn1OctString {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        serializer.serialize_str(&self.val)
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1OctString {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let svis :StringVisitor = StringVisitor::new();
+            let val :String ;
+            val = deserializer.deserialize_str(svis)?;
+            let mut retv :Asn1OctString = Asn1OctString::init_asn1();
+            retv.val = format!("{}",val);
+            Ok(retv)
+        }
+}
+
+
 impl Asn1Op for Asn1OctString {
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
@@ -1469,6 +1537,29 @@ impl Asn1Op for Asn1OctString {
 pub struct Asn1OctData {
     pub data :Vec<u8>,
 }
+
+impl serde::ser::Serialize for Asn1OctData {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        let mut seq = serializer.serialize_seq(Some(self.data.len()))?;
+        for v in self.data.iter() {
+            seq.serialize_element(v)?;
+        }
+        seq.end()
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1OctData {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let vecvis :VecVisitor<u8> = VecVisitor::new();
+            let val :Vec<u8> = deserializer.deserialize_seq(vecvis)?;
+            let mut retv :Asn1OctData = Asn1OctData::init_asn1();
+            retv.data = val;
+            Ok(retv)
+        }
+}
+
 
 
 impl Asn1Op for Asn1OctData {
@@ -1625,6 +1716,24 @@ pub struct Asn1Null {
     data :Vec<u8>,
 }
 
+impl serde::ser::Serialize for Asn1Null {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        serializer.serialize_none()
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1Null {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let nullvis :NullVisitor = NullVisitor::new();
+            let _ = deserializer.deserialize_any(nullvis)?;
+            let retv :Asn1Null = Asn1Null::init_asn1();
+            Ok(retv)
+        }
+}
+
+
 impl Asn1Op for Asn1Null {
 
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
@@ -1712,6 +1821,24 @@ pub struct Asn1Object {
     val :String,
     data :Vec<u8>,
 }
+
+impl serde::ser::Serialize for Asn1Object {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        serializer.serialize_str(&self.val)
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1Object {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let objvis :Asn1ObjectVisitor = Asn1ObjectVisitor::new();
+            let retv :Asn1Object ;
+            retv = deserializer.deserialize_any(objvis)?;
+            Ok(retv)
+        }
+}
+
 
 impl PartialEq for Asn1Object {
     fn eq(&self, other :&Self) -> bool {
