@@ -23,7 +23,7 @@ use std::ops::Shr;
 use num_bigint::{BigUint};
 use num_traits::{Zero};
 use std::cmp::PartialEq;
-use crate::serde_obj::{Asn1AnyVisitor,I64Visitor,BoolVisitor,StringVisitor,VecVisitor,Asn1BitDataFlagVisitor,NullVisitor,Asn1ObjectVisitor,Asn1PrintableStringVisitor};
+use crate::serde_obj::{Asn1AnyVisitor,I64Visitor,BoolVisitor,StringVisitor,VecVisitor,Asn1BitDataFlagVisitor,NullVisitor,Asn1ObjectVisitor,Asn1PrintableStringVisitor,Asn1IA5StringVisitor};
 use serde::ser::{SerializeStruct,SerializeSeq};
 //use serde::de::{DeserializeOwned};
 //use std::marker::{PhantomData};
@@ -2661,6 +2661,31 @@ pub struct Asn1IA5String {
     pub val :String,
     pub flag :u8,
     data :Vec<u8>,
+}
+
+impl serde::ser::Serialize for Asn1IA5String {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        let ores = serializer.serialize_struct("Asn1IA5String",2);
+        match ores {
+            Err(e) => {
+                return Err(e);
+            },
+            Ok(mut val) => {
+                val.serialize_field(ASN1_JSON_INNER_FLAG,&self.flag)?;
+                val.serialize_field(ASN1_JSON_IA5STRING,&self.val)?;
+                return val.end();
+            }
+        }
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1IA5String {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let visitor :Asn1IA5StringVisitor = Asn1IA5StringVisitor::new();
+            deserializer.deserialize_map(visitor)
+        }
 }
 
 

@@ -3027,6 +3027,8 @@ struct Iany {
 	pub strval :Asn1String,
 	#[serde(default = "ps_default")]
 	pub psval :Asn1PrintableString,
+	#[serde(default = "ia5_default")]
+	pub ia5val :Asn1IA5String,
 }
 
 fn ibval_default() -> Asn1Opt<Asn1Integer> {
@@ -3105,6 +3107,10 @@ fn ps_default() -> Asn1PrintableString {
 	Asn1PrintableString::init_asn1()
 }
 
+fn ia5_default() -> Asn1IA5String {
+	Asn1IA5String::init_asn1()
+}
+
 
 #[test]
 fn test_a058() {
@@ -3140,8 +3146,14 @@ fn test_a058() {
 		"psval" : {{
 			"{}" : {},
 			"{}" : "printable string"
+		}},
+		"ia5val" : {{
+			"{}" : {},
+			"{}" : "ia5 string"
 		}}
-	}}"#,ASN1_JSON_INNER_FLAG,ASN1_JSON_BITDATA,ASN1_JSON_INNER_FLAG,ASN1_PRINTABLE2_FLAG,ASN1_JSON_PRINTABLE_STRING);
+	}}"#,ASN1_JSON_INNER_FLAG,ASN1_JSON_BITDATA,
+		ASN1_JSON_INNER_FLAG,ASN1_PRINTABLE2_FLAG,ASN1_JSON_PRINTABLE_STRING,
+		ASN1_JSON_INNER_FLAG,ASN1_PRINTABLE2_FLAG,ASN1_JSON_IA5STRING);
 	iv = serde_json::from_str(&s).unwrap();
 	let _ = iv.print_asn1("co",0,&mut fo).unwrap();
 

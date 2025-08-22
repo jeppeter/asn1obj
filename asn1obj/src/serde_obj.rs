@@ -2,7 +2,7 @@
 use std::marker::{PhantomData};
 use serde::{Deserialize};
 use std::error::Error;
-use crate::base::{Asn1Any,Asn1BitDataFlag,Asn1Object,Asn1PrintableString};
+use crate::base::{Asn1Any,Asn1BitDataFlag,Asn1Object,Asn1PrintableString,Asn1IA5String};
 use crate::asn1impl::{Asn1Op};
 
 use serde::de::{DeserializeOwned};
@@ -488,6 +488,69 @@ impl<'de> serde::de::Visitor<'de> for Asn1PrintableStringVisitor {
 				ASN1_JSON_PRINTABLE_STRING => {
 					if contentv.is_some() {
 						return Err(serde::de::Error::duplicate_field(ASN1_JSON_PRINTABLE_STRING));
+					}
+					let ostr :String = mapv.next_value::<String>()?;
+					contentv = Some(format!("{}",ostr));
+					
+				},
+				_ => {
+
+				},
+			}
+		}
+
+		if tagv.is_some() {
+			oany.flag = (*tagv.as_ref().unwrap()) as u8;
+		}
+
+		if contentv.is_some() {
+			oany.val = format!("{}",contentv.as_ref().unwrap());
+		}
+
+		Ok(oany)
+	}
+}
+
+
+#[allow(dead_code)]
+pub struct Asn1IA5StringVisitor {
+}
+
+impl Asn1IA5StringVisitor {
+	pub fn new() -> Self {
+		Self {
+		}
+	}
+}
+
+impl<'de> serde::de::Visitor<'de> for Asn1IA5StringVisitor {
+	type Value = Asn1IA5String;
+
+	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+		write!(formatter, "a map need")
+	}
+
+
+
+	fn visit_map<A>(self, mut mapv: A) -> Result<Asn1IA5String, A::Error>
+	where A: serde::de::MapAccess<'de>,
+	{
+		let mut oany :Asn1IA5String = Asn1IA5String::init_asn1();
+		let mut tagv :Option<u64> = None;
+		let mut contentv :Option<String> = None;
+
+		while let Some(key) = mapv.next_key::<String>()? {
+			match key.as_str() {
+				ASN1_JSON_INNER_FLAG => {
+
+					if tagv.is_some() {
+						return Err(serde::de::Error::duplicate_field(ASN1_JSON_INNER_FLAG));
+					}
+					tagv = Some(mapv.next_value::<u64>()?);
+				},
+				ASN1_JSON_IA5STRING => {
+					if contentv.is_some() {
+						return Err(serde::de::Error::duplicate_field(ASN1_JSON_IA5STRING));
 					}
 					let ostr :String = mapv.next_value::<String>()?;
 					contentv = Some(format!("{}",ostr));
