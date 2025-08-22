@@ -3031,6 +3031,8 @@ struct Iany {
 	pub ia5val :Asn1IA5String,
 	#[serde(default = "tm_default")]
 	pub tmval :Asn1Time,
+	#[serde(default = "bn_default")]
+	pub bnval :Asn1BigNum,
 }
 
 fn ibval_default() -> Asn1Opt<Asn1Integer> {
@@ -3117,6 +3119,10 @@ fn tm_default() -> Asn1Time {
 	Asn1Time::init_asn1()
 }
 
+fn bn_default() -> Asn1BigNum {
+	Asn1BigNum::init_asn1()
+}
+
 
 #[test]
 fn test_a058() {
@@ -3157,7 +3163,8 @@ fn test_a058() {
 			"{}" : {},
 			"{}" : "ia5 string"
 		}},
-		"tmval" : "2022-02-05 02:15:22"
+		"tmval" : "2022-02-05 02:15:22",
+		"bnval" : [20,22,210,202,99,11,11,33,22,11,112,221,99,190]
 	}}"#,ASN1_JSON_INNER_FLAG,ASN1_JSON_BITDATA,
 		ASN1_JSON_INNER_FLAG,ASN1_PRINTABLE2_FLAG,ASN1_JSON_PRINTABLE_STRING,
 		ASN1_JSON_INNER_FLAG,ASN1_PRINTABLE2_FLAG,ASN1_JSON_IA5STRING);

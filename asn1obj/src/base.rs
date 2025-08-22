@@ -23,7 +23,7 @@ use std::ops::Shr;
 use num_bigint::{BigUint};
 use num_traits::{Zero};
 use std::cmp::PartialEq;
-use crate::serde_obj::{Asn1AnyVisitor,I64Visitor,BoolVisitor,StringVisitor,VecVisitor,Asn1BitDataFlagVisitor,NullVisitor,Asn1ObjectVisitor,Asn1PrintableStringVisitor,Asn1IA5StringVisitor};
+use crate::serde_obj::{Asn1AnyVisitor,I64Visitor,BoolVisitor,StringVisitor,VecVisitor,Asn1BitDataFlagVisitor,NullVisitor,Asn1ObjectVisitor,Asn1PrintableStringVisitor,Asn1IA5StringVisitor,BigUintVisitor};
 use serde::ser::{SerializeStruct,SerializeSeq};
 //use serde::de::{DeserializeOwned};
 //use std::marker::{PhantomData};
@@ -3395,6 +3395,32 @@ pub struct Asn1BigNum {
     pub val :BigUint,
     data :Vec<u8>,
 }
+
+
+impl serde::ser::Serialize for Asn1BigNum {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        let data :Vec<u8> = self.val.to_bytes_be();
+        let mut seq = serializer.serialize_seq(Some(data.len()))?;
+        for v in data.iter() {
+            seq.serialize_element(v)?;
+        }
+        seq.end()
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1BigNum {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let bnvis :BigUintVisitor = BigUintVisitor::new();
+            let val :BigUint ;
+            val = deserializer.deserialize_any(bnvis)?;
+            let mut retv :Asn1BigNum = Asn1BigNum::init_asn1();
+            retv.val = val;
+            Ok(retv)
+        }
+}
+
 
 impl Asn1BigNum {
     pub fn set_value(&mut self, val :&[u8]) -> Vec<u8> {

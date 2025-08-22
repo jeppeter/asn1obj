@@ -11,6 +11,10 @@ use crate::*;
 use crate::logger::*;
 use crate::consts::*;
 
+use num_bigint::{BigUint};
+use num_traits::{Zero,Num,FromPrimitive};
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 pub struct OptionVisitor<T> {
@@ -572,4 +576,97 @@ impl<'de> serde::de::Visitor<'de> for Asn1IA5StringVisitor {
 
 		Ok(oany)
 	}
+}
+
+
+#[allow(dead_code)]
+#[derive(Clone,Copy)]
+pub struct BigUintVisitor {
+}
+
+impl BigUintVisitor {
+	pub fn new() -> Self {
+		Self {
+		}
+	}
+}
+
+impl<'de> serde::de::Visitor<'de> for BigUintVisitor {
+	type Value = BigUint;
+
+	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+		write!(formatter, "i64 value")
+	}
+	fn visit_i64<E>(self, val :i64) -> Result<BigUint,E> 
+		where E: serde::de::Error {
+		let oretv :Option<BigUint> = BigUint::from_i64(val);
+		if oretv.is_none() {
+			let err : E = serde::de::Error::custom(format!("{} not valid for BigUint", val));
+			return Err(err);
+		}
+		let retv = oretv.unwrap();
+		Ok(retv)
+	}
+
+	fn visit_u64<E>(self, val :u64) -> Result<BigUint,E> 
+		where E: serde::de::Error {
+		let oretv :Option<BigUint> = BigUint::from_u64(val);
+		if oretv.is_none() {
+			let err : E = serde::de::Error::custom(format!("{} not valid for BigUint", val));
+			return Err(err);
+		}
+		let retv = oretv.unwrap();
+		Ok(retv)
+	}
+
+	fn visit_str<E>(self,val :&str) -> Result<BigUint,E> 
+		where E: serde::de::Error {
+			let mut cparse :String = val.to_string();
+			let mut base :u32 = 10;
+		if val.starts_with("0x") || val.starts_with("0X") {
+			cparse = cparse[2..].to_string();
+			base = 16;
+		} else if val.starts_with("x") || val.starts_with("X") {
+			cparse = cparse[1..].to_string();
+			base = 16;
+		}
+		let ores = BigUint::from_str_radix(&cparse,base);
+		if ores.is_err() {
+			let err : E = serde::de::Error::custom(format!("{} parse error {:?}", val,ores.err().unwrap()));
+			return Err(err);
+		}
+		let retv = ores.unwrap();
+		Ok(retv)
+	}
+
+	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where        A: serde::de::SeqAccess<'de>, {
+		let capacity = seq.size_hint().unwrap_or_else(|| 0);
+		let mut values = Vec::<u8>::with_capacity(capacity);
+
+		loop {
+			let ores = seq.next_element();
+			match ores {
+				Ok(val) => {
+					if val.is_none() {
+						break;
+					}
+					let value :i64 = val.unwrap();
+					if value < 0 || value > 255 {
+						let err : A::Error = serde::de::Error::custom(format!("{} not >= 0 && <= 255",value));
+						return Err(err);
+					}
+					values.push(value as u8);
+				},
+				Err(e) => {
+					return Err(e);
+				}
+			}
+		}
+
+		let retv :BigUint =BigUint::from_bytes_be(&values);
+
+		Ok(retv)
+    }
+
 }
