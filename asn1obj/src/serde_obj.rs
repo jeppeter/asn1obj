@@ -7,6 +7,8 @@ use crate::asn1impl::{Asn1Op};
 
 use serde::de::{DeserializeOwned};
 use std::str::FromStr;
+use crate::*;
+use crate::logger::*;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -190,11 +192,16 @@ impl<'de> serde::de::Visitor<'de> for I64Visitor {
 	type Value = i64;
 
 	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-		write!(formatter, "i64 ")
+		write!(formatter, "i64 value")
 	}
 	fn visit_i64<E>(self, val :i64) -> Result<i64,E> 
 		where E: serde::de::Error {
 		Ok(val)
+	}
+
+	fn visit_u64<E>(self, val :u64) -> Result<i64,E> 
+		where E: serde::de::Error {
+		Ok(val as i64)
 	}
 
 	fn visit_str<E>(self,val :&str) -> Result<i64,E> 
@@ -208,7 +215,9 @@ impl<'de> serde::de::Visitor<'de> for I64Visitor {
 			cparse = cparse[1..].to_string();
 			base = 16;
 		}
+		asn1obj_log_trace!("put value {} parse value {}",val,cparse);
 		i64::from_str_radix(&cparse,base).map_err(|err| {
+			asn1obj_log_trace!("parse error {}", err);
 			E::custom(format_args!("{} parse error {}",val,err))
 		})
 	}

@@ -2155,6 +2155,27 @@ pub struct Asn1Enumerated {
     data :Vec<u8>,
 }
 
+
+impl serde::ser::Serialize for Asn1Enumerated {
+    fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
+        serializer.serialize_i64(self.val)
+    }
+}
+
+
+impl<'de> serde::de::Deserialize<'de> for Asn1Enumerated {
+    fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
+        where D: serde::de::Deserializer<'de> {
+            let i64vis :I64Visitor = I64Visitor::new();
+            let val :i64 ;
+            val = deserializer.deserialize_any(i64vis)?;
+            let mut retv :Asn1Enumerated = Asn1Enumerated::init_asn1();
+            retv.val = val;
+            Ok(retv)
+        }
+}
+
+
 impl Asn1Op for Asn1Enumerated {
     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
         let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();

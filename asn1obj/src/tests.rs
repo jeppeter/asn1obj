@@ -3019,6 +3019,10 @@ struct Iany {
 	pub octdataval : Asn1OctData,
 	#[serde(default = "nul_default")]
 	pub nulval :Asn1Null,
+	#[serde(default = "obj_default")]
+	pub objval :Asn1Object,
+	#[serde(default = "enum_default")]
+	pub enumval :Asn1Enumerated,
 }
 
 fn ibval_default() -> Asn1Opt<Asn1Integer> {
@@ -3081,13 +3085,21 @@ fn nul_default() -> Asn1Null {
 	Asn1Null::init_asn1()
 }
 
+fn obj_default() -> Asn1Object {
+	Asn1Object::init_asn1()
+}
+
+fn enum_default() -> Asn1Enumerated {
+	Asn1Enumerated::init_asn1()
+}
+
 
 #[test]
 fn test_a058() {
 	let mut iv :Iany = Iany::init_asn1();
 	let mut s :String;
 	let mut fo = std::io::stderr();
-	let mut ival :Asn1Integer = Asn1Integer::init_asn1();
+	let ival :Asn1Integer = Asn1Integer::init_asn1();
 
 	s = serde_json::to_string(&iv).unwrap();
 	s.push_str("\n");
@@ -3099,7 +3111,7 @@ fn test_a058() {
 	fo.write_all(s.as_bytes()).unwrap();
 		
 	s = format!(r#"{{
-		"ibval" :"0x5",
+		"ibval" : 5,
 		"bbval" : true,
 		"bisetval" : ["ccss"],
 		"bitdataval" : [33,21],
@@ -3109,7 +3121,9 @@ fn test_a058() {
 		}},
 		"octstrval" : "xxs2w2",
 		"octdataval" : [99,123,251],
-		"nulval" : null
+		"nulval" : null,
+		"objval" : [2,111019,22,99],
+		"enumval" : "0x29992992"
 	}}"#);
 	iv = serde_json::from_str(&s).unwrap();
 	let _ = iv.print_asn1("co",0,&mut fo).unwrap();
