@@ -8,7 +8,7 @@ use crate::kv::{SynKV};
 use crate::asn1ext::{filter_attrib};
 use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS,ASN1_JSON_SKIP};
 use std::error::Error;
-use crate::utils::{format_tab_line,extract_type_name,TokenValue};
+use crate::utils::{format_tab_line,extract_type_name,TokenValue,SerdeValue};
 use quote::{ToTokens};
 
 asn1_gen_error_class!{SequenceSynError}
@@ -24,6 +24,7 @@ struct SequenceSyn {
 	mapjsonalias :HashMap<String,String>,
 	mapjsonskip :HashMap<String,bool>,
 	tokenvalue :TokenValue,
+	serdevalue :SerdeValue,
 }
 
 impl SequenceSyn {
@@ -45,6 +46,7 @@ impl SequenceSyn {
 			mapjsonalias :HashMap::new(),
 			mapjsonskip : HashMap::new(),
 			tokenvalue : TokenValue::new(),
+			serdevalue: SerdeValue::new(),
 		}
 	}
 

@@ -2,6 +2,7 @@
 use std::error::Error;
 #[allow(unused_imports)]
 use crate::*;
+use std::collections::HashMap;
 use quote::{ToTokens};
 
 asn1_gen_error_class!{UtilError}
@@ -21,6 +22,24 @@ impl TokenValue {
 		}
 	}
 }
+
+pub (crate) struct SerdeValue {
+	skip_map :HashMap<String,bool>,
+	serialize_func :HashMap<String,String>,
+	deserialize_func :HashMap<String,String>,	
+}
+
+impl SerdeValue {
+	pub (crate) fn new() -> Self {
+		Self {
+			skip_map :HashMap::new(),
+			serialize_func :HashMap::new(),
+			deserialize_func :HashMap::new(),
+		}
+	}
+}
+
+
 
 
 pub (crate) fn extract_type_name(n :&str) -> String {
