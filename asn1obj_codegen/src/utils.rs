@@ -6,6 +6,23 @@ use quote::{ToTokens};
 
 asn1_gen_error_class!{UtilError}
 
+pub (crate) struct TokenValue {
+	pub (crate) is_clone :bool,
+	pub (crate) is_serialize :bool,
+	pub (crate) is_deserialize :bool,
+}
+
+impl TokenValue {
+	pub (crate) fn new() -> Self {
+		Self {
+			is_clone : true,
+			is_serialize :true,
+			is_deserialize:true,
+		}
+	}
+}
+
+
 pub (crate) fn extract_type_name(n :&str) -> String {
 	let mut rets :String;
 	rets = format!("{}",n);
@@ -52,3 +69,5 @@ pub (crate) fn format_tab_line(tabs :i32, c :&str) -> String {
 	rets.push_str("\n");
 	rets
 }
+
+

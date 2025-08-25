@@ -8,7 +8,7 @@ use crate::kv::{SynKV};
 use crate::asn1ext::{filter_attrib};
 use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS,ASN1_JSON_SKIP};
 use std::error::Error;
-use crate::utils::{format_tab_line,extract_type_name};
+use crate::utils::{format_tab_line,extract_type_name,TokenValue};
 use quote::{ToTokens};
 
 asn1_gen_error_class!{SequenceSynError}
@@ -23,6 +23,7 @@ struct SequenceSyn {
 	komitinitfns :HashMap<String,String>,
 	mapjsonalias :HashMap<String,String>,
 	mapjsonskip :HashMap<String,bool>,
+	tokenvalue :TokenValue,
 }
 
 impl SequenceSyn {
@@ -43,6 +44,7 @@ impl SequenceSyn {
 			komitinitfns :HashMap::new(),
 			mapjsonalias :HashMap::new(),
 			mapjsonskip : HashMap::new(),
+			tokenvalue : TokenValue::new(),
 		}
 	}
 
@@ -58,6 +60,25 @@ impl SequenceSyn {
 			} else {
 				self.debugenable = false;
 			}
+		} else if k == "noclone" {
+			if v == "true" || v.len() == 0 {
+				self.tokenvalue.is_clone = false;	
+			} else {
+				self.tokenvalue.is_clone = true;
+			}			
+		} else if k == "noserialize" {
+			if v == "true" || v.len() == 0 {
+				self.tokenvalue.is_serialize = false;	
+			} else {
+				self.tokenvalue.is_serialize = true;
+			}
+			
+		} else if k == "nodeserialize" {
+			if v == "true" || v.len() == 0 {
+				self.tokenvalue.is_deserialize = false;	
+			} else {
+				self.tokenvalue.is_deserialize = true;
+			}			
 		} else {
 			asn1_gen_new_error!{SequenceSynError,"can not accept k[{}] v [{}]",k,v}
 		}
@@ -393,7 +414,7 @@ impl syn::parse::Parse for SequenceSyn {
 		loop {
 			if input.peek(syn::Ident) {
 				let c :syn::Ident = input.parse()?;
-				//asn1_gen_log_trace!("token [{}]",c);
+				asn1_gen_log_trace!("token [{}]",c);
 				if k.len() == 0 {
 					k = format!("{}",c);
 				} else if v.len() == 0 {
@@ -404,10 +425,10 @@ impl syn::parse::Parse for SequenceSyn {
 				}
 			} else if input.peek(syn::Token![=]) {
 				let _c : syn::token::Eq = input.parse()?;
-				//asn1_gen_log_trace!("=");
+				asn1_gen_log_trace!("=");
 			} else if input.peek(syn::Token![,]) {
 				let _c : syn::token::Comma = input.parse()?;
-				//asn1_gen_log_trace!("parse ,");
+				asn1_gen_log_trace!("parse ,");
 				if k.len() == 0 || v.len() == 0 {
 					let c = format!("need set k=v format");
 					return Err(syn::Error::new(input.span(),&c));
@@ -418,7 +439,7 @@ impl syn::parse::Parse for SequenceSyn {
 					let c = format!("{:?}", e);
 					return Err(syn::Error::new(input.span(),&c));
 				}
-				//asn1_gen_log_trace!("parse [{}]=[{}]",k,v);
+				asn1_gen_log_trace!("parse [{}]=[{}]",k,v);
 				k = "".to_string();
 				v = "".to_string();
 			} else {
