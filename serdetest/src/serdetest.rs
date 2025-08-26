@@ -9,7 +9,7 @@ use extargsparse_worker::argset::{ArgSetImpl};
 use extargsparse_worker::parser::{ExtArgsParser};
 use extargsparse_worker::funccall::{ExtArgsParseFunc};
 
-use serde::{Serialize,Deserialize};
+use serde::{Serialize,Deserialize,de::DeserializeOwned};
 
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -35,11 +35,21 @@ use super::*;
 extargs_error_class!{JsonLoadError}
 
 #[derive(Clone,Debug,Serialize,Deserialize)]
-struct BaseStruct {
-	pub name :Vec<String>,
-	pub cc :Vec<i32>,
+#[serde(untagged)]
+enum DeriveEnum {
+	Enum1,
+	Enum3,
+	EnumCC,
 }
 
+//#[derive(Debug,Clone)]
+#[derive(Clone,Debug,Serialize,Deserialize)]
+struct BaseStruct {
+	pub name2 :Vec<String>,
+	pub cc2 :Vec<i32>,
+}
+
+//#[derive(Debug,Clone)]
 #[derive(Clone,Debug,Serialize,Deserialize)]
 struct NoPatternStruct {
 	pub name :Vec<String>,
@@ -55,12 +65,18 @@ impl Default for NoPatternStruct {
 	}
 }
 
+
+//#[derive(Debug,Clone)]
+#[allow(non_snake_case)]
 #[derive(Clone,Debug,Serialize,Deserialize)]
 struct DeriveStruct {
-	pub base :Vec<BaseStruct>,
-	#[serde(skip)]
+	pub basenew :Vec<BaseStruct>,
 	pub pattern :NoPatternStruct,
+	pub enumval :DeriveEnum,
 }
+
+
+
 
 
 fn serdeload_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSetImpl>>>,_ctx :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
