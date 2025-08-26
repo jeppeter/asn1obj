@@ -34,13 +34,38 @@ use super::*;
 
 extargs_error_class!{JsonLoadError}
 
+
 #[derive(Clone,Debug,Serialize,Deserialize)]
-#[serde(tag = "type" ,content="cc")]
+#[serde(try_from = "i32",into = "i32")]
 enum DeriveEnum {
 	Enum1,
 	Enum3,
 	EnumCC,
 }
+
+impl TryFrom<i32> for DeriveEnum {
+	type Error = String;
+
+	fn try_from(v :i32)	 -> Result<Self,Self::Error> {
+		match v {
+			0 => {return Ok(DeriveEnum::Enum1);},
+			1 => {return Ok(DeriveEnum::Enum3);},
+			2 => {return Ok(DeriveEnum::EnumCC);},
+			_ => {return Err(format!("not valid value {}",v));},
+		}
+	}
+}
+
+impl Into<i32> for DeriveEnum {
+	fn into(self) -> i32 {
+		match self {
+			DeriveEnum::Enum1 => {return 0;},
+			DeriveEnum::Enum3 => {return 1;},
+			DeriveEnum::EnumCC => {return 2;},
+		}
+	}
+}
+
 
 //#[derive(Debug,Clone)]
 #[derive(Clone,Debug,Serialize,Deserialize)]
