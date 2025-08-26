@@ -1,0 +1,101 @@
+#[allow(unused_imports)]
+use extargsparse_codegen::{extargs_load_commandline,ArgSet,extargs_map_function};
+#[allow(unused_imports)]
+use extargsparse_worker::{extargs_error_class,extargs_new_error};
+#[allow(unused_imports)]
+use extargsparse_worker::namespace::{NameSpaceEx};
+#[allow(unused_imports)]
+use extargsparse_worker::argset::{ArgSetImpl};
+use extargsparse_worker::parser::{ExtArgsParser};
+use extargsparse_worker::funccall::{ExtArgsParseFunc};
+
+use serde::{Serialize,Deserialize};
+
+use std::cell::RefCell;
+use std::sync::Arc;
+use std::error::Error;
+use std::boxed::Box;
+#[allow(unused_imports)]
+use regex::Regex;
+#[allow(unused_imports)]
+use std::any::Any;
+
+use lazy_static::lazy_static;
+use std::collections::HashMap;
+
+#[allow(unused_imports)]
+use super::loglib::*;
+#[allow(unused_imports)]
+use super::fileop::*;
+#[allow(unused_imports)]
+use super::*;
+
+
+
+extargs_error_class!{JsonLoadError}
+
+#[derive(Clone,Debug,Serialize,Deserialize)]
+struct BaseStruct {
+	pub name :Vec<String>,
+	pub cc :Vec<i32>,
+}
+
+#[derive(Clone,Debug,Serialize,Deserialize)]
+struct NoPatternStruct {
+	pub name :Vec<String>,
+	pub cc :Vec<i32>,
+}
+
+impl Default for NoPatternStruct {
+	fn default() -> Self {
+		Self {
+			name :vec![],
+			cc :vec![],
+		}
+	}
+}
+
+#[derive(Clone,Debug,Serialize,Deserialize)]
+struct DeriveStruct {
+	pub base :Vec<BaseStruct>,
+	#[serde(skip)]
+	pub pattern :NoPatternStruct,
+}
+
+
+fn serdeload_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSetImpl>>>,_ctx :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
+	let sarr :Vec<String> = ns.get_array("subnargs");
+
+	init_log(ns.clone())?;
+
+	if sarr.len() < 1 {
+		extargs_new_error!{JsonLoadError,"need binfile"}
+	}
+
+	for f in sarr.iter() {
+		let s = read_file(f)?;
+		let pat :DeriveStruct = serde_json::from_str(&s)?;
+		println!("{:?}",pat);
+
+		let outs = serde_json::to_string_pretty(&pat)?;
+		println!("outs\n{}",outs);
+	}
+
+	Ok(())
+}
+
+
+
+
+#[extargs_map_function(serdeload_handler)]
+pub fn load_serde_command(parser :ExtArgsParser) -> Result<(),Box<dyn Error>> {
+	let cmdline = format!(r#"
+	{{
+		"serdeload<serdeload_handler>##jsonfile ... to load ##" : {{
+			"$" : "+"
+		}}
+	}}
+	"#);
+	extargs_load_commandline!(parser,&cmdline)?;
+	Ok(())
+}

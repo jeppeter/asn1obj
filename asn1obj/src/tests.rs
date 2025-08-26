@@ -41,7 +41,6 @@ fn check_equal_u8(a :&[u8],b :&[u8]) -> bool {
 	return true;
 }
 
-/*
 #[test]
 fn test_a001() {
 	let mut a1 :Asn1Integer = Asn1Integer::init_asn1();
@@ -2082,6 +2081,7 @@ fn test_a047() {
 	assert!(ores.is_err());
 }
 
+#[derive(Clone,Serialize,Deserialize)]
 struct CCTest {
 	pub ccv :Asn1Object,
 	pub bbv :Asn1BigNum,
@@ -2231,6 +2231,7 @@ fn test_a048() {
 	assert!(cv[0]["ddv"][ASN1_JSON_PRINTABLE_STRING] == serde_json::json!("hello worldst"));
 }
 
+#[derive(Clone,Serialize,Deserialize)]
 struct BBSelector {
 	pub stype :Asn1Object,
 }
@@ -2289,6 +2290,7 @@ impl Asn1Op for BBSelector {
 	}
 }
 
+#[derive(Clone,Serialize,Deserialize)]
 struct BBTest {
 	pub seltype :BBSelector,
 	pub ccv :Asn1Object,
@@ -2465,6 +2467,7 @@ fn test_a049() {
 	}]));
 }
 
+#[derive(Clone,Serialize,Deserialize)]
 struct IntTest {
 	pub seltype :i32,
 	pub ccv :Asn1Object,
@@ -2638,6 +2641,7 @@ fn test_a050() {
 	}]));
 }
 
+#[derive(Clone,Serialize,Deserialize)]
 #[asn1_sequence()]
 struct CCTestauto {
 	pub ccv :Asn1Object,
@@ -2645,7 +2649,7 @@ struct CCTestauto {
 	pub ddv :Asn1PrintableString,
 }
 
-
+#[derive(Clone,Serialize,Deserialize)]
 #[asn1_sequence()]
 struct CCTestautoSeq {
 	pub elem :Asn1Seq<CCTestauto>,
@@ -2696,11 +2700,13 @@ fn test_a051() {
 	assert!(cv[0]["ddv"][ASN1_JSON_PRINTABLE_STRING] == serde_json::json!("hello worldst"));
 }
 
+#[derive(Clone,Serialize,Deserialize)]
 #[asn1_obj_selector(selector=stype,ccv="1.2.3",bbv="1.2.4",ddv="1.2.5",ddv=default)]
 struct BBSelectorauto {
 	pub stype :Asn1Object,
 }
 
+#[derive(Clone,Serialize,Deserialize)]
 #[asn1_choice(selector=seltype)]
 struct BBTestauto {
 	pub seltype :BBSelectorauto,
@@ -2761,6 +2767,7 @@ fn test_a052() {
 	}]));
 }
 
+#[derive(Clone,Serialize,Deserialize)]
 #[asn1_int_choice(ccv=1,bbv=2,ddv=3,selector=seltype)]
 struct IntTestauto {
 	pub seltype :i32,
@@ -2882,9 +2889,6 @@ fn test_a056() {
 	assert!(check_equal_u8(&v2,&v1));
 }
 
-*/
-
-//#[derive(Clone,Serialize,Deserialize)]
 #[derive(Clone,Serialize,Deserialize)]
 #[asn1_sequence()]
 struct Oany {

@@ -6,13 +6,14 @@ use crate::base::{Asn1Any,Asn1BitDataFlag,Asn1Object,Asn1PrintableString,Asn1IA5
 use crate::asn1impl::{Asn1Op};
 
 use serde::de::{DeserializeOwned};
+#[allow(unused_imports)]
 use std::str::FromStr;
 use crate::*;
 use crate::logger::*;
 use crate::consts::*;
 
 use num_bigint::{BigUint};
-use num_traits::{Zero,Num,FromPrimitive};
+use num_traits::{Num,FromPrimitive};
 
 
 ////////////////////////////////////////////////////////////////////////////////

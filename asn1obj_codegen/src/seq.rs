@@ -509,6 +509,7 @@ pub fn asn1_sequence(_attr :proc_macro::TokenStream,item :proc_macro::TokenStrea
 							omitname = Some(format!("{}",n));
 						}
 
+
 						let ores = retkv.get_value(ASN1_JSON_ALIAS);
 						if ores.is_some() {
 							let aliasname = format!("{}",ores.unwrap());
@@ -531,6 +532,17 @@ pub fn asn1_sequence(_attr :proc_macro::TokenStream,item :proc_macro::TokenStrea
 							asn1_gen_log_trace!("n[{}]=[{}]",omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
 							cs.set_init_func(omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
 						}
+
+						if cs.tokenvalue.is_serialize || cs.tokenvalue.is_deserialize {
+							let serdekv :SynKV;
+							serdekv = filter_serde(_v)?;
+							let ores = retv.get_value(SERDE_SKIP);
+							if ores.is_some() {
+								cs.
+							}
+						}
+
+
 					}
 				},
 				_ => {

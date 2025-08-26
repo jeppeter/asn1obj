@@ -27,6 +27,7 @@ pub (crate) struct SerdeValue {
 	skip_map :HashMap<String,bool>,
 	serialize_func :HashMap<String,String>,
 	deserialize_func :HashMap<String,String>,	
+	rename_value :HashMap<String,String>,
 }
 
 impl SerdeValue {
@@ -35,10 +36,30 @@ impl SerdeValue {
 			skip_map :HashMap::new(),
 			serialize_func :HashMap::new(),
 			deserialize_func :HashMap::new(),
+			rename_value :HashMap::new(),
 		}
 	}
-}
 
+	pub (crate) fn set_skip(&mut self,name :&str) -> Result<(),Box<dyn Error>> {
+		self.skip_map.insert(format!("{}",name),true);
+		Ok(())
+	}
+
+	pub (crate) fn set_serialize_func(&mut self,name :&str , funcname :&str) -> Result<(),Box<dyn Error>> {
+		self.serialize_func.insert(format!("{}",name),format!("{}",funcname));
+		Ok(())
+	}
+
+	pub (crate) fn set_deserialize_func(&mut self,name :&str , funcname :&str) -> Result<(),Box<dyn Error>> {
+		self.deserialize_func.insert(format!("{}",name),format!("{}",funcname));
+		Ok(())
+	}
+
+	pub (crate) fn rename_value(&mut self, name :&str,rename :&str) -> Result<(),Box<dyn Error>> {
+		self.rename_value.insert(format!("{}",name),format!("{}",rename));
+		Ok(())
+	}
+}
 
 
 
@@ -75,7 +96,7 @@ pub (crate) fn get_name_type(n : syn::Field) -> Result<(String,String), Box<dyn 
 	n.ty.to_tokens(&mut ttks);
 	typename = format!("{}",ttks.to_string());
 
-	//asn1_gen_log_trace!("name [{}] typename [{}]",name,typename);
+	asn1_gen_log_trace!("name [{}] typename [{}]",name,typename);
 	Ok((name,typename))
 }
 

@@ -62,6 +62,42 @@ pub (crate) fn filter_attrib(_v :&mut syn::Field) -> Result<(String,String,SynKV
 	return Ok((n,tn,retv));
 }
 
+
+pub (crate) fn filter_serde(_v :&mut syn::Field) -> Result<SynKV,Box<dyn Error>> {
+	let mut retv :SynKV = SynKV::new();
+	let mut removed :Vec<usize> = vec![];
+	let mut idx:usize = 0;
+	while idx < _v.attrs.len() {
+		let _a = &_v.attrs[idx];
+
+		let v = format!("{}",_a.path.get_ident().unwrap().to_string());
+		if v == SERDE_IDENT {
+			removed.push(idx);
+			asn1_gen_log_trace!("[{}]=[{}][{}]",n,_a.path.get_ident().unwrap().to_string(),_a.tokens.to_string());
+
+			let ntoks =proc_macro::TokenStream::from(_a.tokens.clone());
+			let kv :SynKV = _get_synkv(ntoks)?;
+			for k in kv.get_keys().iter() {
+				let ov = kv.get_value(k).unwrap();
+				retv.set_attr(k,&ov).unwrap();
+			}
+		}
+		idx += 1;
+	}
+
+	if removed.len() > 0 {
+		idx = removed.len() - 1;
+		loop {
+			_v.attrs.remove(removed[idx]);
+			if idx == 0 {
+				break;
+			}
+			idx -= 1;
+		}
+	}
+	return Ok(retv);	
+}
+
 pub (crate) fn asn1_ext(_attr :proc_macro::TokenStream,item :proc_macro::TokenStream) -> proc_macro::TokenStream {
 	asn1_gen_log_trace!("asn1_ext\n{}",item.to_string());
 	item
