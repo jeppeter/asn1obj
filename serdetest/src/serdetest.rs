@@ -35,7 +35,7 @@ use super::*;
 extargs_error_class!{JsonLoadError}
 
 #[derive(Clone,Debug,Serialize,Deserialize)]
-#[serde(tag = "type")]
+#[serde(tag = "type" ,content="cc")]
 enum DeriveEnum {
 	Enum1,
 	Enum3,
