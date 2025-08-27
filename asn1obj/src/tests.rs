@@ -1587,56 +1587,29 @@ fn test_a025() {
 
 #[test]
 fn test_a026() {
-	let mut a1 :Asn1Any = Asn1Any::init_asn1();
-	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"
+	let a1 :Asn1Any = serde_json::from_str(&format!(r#"
 			{{
 				"{}" : 10,
 				"{}" : [20,21,32]
 			}}
 		"#,ASN1_JSON_TAG,ASN1_JSON_CONTENT)).unwrap();
-	let _ = a1.decode_json("",&val).unwrap();
 	let v1 = vec![20,21,32];
 	assert!(a1.tag == 10);
 	assert!(check_equal_u8(&a1.content,&v1));
-	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-	let _ = a1.encode_json("",&mut cv).unwrap();
+	let s = serde_json::to_string(&a1).unwrap();
+	let cv :serde_json::value::Value = serde_json::from_str(&s).unwrap();
 	assert!(cv[ASN1_JSON_TAG] == serde_json::json!(10) );
 	assert!(cv[ASN1_JSON_CONTENT] == serde_json::json!([20,21,32]));
-	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
-		"hello" : 			{{
-				"{}" : 10,
-				"{}" : [20,21,32]
-			}}
-	}}
-		"#,ASN1_JSON_TAG,ASN1_JSON_CONTENT)).unwrap();
-	let _ = a1.decode_json("hello",&val).unwrap();
-	let v1 = vec![20,21,32];
-	assert!(a1.tag == 10);
-	assert!(check_equal_u8(&a1.content,&v1));
-	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-	let _ = a1.encode_json("hello",&mut cv).unwrap();
-	assert!(cv["hello"][ASN1_JSON_TAG] == serde_json::json!(10) );
-	assert!(cv["hello"][ASN1_JSON_CONTENT] == serde_json::json!([20,21,32]));
 }
 
 #[test]
 fn test_a027() {
-	let mut a1 :Asn1Integer = Asn1Integer::init_asn1();
-	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"10"#)).unwrap();
-	let _ = a1.decode_json("",&val).unwrap();
+	let curs :String = format!(r#"10"#);
+	let a1 :Asn1Integer = serde_json::from_str(&curs).unwrap();
 	assert!(a1.val == 10);
-	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-	let _ = a1.encode_json("",&mut cv).unwrap();
+	let ns = serde_json::to_string(&a1).unwrap();
+	let cv :serde_json::value::Value = serde_json::from_str(&ns).unwrap();
 	assert!(cv == serde_json::json!(10) );
-	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
-		"hello" : 10
-	}}
-		"#)).unwrap();
-	let _ = a1.decode_json("hello",&val).unwrap();
-	assert!(a1.val == 10);
-	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-	let _ = a1.encode_json("hello",&mut cv).unwrap();
-	assert!(cv["hello"] == serde_json::json!(10) );
 }
 
 #[test]
@@ -2641,7 +2614,6 @@ fn test_a050() {
 	}]));
 }
 
-#[derive(Clone,Serialize,Deserialize)]
 #[asn1_sequence()]
 struct CCTestauto {
 	pub ccv :Asn1Object,
@@ -2649,7 +2621,6 @@ struct CCTestauto {
 	pub ddv :Asn1PrintableString,
 }
 
-#[derive(Clone,Serialize,Deserialize)]
 #[asn1_sequence()]
 struct CCTestautoSeq {
 	pub elem :Asn1Seq<CCTestauto>,
@@ -2700,13 +2671,11 @@ fn test_a051() {
 	assert!(cv[0]["ddv"][ASN1_JSON_PRINTABLE_STRING] == serde_json::json!("hello worldst"));
 }
 
-#[derive(Clone,Serialize,Deserialize)]
 #[asn1_obj_selector(selector=stype,ccv="1.2.3",bbv="1.2.4",ddv="1.2.5",ddv=default)]
 struct BBSelectorauto {
 	pub stype :Asn1Object,
 }
 
-#[derive(Clone,Serialize,Deserialize)]
 #[asn1_choice(selector=seltype)]
 struct BBTestauto {
 	pub seltype :BBSelectorauto,
@@ -2767,7 +2736,6 @@ fn test_a052() {
 	}]));
 }
 
-#[derive(Clone,Serialize,Deserialize)]
 #[asn1_int_choice(ccv=1,bbv=2,ddv=3,selector=seltype)]
 struct IntTestauto {
 	pub seltype :i32,
@@ -2889,7 +2857,6 @@ fn test_a056() {
 	assert!(check_equal_u8(&v2,&v1));
 }
 
-#[derive(Clone,Serialize,Deserialize)]
 #[asn1_sequence()]
 struct Oany {
 	#[serde(default = "bval_default")]
@@ -2990,7 +2957,6 @@ fn test_a057() {
 	let _ = co.print_asn1("co",0,&mut fo).unwrap();
 }
 
-#[derive(Clone,Serialize,Deserialize)]
 #[asn1_sequence()]
 struct Iany {
 	#[serde(default = "ibval_default")]

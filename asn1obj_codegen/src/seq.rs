@@ -453,9 +453,6 @@ impl syn::parse::Parse for SequenceSyn {
 							let c = format!("{:?}", e);
 							return Err(syn::Error::new(input.span(),&c));
 						}
-					} else if  k.len() == 0 {
-						let c = format!("need key ");
-						return Err(syn::Error::new(input.span(),&c));
 					}
 					break;
 				}
