@@ -588,8 +588,8 @@ pub fn asn1_choice(_attr :proc_macro::TokenStream,item :proc_macro::TokenStream)
 ///  */
 ///  ```
 ///  ```rust
-///  #[derive(Clone)]
 ///  #[asn1_int_choice(unicode=0,ascii=1,selector=stype)]
+///  #[derive(Clone)]
 ///  pub struct SpcString {
 ///  	pub stype :i32,
 ///  	pub unicode : Asn1Imp<Asn1OctData,0>,
@@ -597,15 +597,15 @@ pub fn asn1_choice(_attr :proc_macro::TokenStream,item :proc_macro::TokenStream)
 ///  }
 ///  
 ///  
-///  #[derive(Clone)]
 ///  #[asn1_sequence()]
+///  #[derive(Clone)]
 ///  pub struct SpcSerializedObject {
 ///  	pub classid :Asn1OctData,
 ///  	pub serializeddata : Asn1OctData,
 ///  }
 ///  
-///  #[derive(Clone)]
 ///  #[asn1_int_choice(selector=stype,url=0,moniker=1,file=2)]
+///  #[derive(Clone)]
 ///  pub struct SpcLink {
 ///  	pub stype :i32,
 ///  	pub url :Asn1ImpSet<Asn1OctData,0>,

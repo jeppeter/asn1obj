@@ -7,6 +7,7 @@ use crate::consts::*;
 use std::error::Error;
 use crate::utils::{get_name_type};
 use quote::ToTokens;
+use regex::Regex;
 
 
 asn1_gen_error_class!{Asn1ExtError}
@@ -119,6 +120,12 @@ pub (crate) fn get_attr_clone_serde(inval :&syn::DeriveInput) -> Result<(bool,bo
 	let mut isclone:bool = false;
 	let mut isserialize:bool = false;
 	let mut isdeserialize :bool = false;
+	let mut exprs :String = format!("(.*::)?{}",CLONE_TYPE_KEYWORD);
+	let cloneexpr :Regex = Regex::new(&exprs)?;
+	exprs = format!("(.*::)?{}",SERIALIZE_TYPE_KEYWORD);
+	let serexpr :Regex = Regex::new(&exprs)?;
+	exprs = format!("(.*::)?{}",DESERIALIZE_TYPE_KEYWORD);
+	let deserexpr :Regex = Regex::new(&exprs)?;
 	for _a in &inval.attrs {
 		match _a.style {
 			syn::AttrStyle::Inner(ref _a) => {
@@ -129,12 +136,38 @@ pub (crate) fn get_attr_clone_serde(inval :&syn::DeriveInput) -> Result<(bool,bo
 			},
 		}
 
-		isclone= true;
-		isserialize = true;
-		isdeserialize = true;
+		/*now to get the meta*/
+		if !_a.path().is_ident(DERIVE_KEYWORD) {
+			continue;
+		}
 
+		let _ = _a.parse_nested_meta(|meta| {
+			let p = meta.path.get_ident();
+			if p.is_some() {
+				asn1_gen_log_trace!("meta path [{}]",p.as_ref().unwrap());	
+				let curs = format!("{}",p.as_ref().unwrap());
+				let mut caps :Option<regex::Captures>;
+				caps = cloneexpr.captures(&curs);
+				if caps.is_some() {
+					asn1_gen_log_trace!("isclone");
+					isclone = true;
+				}
 
+				caps = serexpr.captures(&curs);
+				if caps.is_some() {
+					asn1_gen_log_trace!("isserialize");
+					isserialize = true;
+				}
 
+				caps = deserexpr.captures(&curs);
+				if caps.is_some() {
+					asn1_gen_log_trace!("isdeserialize");
+					isdeserialize = true;
+				}
+			}
+			
+			Ok(())
+		})?;
 	}
 
 	Ok((isclone,isserialize,isdeserialize))

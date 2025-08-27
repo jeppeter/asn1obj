@@ -6,10 +6,10 @@ use crate::vars::{asn1_gen_debug_level};
 use crate::logger::{asn1_gen_debug_out};
 use crate::randv::{get_random_bytes};
 use crate::kv::{SynKV};
-use crate::asn1ext::{filter_attrib};
+use crate::asn1ext::{filter_attrib,filter_serde,get_attr_clone_serde};
 use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS,ASN1_JSON_SKIP};
 use std::error::Error;
-use crate::utils::{format_tab_line,extract_type_name};
+use crate::utils::{format_tab_line,extract_type_name,TokenValue};
 use quote::{ToTokens};
 
 asn1_gen_error_class!{SelectorSynError}
@@ -32,6 +32,7 @@ struct ObjSelectorSyn {
 	komitfns :HashMap<String,String>,
 	mapjsonalias :HashMap<String,String>,
 	mapjsonskip :HashMap<String,bool>,
+	tokenvalue :TokenValue,
 }
 
 //#[allow(unused_variables)]
@@ -57,6 +58,7 @@ impl ObjSelectorSyn {
 			komitfns :HashMap::new(),
 			mapjsonalias :HashMap::new(),
 			mapjsonskip : HashMap::new(),
+			tokenvalue :TokenValue::new(),
 		}
 	}
 
@@ -78,6 +80,25 @@ impl ObjSelectorSyn {
 			} else {
 				self.debugenable = false;
 			}
+		}  else if k == "noclone" {
+			if v == "true" || v.len() == 0 {
+				self.tokenvalue.is_clone = false;	
+			} else {
+				self.tokenvalue.is_clone = true;
+			}			
+		} else if k == "noserialize" {
+			if v == "true" || v.len() == 0 {
+				self.tokenvalue.is_serialize = false;	
+			} else {
+				self.tokenvalue.is_serialize = true;
+			}
+			
+		} else if k == "nodeserialize" {
+			if v == "true" || v.len() == 0 {
+				self.tokenvalue.is_deserialize = false;	
+			} else {
+				self.tokenvalue.is_deserialize = true;
+			}			
 		} else {
 			let ov = self.kmap.get(k);
 			let mut insertv :Vec<String>;
@@ -635,8 +656,8 @@ impl syn::parse::Parse for ObjSelectorSyn {
 				iskey = false;
 			} else if input.peek(syn::Token![,]) {
 				let _c : syn::token::Comma = input.parse()?;
-				if k.len() == 0 || v.len() == 0 {
-					let c = format!("need set k=v format");
+				if k.len() == 0  {
+					let c = format!("need set k format");
 					asn1_gen_log_error!("{}",c);
 					return Err(syn::Error::new(input.span(),&c));
 				}
@@ -652,15 +673,15 @@ impl syn::parse::Parse for ObjSelectorSyn {
 				}
 			} else {
 				if input.is_empty() {
-					if k.len() != 0 && v.len() != 0 {
+					if k.len() != 0  {
 						let ov = retv.set_matches(&k,&v);
 						if ov.is_err() {
 							let e = ov.err().unwrap();
 							let c = format!("{:?}", e);
 							return Err(syn::Error::new(input.span(),&c));
 						}
-					} else if v.len() == 0 && k.len() != 0 {
-						let c = format!("need value in [{}]",k);
+					} else if k.len() == 0 {
+						let c = format!("need key");
 						asn1_gen_log_error!("{}",c);
 						return Err(syn::Error::new(input.span(),&c));
 					}
@@ -695,6 +716,8 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 	sname = format!("{}",co.ident);
 	//asn1_gen_log_trace!("sname [{}]",sname);
 	selcs.set_sname(&sname);
+
+	let (isclone,isserialize,isdeserialize) = get_attr_clone_serde(&co).unwrap();
 
 
 	match co.data {
@@ -744,6 +767,15 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 							selcs.set_init_func(omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
 						}
 
+						if !selcs.tokenvalue.is_serialize && !selcs.tokenvalue.is_deserialize {
+							/*we filter serde #[serde(skip)] like */
+							let ores = filter_serde(_v);
+							if ores.is_err() {
+								let c = format!("{:?}",ores.err().unwrap());
+								panic!("{}",c);
+							}
+						}
+
 					}
 				},
 				_ => {
@@ -755,6 +787,28 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 			asn1_syn_error_fmt!("not struct format\n{}",item.to_string());
 		}
 	}
+
+	if !isclone {
+		let cloneattr = syn::parse_quote!{
+			#[derive(Clone)]
+		};
+		co.attrs.push(cloneattr);
+	}
+
+	if !isserialize && selcs.tokenvalue.is_serialize {
+		let serattr = syn::parse_quote!{
+			#[derive(serde::Serialize)]
+		};
+		co.attrs.push(serattr);
+	}
+
+	if !isdeserialize && selcs.tokenvalue.is_deserialize {
+		let deserattr = syn::parse_quote!{
+			#[derive(serde::Deserialize)]
+		};
+		co.attrs.push(deserattr);		
+	}
+
 
 	/*now to compile ok*/
     //let cc = format_code(&sname,names.clone(),structnames.clone());

@@ -44,8 +44,8 @@ use asn1obj_codegen::asn1_sequence;
 extargs_error_class!{Asn1TestError}
 
 
+//#[derive(Clone,Serialize,Deserialize)]
 #[asn1_sequence()]
-#[derive(Clone,Serialize,Deserialize)]
 struct ComplexAsn1 {
 	pub objval :Asn1Seq<Asn1Object>,
 	pub intval :Asn1Set<Asn1BigNum>,

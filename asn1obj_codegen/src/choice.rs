@@ -5,9 +5,9 @@ use std::error::Error;
 use crate::randv::{get_random_bytes};
 use crate::logger::{asn1_gen_debug_out};
 use crate::kv::{SynKV};
-use crate::asn1ext::{filter_attrib};
+use crate::asn1ext::{filter_attrib,filter_serde,get_attr_clone_serde};
 use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS,ASN1_JSON_SKIP};
-use crate::utils::{format_tab_line,extract_type_name};
+use crate::utils::{format_tab_line,extract_type_name,TokenValue};
 use quote::{ToTokens};
 
 struct ChoiceSyn {
@@ -21,6 +21,7 @@ struct ChoiceSyn {
 	komitfns :HashMap<String,String>,
 	mapjsonalias :HashMap<String,String>,
 	mapjsonskip :HashMap<String,bool>,	
+	tokenvalue :TokenValue,
 }
 
 asn1_gen_error_class!{ChoiceSynError}
@@ -44,6 +45,7 @@ impl ChoiceSyn {
 			komitfns :HashMap::new(),
 			mapjsonalias :HashMap::new(),
 			mapjsonskip :HashMap::new(),
+			tokenvalue : TokenValue::new(),
 		}
 	}
 
@@ -58,6 +60,25 @@ impl ChoiceSyn {
 			} else {
 				self.debugenable = false;
 			}
+		}  else if k == "noclone" {
+			if v == "true" || v.len() == 0 {
+				self.tokenvalue.is_clone = false;	
+			} else {
+				self.tokenvalue.is_clone = true;
+			}			
+		} else if k == "noserialize" {
+			if v == "true" || v.len() == 0 {
+				self.tokenvalue.is_serialize = false;	
+			} else {
+				self.tokenvalue.is_serialize = true;
+			}
+			
+		} else if k == "nodeserialize" {
+			if v == "true" || v.len() == 0 {
+				self.tokenvalue.is_deserialize = false;	
+			} else {
+				self.tokenvalue.is_deserialize = true;
+			}			
 		} else {
 			asn1_gen_new_error!{ChoiceSynError,"not valid [{}] only accept error or selector", k}
 		}
@@ -516,8 +537,8 @@ impl syn::parse::Parse for ChoiceSyn {
 				//asn1_gen_log_trace!("=");
 			} else if input.peek(syn::Token![,]) {
 				let _c : syn::token::Comma = input.parse()?;
-				if k.len() == 0 || v.len() == 0 {
-					let c = format!("need set k=v format");
+				if k.len() == 0 {
+					let c = format!("need set k format");
 					return Err(syn::Error::new(input.span(),&c));
 				}
 				let ov = retv.set_attr_name(&k,&v);
@@ -530,14 +551,14 @@ impl syn::parse::Parse for ChoiceSyn {
 				v = "".to_string();
 			} else {
 				if input.is_empty() {
-					if k.len() != 0 && v.len() != 0 {
+					if k.len() != 0  {
 						let ov = retv.set_attr_name(&k,&v);
 						if ov.is_err() {
 							let e = ov.err().unwrap();
 							let c = format!("{:?}", e);
 							return Err(syn::Error::new(input.span(),&c));
 						}
-					} else if v.len() == 0 && k.len() != 0 {
+					} else if  k.len() == 0 {
 						let c = format!("need value in [{}]",k);
 						return Err(syn::Error::new(input.span(),&c));
 					}
@@ -564,6 +585,7 @@ struct IntChoiceSyn {
 	komitfns :HashMap<String,String>,
 	mapjsonalias :HashMap<String,String>,
 	mapjsonskip :HashMap<String,bool>,
+	tokenvalue :TokenValue,
 }
 
 impl IntChoiceSyn {
@@ -586,6 +608,7 @@ impl IntChoiceSyn {
 			komitfns :HashMap::new(),
 			mapjsonalias :HashMap::new(),
 			mapjsonskip : HashMap::new(),
+			tokenvalue : TokenValue::new(),
 		}
 	}
 
@@ -638,7 +661,26 @@ impl IntChoiceSyn {
 			self.seltypename = format!("{}",_v);
 		} else if _k.eq("error") {
 			self.errname = format!("{}",_v);
-		}else {
+		} else if _k == "noclone" {
+			if _v == "true" || _v.len() == 0 {
+				self.tokenvalue.is_clone = false;	
+			} else {
+				self.tokenvalue.is_clone = true;
+			}			
+		} else if _k == "noserialize" {
+			if _v == "true" || _v.len() == 0 {
+				self.tokenvalue.is_serialize = false;	
+			} else {
+				self.tokenvalue.is_serialize = true;
+			}
+			
+		} else if _k == "nodeserialize" {
+			if _v == "true" || _v.len() == 0 {
+				self.tokenvalue.is_deserialize = false;	
+			} else {
+				self.tokenvalue.is_deserialize = true;
+			}			
+		} else {
 			iv = self.parse_value(_v)?;
 			self.typmaps.insert(format!("{}",_k), iv as i32);
 		}
@@ -1036,7 +1078,7 @@ impl syn::parse::Parse for IntChoiceSyn {
 				asn1_gen_log_trace!("=");
 			} else if input.peek(syn::Token![,]) {
 				let _c : syn::token::Comma = input.parse()?;
-				if k.len() == 0 || v.len() == 0 {
+				if k.len() == 0  {
 					let c = format!("need set k=v format");
 					return Err(syn::Error::new(input.span(),&c));
 				}
@@ -1050,15 +1092,15 @@ impl syn::parse::Parse for IntChoiceSyn {
 				v = "".to_string();
 			} else {
 				if input.is_empty() {
-					if k.len() != 0 && v.len() != 0 {
+					if k.len() != 0  {
 						let ov = retv.set_attr_name(&k,&v);
 						if ov.is_err() {
 							let e = ov.err().unwrap();
 							let c = format!("{:?}", e);
 							return Err(syn::Error::new(input.span(),&c));
 						}
-					} else if v.len() == 0 && k.len() != 0 {
-						let c = format!("need value in [{}]",k);
+					} else if  k.len() == 0 {
+						let c = format!("need key");
 						return Err(syn::Error::new(input.span(),&c));
 					}
 					break;
@@ -1078,6 +1120,7 @@ pub fn asn1_choice(_attr : proc_macro::TokenStream,item : proc_macro::TokenStrea
 	let sname :String;
 	let mut cs :ChoiceSyn = syn::parse_macro_input!(nargs as ChoiceSyn);
 
+
 	match syn::parse::<syn::DeriveInput>(item.clone()) {
 		Ok(v) => {
 			co = v.clone();
@@ -1090,6 +1133,7 @@ pub fn asn1_choice(_attr : proc_macro::TokenStream,item : proc_macro::TokenStrea
 	sname = format!("{}",co.ident);
 	//asn1_gen_log_trace!("sname [{}]",sname);
 	cs.set_struct_name(&sname);
+	let (isclone,isserialize,isdeserialize) = get_attr_clone_serde(&co).unwrap();
 
 
 	match co.data {
@@ -1137,6 +1181,10 @@ pub fn asn1_choice(_attr : proc_macro::TokenStream,item : proc_macro::TokenStrea
 							asn1_gen_log_trace!("n[{}]=[{}]",omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
 							cs.set_init_func(omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
 						}
+
+						if !cs.tokenvalue.is_serialize && !cs.tokenvalue.is_deserialize {
+							let _ = filter_serde(_v).unwrap();
+						}
 					}
 				},
 				_ => {
@@ -1148,6 +1196,28 @@ pub fn asn1_choice(_attr : proc_macro::TokenStream,item : proc_macro::TokenStrea
 			asn1_syn_error_fmt!("not struct format\n{}",item.to_string());
 		}
 	}
+
+	if !isclone {
+		let cloneattr = syn::parse_quote!{
+			#[derive(Clone)]
+		};
+		co.attrs.push(cloneattr);
+	}
+
+	if !isserialize && cs.tokenvalue.is_serialize {
+		let serattr = syn::parse_quote!{
+			#[derive(serde::Serialize)]
+		};
+		co.attrs.push(serattr);
+	}
+
+	if !isdeserialize && cs.tokenvalue.is_deserialize {
+		let deserattr = syn::parse_quote!{
+			#[derive(serde::Deserialize)]
+		};
+		co.attrs.push(deserattr);		
+	}
+
 
 	/*now to compile ok*/
     //let cc = format_code(&sname,names.clone(),structnames.clone());
@@ -1178,6 +1248,7 @@ pub fn asn1_int_choice(_attr : proc_macro::TokenStream, item : proc_macro::Token
 	sname = format!("{}",co.ident);
 	//asn1_gen_log_trace!("sname [{}]",sname);
 	cs.set_struct_name(&sname);
+	let (isclone,isserialize,isdeserialize) = get_attr_clone_serde(&co).unwrap();
 
 
 	match co.data {
@@ -1221,6 +1292,10 @@ pub fn asn1_int_choice(_attr : proc_macro::TokenStream, item : proc_macro::Token
 							cs.set_init_func(omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
 						}
 
+						if !cs.tokenvalue.is_serialize && !cs.tokenvalue.is_deserialize {
+							let _ = filter_serde(_v).unwrap();
+						}
+
 
 						/*
 						let res = get_name_type(_v.clone());
@@ -1240,6 +1315,27 @@ pub fn asn1_int_choice(_attr : proc_macro::TokenStream, item : proc_macro::Token
 		_ => {
 			asn1_syn_error_fmt!("not struct format\n{}",item.to_string());
 		}
+	}
+
+	if !isclone {
+		let cloneattr = syn::parse_quote!{
+			#[derive(Clone)]
+		};
+		co.attrs.push(cloneattr);
+	}
+
+	if !isserialize && cs.tokenvalue.is_serialize {
+		let serattr = syn::parse_quote!{
+			#[derive(serde::Serialize)]
+		};
+		co.attrs.push(serattr);
+	}
+
+	if !isdeserialize && cs.tokenvalue.is_deserialize {
+		let deserattr = syn::parse_quote!{
+			#[derive(serde::Deserialize)]
+		};
+		co.attrs.push(deserattr);		
 	}
 
 	/*now to compile ok*/

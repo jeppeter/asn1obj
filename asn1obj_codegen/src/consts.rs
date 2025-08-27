@@ -14,6 +14,6 @@ pub (crate) const ASN1_JSON_SKIP :&str = "jsonskip";
 
 pub (crate) const SERDE_IDENT :&str = "serde";
 pub (crate) const DERIVE_KEYWORD :&str = "derive";
-pub (crate) const CLONE_KEYWORD :&str = "Clone";
-pub (crate) const SERIALIZE_KEYWORD :&str = "Serialize";
-pub (crate) const DESERIALIZE_KEYWORD :&str = "Deserialize";
+pub (crate) const CLONE_TYPE_KEYWORD :&str = "Clone";
+pub (crate) const SERIALIZE_TYPE_KEYWORD :&str = "Serialize";
+pub (crate) const DESERIALIZE_TYPE_KEYWORD :&str = "Deserialize";

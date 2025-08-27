@@ -556,6 +556,27 @@ pub fn asn1_sequence(_attr :proc_macro::TokenStream,item :proc_macro::TokenStrea
 		}
 	}
 
+	if !isclone {
+		let cloneattr = syn::parse_quote!{
+			#[derive(Clone)]
+		};
+		co.attrs.push(cloneattr);
+	}
+
+	if !isserialize && cs.tokenvalue.is_serialize {
+		let serattr = syn::parse_quote!{
+			#[derive(serde::Serialize)]
+		};
+		co.attrs.push(serattr);
+	}
+
+	if !isdeserialize && cs.tokenvalue.is_deserialize {
+		let deserattr = syn::parse_quote!{
+			#[derive(serde::Deserialize)]
+		};
+		co.attrs.push(deserattr);		
+	}
+
 
 	//asn1_gen_log_trace!(" ");
 
