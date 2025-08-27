@@ -30,7 +30,6 @@ use super::fileop::*;
 #[allow(unused_imports)]
 use super::*;
 
-use asn1obj::base::Asn1OctData;
 
 
 
@@ -44,11 +43,6 @@ enum DeriveEnum {
 	EnumCC,
 }
 
-#[derive(Clone,Debug,Serialize,Deserialize)]
-#[serde(remote = "Asn1OctData")]
-struct NAsn1OctData {
-	pub data :Vec<u8>,
-}
 
 
 impl TryFrom<i32> for DeriveEnum {
@@ -106,7 +100,6 @@ struct DeriveStruct {
 	pub basenew :Vec<BaseStruct>,
 	pub pattern :NoPatternStruct,
 	pub enumval :DeriveEnum,
-	pub strval :NAsn1OctData,
 }
 
 
