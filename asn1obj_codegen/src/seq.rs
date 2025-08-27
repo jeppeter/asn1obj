@@ -54,6 +54,7 @@ impl SequenceSyn {
 	}
 
 	pub fn set_attr(&mut self, k :&str, v :&str) -> Result<(),Box<dyn Error>> {
+		asn1_gen_log_trace!("k [{}] v [{}]",k ,v);
 		if k == "debug" && (v == "enable" || v == "disable") {
 			if v == "enable" {
 				self.debugenable = true;
@@ -62,6 +63,7 @@ impl SequenceSyn {
 			}
 		} else if k == "noclone" {
 			if v == "true" || v.len() == 0 {
+				asn1_gen_log_trace!("noclone");
 				self.tokenvalue.is_clone = false;	
 			} else {
 				self.tokenvalue.is_clone = true;
@@ -429,7 +431,7 @@ impl syn::parse::Parse for SequenceSyn {
 			} else if input.peek(syn::Token![,]) {
 				let _c : syn::token::Comma = input.parse()?;
 				asn1_gen_log_trace!("parse ,");
-				if k.len() == 0 || v.len() == 0 {
+				if k.len() == 0  {
 					let c = format!("need set k=v format");
 					return Err(syn::Error::new(input.span(),&c));
 				}
@@ -444,15 +446,15 @@ impl syn::parse::Parse for SequenceSyn {
 				v = "".to_string();
 			} else {
 				if input.is_empty() {
-					if k.len() != 0 && v.len() != 0 {
+					if k.len() != 0 {
 						let ov = retv.set_attr(&k,&v);
 						if ov.is_err() {
 							let e = ov.err().unwrap();
 							let c = format!("{:?}", e);
 							return Err(syn::Error::new(input.span(),&c));
 						}
-					} else if v.len() == 0 && k.len() != 0 {
-						let c = format!("need value in [{}]",k);
+					} else if  k.len() == 0 {
+						let c = format!("need key ");
 						return Err(syn::Error::new(input.span(),&c));
 					}
 					break;
@@ -556,7 +558,7 @@ pub fn asn1_sequence(_attr :proc_macro::TokenStream,item :proc_macro::TokenStrea
 		}
 	}
 
-	if !isclone {
+	if !isclone && cs.tokenvalue.is_clone {
 		let cloneattr = syn::parse_quote!{
 			#[derive(Clone)]
 		};
