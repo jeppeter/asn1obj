@@ -30,18 +30,26 @@ use super::fileop::*;
 #[allow(unused_imports)]
 use super::*;
 
+use asn1obj::base::Asn1OctData;
+
 
 
 extargs_error_class!{JsonLoadError}
 
 
 #[derive(Clone,Debug,Serialize,Deserialize)]
-#[serde(try_from = "i32",into = "i32")]
 enum DeriveEnum {
 	Enum1,
 	Enum3,
 	EnumCC,
 }
+
+#[derive(Clone,Debug,Serialize,Deserialize)]
+#[serde(remote = "Asn1OctData")]
+struct NAsn1OctData {
+	pub data :Vec<u8>,
+}
+
 
 impl TryFrom<i32> for DeriveEnum {
 	type Error = String;
@@ -68,7 +76,7 @@ impl Into<i32> for DeriveEnum {
 
 
 //#[derive(Debug,Clone)]
-#[derive(Clone,Debug,Serialize,Deserialize)]
+#[derive(Clone,Debug,serde::Serialize,serde::Deserialize)]
 struct BaseStruct {
 	pub name2 :Vec<String>,
 	pub cc2 :Vec<i32>,
@@ -93,11 +101,12 @@ impl Default for NoPatternStruct {
 
 //#[derive(Debug,Clone)]
 #[allow(non_snake_case)]
-#[derive(Clone,Debug,Serialize,Deserialize)]
+#[derive(Clone,Debug,serde::Serialize,serde::Deserialize)]
 struct DeriveStruct {
 	pub basenew :Vec<BaseStruct>,
 	pub pattern :NoPatternStruct,
 	pub enumval :DeriveEnum,
+	pub strval :NAsn1OctData,
 }
 
 
