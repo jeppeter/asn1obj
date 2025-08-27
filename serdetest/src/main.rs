@@ -35,6 +35,7 @@ mod loglib_windows;
 mod loglib;
 mod fileop;
 mod serdetest;
+mod asn1test;
 
 
 
@@ -49,6 +50,7 @@ fn main() -> Result<(),Box<dyn Error>> {
     extargs_load_commandline!(parser,&commandline)?;
     loglib::prepare_log(parser.clone())?;
     serdetest::load_serde_command(parser.clone())?;
+    asn1test::load_asn1_command(parser.clone())?;
     let ores = parser.parse_commandline_ex(None,None,None,None);
     if ores.is_err() {
         let e = ores.err().unwrap();

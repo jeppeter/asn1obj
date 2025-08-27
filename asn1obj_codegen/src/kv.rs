@@ -49,7 +49,7 @@ impl syn::parse::Parse for SynKV {
 		loop {
 			if input.peek(syn::Ident) {
 				let c :syn::Ident = input.parse()?;
-				//asn1_gen_log_trace!("token [{}]",c);
+				asn1_gen_log_trace!("token [{}]",c);
 				if k.len() == 0 {
 					k = format!("{}",c);
 				} else if v.len() == 0 {
@@ -60,21 +60,23 @@ impl syn::parse::Parse for SynKV {
 				}
 			} else if input.peek(syn::Token![=])  {
 				let _c : syn::token::Eq = input.parse()?;
-				//asn1_gen_log_trace!("=");
+				asn1_gen_log_trace!("=");
 			} else if input.peek(syn::Token![,]) {
 				let _c : syn::token::Comma = input.parse()?;
-				//asn1_gen_log_trace!("parse ,");
-				if k.len() == 0 || v.len() == 0 {
-					let c = format!("need set k=v format");
+				asn1_gen_log_trace!("parse ,");
+				if k.len() == 0  {
+					let c = format!("need set k format");
+					asn1_gen_log_error!("{}",c);
 					return Err(syn::Error::new(input.span(),&c));
 				}
 				let ov = retv.set_attr(&k,&v);
 				if ov.is_err() {
 					let e = ov.err().unwrap();
 					let c = format!("{:?}", e);
+					asn1_gen_log_error!("{}",c);
 					return Err(syn::Error::new(input.span(),&c));
 				}
-				//asn1_gen_log_trace!("parse [{}]=[{}]",k,v);
+				asn1_gen_log_trace!("parse [{}]=[{}]",k,v);
 				k = "".to_string();
 				v = "".to_string();
 			} else if input.peek(syn::token::Paren)  {

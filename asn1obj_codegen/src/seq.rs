@@ -5,10 +5,10 @@ use crate::vars::{asn1_gen_debug_level};
 use crate::logger::{asn1_gen_debug_out};
 use crate::randv::{get_random_bytes};
 use crate::kv::{SynKV};
-use crate::asn1ext::{filter_attrib};
+use crate::asn1ext::{filter_attrib,filter_serde,get_attr_clone_serde};
 use crate::consts::{ASN1_INITFN,ASN1_JSON_ALIAS,ASN1_JSON_SKIP};
 use std::error::Error;
-use crate::utils::{format_tab_line,extract_type_name,TokenValue,SerdeValue};
+use crate::utils::{format_tab_line,extract_type_name,TokenValue};
 use quote::{ToTokens};
 
 asn1_gen_error_class!{SequenceSynError}
@@ -24,7 +24,6 @@ struct SequenceSyn {
 	mapjsonalias :HashMap<String,String>,
 	mapjsonskip :HashMap<String,bool>,
 	tokenvalue :TokenValue,
-	serdevalue :SerdeValue,
 }
 
 impl SequenceSyn {
@@ -46,7 +45,6 @@ impl SequenceSyn {
 			mapjsonalias :HashMap::new(),
 			mapjsonskip : HashMap::new(),
 			tokenvalue : TokenValue::new(),
-			serdevalue: SerdeValue::new(),
 		}
 	}
 
@@ -488,8 +486,11 @@ pub fn asn1_sequence(_attr :proc_macro::TokenStream,item :proc_macro::TokenStrea
 	cs.set_struct_name(&sname);
 
 	for a in &co.attrs {
-		asn1_gen_log_trace!("path [{}]",a.path.get_ident().unwrap().to_string());
+		asn1_gen_log_trace!("path [{}]",a.path().get_ident().as_ref().unwrap());
+
 	}
+
+	let (isclone,isserialize,isdeserialize) = get_attr_clone_serde(&co).unwrap();
 
 
 	match co.data {
@@ -533,12 +534,12 @@ pub fn asn1_sequence(_attr :proc_macro::TokenStream,item :proc_macro::TokenStrea
 							cs.set_init_func(omitname.as_ref().unwrap(),callfn.as_ref().unwrap());
 						}
 
-						if cs.tokenvalue.is_serialize || cs.tokenvalue.is_deserialize {
-							let serdekv :SynKV;
-							serdekv = filter_serde(_v)?;
-							let ores = retv.get_value(SERDE_SKIP);
-							if ores.is_some() {
-								cs.
+						if !cs.tokenvalue.is_serialize && !cs.tokenvalue.is_deserialize {
+							/*we filter serde #[serde(skip)] like */
+							let ores = filter_serde(_v);
+							if ores.is_err() {
+								let c = format!("{:?}",ores.err().unwrap());
+								panic!("{}",c);
 							}
 						}
 
@@ -554,6 +555,7 @@ pub fn asn1_sequence(_attr :proc_macro::TokenStream,item :proc_macro::TokenStrea
 			asn1_syn_error_fmt!("not struct format\n{}",item.to_string());
 		}
 	}
+
 
 	//asn1_gen_log_trace!(" ");
 
