@@ -44,13 +44,14 @@ use asn1obj_codegen::asn1_sequence;
 extargs_error_class!{Asn1TestError}
 
 
-//#[derive(Clone,Serialize,Deserialize)]
 #[asn1_sequence()]
 struct ComplexAsn1 {
+	#[serde(default="obj_default")]
 	pub objval :Asn1Seq<Asn1Object>,
+	#[serde(default="bignum_default")]
 	pub intval :Asn1Set<Asn1BigNum>,
 	#[asn1_gen(initfn = "cint_default")]
-	#[serde(skip,rename="ccname")]
+	#[serde(default = "cint_default")]
 	pub cintval :i32,
 }
 
@@ -58,6 +59,13 @@ fn cint_default() -> i32 {
 	0
 }
 
+fn obj_default() -> Asn1Seq<Asn1Object> {
+	Asn1Seq::init_asn1()
+}
+
+fn bignum_default() -> Asn1Set<Asn1BigNum> {
+	Asn1Set::init_asn1()
+}
 
 
 fn asn1load_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSetImpl>>>,_ctx :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
