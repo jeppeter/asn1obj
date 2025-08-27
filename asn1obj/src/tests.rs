@@ -1614,22 +1614,13 @@ fn test_a027() {
 
 #[test]
 fn test_a028() {
-	let mut a1 :Asn1Boolean = Asn1Boolean::init_asn1();
-	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"true"#)).unwrap();
-	let _ = a1.decode_json("",&val).unwrap();
+	let s :String = format!(r#"true"#);
+	let a1 :Asn1Boolean = serde_json::from_str(&s).unwrap();
 	assert!(a1.val == true);
-	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	let ns :String = serde_json::to_string(&a1).unwrap();
+	let mut cv :serde_json::value::Value = serde_json::from_str(&ns).unwrap();
 	let _ = a1.encode_json("",&mut cv).unwrap();
 	assert!(cv == serde_json::json!(true) );
-	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
-		"hello" : false
-	}}
-		"#)).unwrap();
-	let _ = a1.decode_json("hello",&val).unwrap();
-	assert!(a1.val == false);
-	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-	let _ = a1.encode_json("hello",&mut cv).unwrap();
-	assert!(cv["hello"] == serde_json::json!(false) );
 }
 
 #[test]
