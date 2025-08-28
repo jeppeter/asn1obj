@@ -2655,42 +2655,42 @@ fn test_a053() {
 
 #[test]
 fn test_a054() {
-	let mut a1 :IntTestautoSeq = IntTestautoSeq::init_asn1();
-	let s = format!(r#"
-		{{
+	let a1 :IntTestautoSeq ;
+	let mut a2 :IntTestautoSeq;
+	let s = format!(r#"{{
+		"elem":[{{
 			"seltype" : 1,
-			"ccv" : "1.7.222"
-		}}
+			"ccv" : "1.7.222",
+			"bbv" : "0x0",
+			"ddv" : ""
+		}}] }}
 		"#);
-	let s2 = format!(r#"
-		{{
+	let s2 = format!(r#" {{
+		"elem" : [{{
 			"seltype" : 1,
-			"ccv" : "1.7.299"
-		}}
+			"ccv" : "1.7.299",
+			"bbv" : "0x0",
+			"ddv" : ""
+		}}] }}
 		"#);
-	let val = serde_json::from_str(&s).unwrap();
-	let _ = a1.decode_json("",&val).unwrap();
-	let mut a2 :IntTestautoSeq = IntTestautoSeq::init_asn1();
-	let _ = a2.decode_json("",&val).unwrap();
+	a1 = serde_json::from_str(&s).unwrap();
+	a2 = serde_json::from_str(&s).unwrap();
 	assert!(a1.equal_asn1(&a2));
-	let val = serde_json::from_str(&s2).unwrap();
-	let _ = a2.decode_json("",&val).unwrap();
+	a2 = serde_json::from_str(&s2).unwrap();
 	assert!(!a1.equal_asn1(&a2));	
 }
 
 #[test]
 fn test_a055() {
-	let mut a1 :Asn1BMPString = Asn1BMPString::init_asn1();
+	let mut a1 :Asn1BMPString;
 	let s = format!(r#""ccv""#);
-	let val = serde_json::from_str(&s).unwrap();
-	a1.decode_json("",&val).unwrap();
+	a1 = serde_json::from_str(&s).unwrap();
 	assert!(a1.val == "ccv");
 	let code = a1.encode_asn1().unwrap();
 	let v1 = vec![0x1e,0x6,0x00,0x63,0x00,0x63,0x00,0x76];
 	assert!(check_equal_u8(&code,&v1));
 	let s = format!(r#""ccvb""#);
-	let val = serde_json::from_str(&s).unwrap();
-	a1.decode_json("",&val).unwrap();
+	a1 = serde_json::from_str(&s).unwrap();
 	assert!(a1.val == "ccvb");
 	let code = a1.encode_asn1().unwrap();
 	let v1 = vec![0x1e,0x8,0x00,0x63,0x00,0x63,0x00,0x76,0x00,0x62];
@@ -2775,42 +2775,90 @@ fn test_a057() {
 	ca.tag = 4;
 	ca.content = vec![3];
 	let mut s :String = serde_json::to_string(&ca).unwrap();
-	let mut fo = std::io::stderr();
-	s.push_str("\n");
-	fo.write_all(s.as_bytes()).unwrap();
+	//let mut fo = std::io::stderr();
+	let mut cv :serde_json::value::Value;
+	cv = serde_json::from_str(&s).unwrap();
+	assert!(cv[ASN1_JSON_TAG] == serde_json::json!(4));
+	assert!(cv[ASN1_JSON_CONTENT] == serde_json::json!([3]));
 
 	s = serde_json::to_string(&ba).unwrap();
-	s.push_str("\n");
-	fo.write_all(s.as_bytes()).unwrap();
+	cv = serde_json::from_str(&s).unwrap();
+	assert!(cv == serde_json::json!(null));
+
 
 	ba.val = Some(ca.clone());
 	s = serde_json::to_string(&ba).unwrap();
-	s.push_str("\n");
-	fo.write_all(s.as_bytes()).unwrap();
+	cv = serde_json::from_str(&s).unwrap();
+	assert!(cv[ASN1_JSON_TAG] == serde_json::json!(4));
+	assert!(cv[ASN1_JSON_CONTENT] == serde_json::json!([3]));
+
 
 	s = serde_json::to_string(&za).unwrap();
-	s.push_str("\n");
-	fo.write_all(s.as_bytes()).unwrap();
+	cv = serde_json::from_str(&s).unwrap();
+	assert!(cv == serde_json::json!([]));
 
 	za.val.push(ca.clone());
 	s = serde_json::to_string(&za).unwrap();
-	s.push_str("\n");
-	fo.write_all(s.as_bytes()).unwrap();
+	cv = serde_json::from_str(&s).unwrap();
+	assert_eq!(cv[0][ASN1_JSON_TAG], serde_json::json!(4));
+	assert_eq!(cv[0][ASN1_JSON_CONTENT], serde_json::json!([3]));
+
 
 	s = serde_json::to_string(&co).unwrap();
-	s.push_str("\n");
-	fo.write_all(s.as_bytes()).unwrap();
+	cv = serde_json::from_str(&s).unwrap();
+	assert_eq!(cv["bval"],serde_json::json!(null));
+	assert_eq!(cv["impsetval"], serde_json::json!([]));
+	assert_eq!(cv["seqval"], serde_json::json!([]));
+	assert_eq!(cv["setval"], serde_json::json!([]));
+	assert_eq!(cv["impval"][ASN1_JSON_TAG], serde_json::json!(0));
+	assert_eq!(cv["impval"][ASN1_JSON_CONTENT], serde_json::json!([]));
+	assert_eq!(cv["expval"][ASN1_JSON_TAG], serde_json::json!(0));
+	assert_eq!(cv["expval"][ASN1_JSON_CONTENT], serde_json::json!([]));
+	assert_eq!(cv["ndefval"], serde_json::json!(null));
+	assert_eq!(cv["bitseqval"][ASN1_JSON_TAG], serde_json::json!(0));
+	assert_eq!(cv["bitseqval"][ASN1_JSON_CONTENT], serde_json::json!([]));
+
 
 	co.bval.val = Some(ca.clone());
 	s = serde_json::to_string(&co).unwrap();
-	s.push_str("\n");
-	fo.write_all(s.as_bytes()).unwrap();
+
+	cv = serde_json::from_str(&s).unwrap();
+	assert_eq!(cv["bval"][ASN1_JSON_TAG],serde_json::json!(4));
+	assert_eq!(cv["bval"][ASN1_JSON_CONTENT],serde_json::json!([3]));
+	assert_eq!(cv["impsetval"], serde_json::json!([]));
+	assert_eq!(cv["seqval"], serde_json::json!([]));
+	assert_eq!(cv["setval"], serde_json::json!([]));
+	assert_eq!(cv["impval"][ASN1_JSON_TAG], serde_json::json!(0));
+	assert_eq!(cv["impval"][ASN1_JSON_CONTENT], serde_json::json!([]));
+	assert_eq!(cv["expval"][ASN1_JSON_TAG], serde_json::json!(0));
+	assert_eq!(cv["expval"][ASN1_JSON_CONTENT], serde_json::json!([]));
+	assert_eq!(cv["ndefval"], serde_json::json!(null));
+	assert_eq!(cv["bitseqval"][ASN1_JSON_TAG], serde_json::json!(0));
+	assert_eq!(cv["bitseqval"][ASN1_JSON_CONTENT], serde_json::json!([]));
+
 		
 	s = format!(r#"{{
 		"bval" : {{"{}" : 4 ,"{}" : [99,22]}}
 	}}"#, ASN1_JSON_TAG,ASN1_JSON_CONTENT);
 	co = serde_json::from_str(&s).unwrap();
-	let _ = co.print_asn1("co",0,&mut fo).unwrap();
+	let ns = serde_json::to_string(&co).unwrap();
+
+	cv = serde_json::from_str(&ns).unwrap();
+	assert_eq!(cv["bval"][ASN1_JSON_TAG],serde_json::json!(4));
+	assert_eq!(cv["bval"][ASN1_JSON_CONTENT],serde_json::json!([99,22]));
+	assert_eq!(cv["impsetval"], serde_json::json!([]));
+	assert_eq!(cv["seqval"], serde_json::json!([]));
+	assert_eq!(cv["setval"], serde_json::json!([]));
+	assert_eq!(cv["impval"][ASN1_JSON_TAG], serde_json::json!(0));
+	assert_eq!(cv["impval"][ASN1_JSON_CONTENT], serde_json::json!([]));
+	assert_eq!(cv["expval"][ASN1_JSON_TAG], serde_json::json!(0));
+	assert_eq!(cv["expval"][ASN1_JSON_CONTENT], serde_json::json!([]));
+	assert_eq!(cv["ndefval"], serde_json::json!(null));
+	assert_eq!(cv["bitseqval"][ASN1_JSON_TAG], serde_json::json!(0));
+	assert_eq!(cv["bitseqval"][ASN1_JSON_CONTENT], serde_json::json!([]));
+
+
+	//let _ = co.print_asn1("co",0,&mut fo).unwrap();
 }
 
 #[asn1_sequence()]
