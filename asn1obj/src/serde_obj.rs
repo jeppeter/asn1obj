@@ -2,7 +2,7 @@
 use std::marker::{PhantomData};
 use serde::{Deserialize};
 use std::error::Error;
-use crate::base::{Asn1Any,Asn1BitDataFlag,Asn1Object,Asn1PrintableString,Asn1IA5String};
+use crate::base::{Asn1Any,Asn1BitDataFlag,Asn1Object,Asn1PrintableString,Asn1IA5String,Asn1Time};
 use crate::asn1impl::{Asn1Op};
 
 use serde::de::{DeserializeOwned};
@@ -201,19 +201,19 @@ impl<'de> serde::de::Visitor<'de> for I64Visitor {
 		write!(formatter, "i64 value")
 	}
 	fn visit_i64<E>(self, val :i64) -> Result<i64,E> 
-		where E: serde::de::Error {
+	where E: serde::de::Error {
 		Ok(val)
 	}
 
 	fn visit_u64<E>(self, val :u64) -> Result<i64,E> 
-		where E: serde::de::Error {
+	where E: serde::de::Error {
 		Ok(val as i64)
 	}
 
 	fn visit_str<E>(self,val :&str) -> Result<i64,E> 
-		where E: serde::de::Error {
-			let mut cparse :String = val.to_string();
-			let mut base :u32 = 10;
+	where E: serde::de::Error {
+		let mut cparse :String = val.to_string();
+		let mut base :u32 = 10;
 		if val.starts_with("0x") || val.starts_with("0X") {
 			cparse = cparse[2..].to_string();
 			base = 16;
@@ -246,7 +246,7 @@ impl<'de> serde::de::Visitor<'de> for BoolVisitor {
 		write!(formatter, "need bool")
 	}
 	fn visit_bool<E>(self, val :bool) -> Result<bool,E> 
-		where E: serde::de::Error {
+	where E: serde::de::Error {
 		Ok(val)
 	}
 
@@ -269,7 +269,7 @@ impl<'de> serde::de::Visitor<'de> for StringVisitor {
 		write!(formatter, "need bool")
 	}
 	fn visit_str<E>(self, val :&str) -> Result<String,E> 
-		where E: serde::de::Error {
+	where E: serde::de::Error {
 		let retv :String = format!("{}",val);
 		Ok(retv)
 	}
@@ -394,7 +394,7 @@ impl<'de> serde::de::Visitor<'de> for Asn1ObjectVisitor {
 	}
 
 	fn visit_str<E>(self,val :&str) -> Result<Asn1Object,E> 
-		where E: serde::de::Error {
+	where E: serde::de::Error {
 		let mut retv :Asn1Object = Asn1Object::init_asn1();
 		let ores = retv.set_value(val);
 		if ores.is_err() {
@@ -599,7 +599,7 @@ impl<'de> serde::de::Visitor<'de> for BigUintVisitor {
 		write!(formatter, "i64 value")
 	}
 	fn visit_i64<E>(self, val :i64) -> Result<BigUint,E> 
-		where E: serde::de::Error {
+	where E: serde::de::Error {
 		let oretv :Option<BigUint> = BigUint::from_i64(val);
 		if oretv.is_none() {
 			let err : E = serde::de::Error::custom(format!("{} not valid for BigUint", val));
@@ -610,7 +610,7 @@ impl<'de> serde::de::Visitor<'de> for BigUintVisitor {
 	}
 
 	fn visit_u64<E>(self, val :u64) -> Result<BigUint,E> 
-		where E: serde::de::Error {
+	where E: serde::de::Error {
 		let oretv :Option<BigUint> = BigUint::from_u64(val);
 		if oretv.is_none() {
 			let err : E = serde::de::Error::custom(format!("{} not valid for BigUint", val));
@@ -621,9 +621,9 @@ impl<'de> serde::de::Visitor<'de> for BigUintVisitor {
 	}
 
 	fn visit_str<E>(self,val :&str) -> Result<BigUint,E> 
-		where E: serde::de::Error {
-			let mut cparse :String = val.to_string();
-			let mut base :u32 = 10;
+	where E: serde::de::Error {
+		let mut cparse :String = val.to_string();
+		let mut base :u32 = 10;
 		if val.starts_with("0x") || val.starts_with("0X") {
 			cparse = cparse[2..].to_string();
 			base = 16;
@@ -641,7 +641,7 @@ impl<'de> serde::de::Visitor<'de> for BigUintVisitor {
 	}
 
 	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-        where        A: serde::de::SeqAccess<'de>, {
+	where        A: serde::de::SeqAccess<'de>, {
 		let capacity = seq.size_hint().unwrap_or_else(|| 0);
 		let mut values = Vec::<u8>::with_capacity(capacity);
 
@@ -668,6 +668,99 @@ impl<'de> serde::de::Visitor<'de> for BigUintVisitor {
 		let retv :BigUint =BigUint::from_bytes_be(&values);
 
 		Ok(retv)
-    }
+	}
 
+}
+
+
+#[allow(dead_code)]
+pub struct Asn1TimeVisitor {
+}
+
+impl Asn1TimeVisitor {
+	pub fn new() -> Self {
+		Self {
+		}
+	}
+}
+
+impl<'de> serde::de::Visitor<'de> for Asn1TimeVisitor {
+	type Value = Asn1Time;
+
+	fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+		write!(formatter, "a map need or string")
+	}
+
+	fn visit_str<E>(self,val :&str) -> Result<Asn1Time,E> 
+	where E: serde::de::Error {
+		let mut retv :Asn1Time = Asn1Time::init_asn1();
+		asn1obj_log_trace!("get val [{}]", val);
+		let ores = retv.set_value_str(val);
+		if ores.is_err() {
+			let err : E = serde::de::Error::custom(&format!("{:?}",ores.err().unwrap()));
+			return Err(err);
+		}
+		Ok(retv)
+	}
+
+	fn visit_string<E>(self,val :String) -> Result<Asn1Time,E> 
+	where E: serde::de::Error {
+		let mut retv :Asn1Time = Asn1Time::init_asn1();
+		asn1obj_log_trace!("get val [{}]", val);
+		let ores = retv.set_value_str(&val);
+		if ores.is_err() {
+			let err : E = serde::de::Error::custom(&format!("{:?}",ores.err().unwrap()));
+			return Err(err);
+		}
+		Ok(retv)
+	}
+
+
+	fn visit_map<A>(self, mut mapv: A) -> Result<Asn1Time, A::Error>
+	where A: serde::de::MapAccess<'de>,
+	{
+		let mut oany :Asn1Time = Asn1Time::init_asn1();
+		let mut tagv :Option<u64> = None;
+		let mut contentv :Option<String> = None;
+
+		while let Some(key) = mapv.next_key::<String>()? {
+			match key.as_str() {
+				ASN1_JSON_INNER_FLAG => {
+
+					if tagv.is_some() {
+						return Err(serde::de::Error::duplicate_field(ASN1_JSON_INNER_FLAG));
+					}
+					tagv = Some(mapv.next_value::<u64>()?);
+				},
+				ASN1_JSON_TIME => {
+					if contentv.is_some() {
+						return Err(serde::de::Error::duplicate_field(ASN1_JSON_TIME));
+					}
+					contentv = Some(mapv.next_value::<String>()?);
+				},
+				_ => {
+
+				},
+			}
+		}
+
+		if contentv.is_some() {
+			let s  = format!("{}",contentv.as_ref().unwrap());
+			let ores = oany.set_value_str(&s);
+			if ores.is_err() {
+				return Err(serde::de::Error::custom(&format!("{}",ores.err().unwrap())));
+			}
+		}
+
+		if tagv.is_some() {
+			let tag = tagv.as_ref().unwrap().clone();
+			let ores = oany.set_utag(tag as u8);
+			if ores.is_err() {
+				return Err(serde::de::Error::custom(&format!("{}",ores.err().unwrap())));
+			}
+		}
+
+
+		Ok(oany)
+	}
 }

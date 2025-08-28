@@ -23,7 +23,7 @@ use std::ops::Shr;
 use num_bigint::{BigUint};
 use num_traits::{Zero};
 use std::cmp::PartialEq;
-use crate::serde_obj::{Asn1AnyVisitor,I64Visitor,BoolVisitor,StringVisitor,VecVisitor,Asn1BitDataFlagVisitor,NullVisitor,Asn1ObjectVisitor,Asn1PrintableStringVisitor,Asn1IA5StringVisitor,BigUintVisitor};
+use crate::serde_obj::{Asn1AnyVisitor,I64Visitor,BoolVisitor,StringVisitor,VecVisitor,Asn1BitDataFlagVisitor,NullVisitor,Asn1ObjectVisitor,Asn1PrintableStringVisitor,Asn1IA5StringVisitor,BigUintVisitor,Asn1TimeVisitor};
 use serde::ser::{SerializeStruct,SerializeSeq};
 //use serde::de::{DeserializeOwned};
 //use std::marker::{PhantomData};
@@ -2824,8 +2824,19 @@ pub struct Asn1Time {
 
 impl serde::ser::Serialize for Asn1Time {
     fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
-        let tmstr :String = self.get_value_str();
-        serializer.serialize_str(&tmstr)
+        let ores = serializer.serialize_struct("Asn1Time",2);
+        match ores {
+            Err(e) => {
+                return Err(e);
+            },
+            Ok(mut val) => {
+                let s = self.get_value_str();
+                let tag = self.get_utag();
+                val.serialize_field(ASN1_JSON_TIME,&s)?;
+                val.serialize_field(ASN1_JSON_INNER_FLAG,&tag)?;
+                return val.end();
+            }
+        }
     }
 }
 
@@ -2833,18 +2844,12 @@ impl serde::ser::Serialize for Asn1Time {
 impl<'de> serde::de::Deserialize<'de> for Asn1Time {
     fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
         where D: serde::de::Deserializer<'de> {
-            let svis :StringVisitor = StringVisitor::new();
-            let val :String ;
-            val = deserializer.deserialize_str(svis)?;
-            let mut retv :Asn1Time = Asn1Time::init_asn1();
-            let ores = retv.set_value_str(&val);
-            if ores.is_err() {
-                let err :D::Error = serde::de::Error::custom(ores.err().unwrap().to_string());
-                return Err(err);
-            }
-            Ok(retv)
+            let visitor :Asn1TimeVisitor = Asn1TimeVisitor::new();
+            deserializer.deserialize_any(visitor)
         }
 }
+
+
 
 
 
