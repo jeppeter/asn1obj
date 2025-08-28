@@ -93,6 +93,7 @@ impl<'de,T :DeserializeOwned> serde::de::Visitor<'de> for VecVisitor<T>
 		formatter.write_str("a sequence")
 	}
 
+
 	fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
 	where
 	A: serde::de::SeqAccess<'de>,

@@ -326,7 +326,7 @@ pub struct Asn1Seq<T : Asn1Op + Clone + Serialize + DeserializeOwned> {
 
 impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned> serde::ser::Serialize for Asn1Seq<T>{
 	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
-		serializer.collect_seq(self.val.clone())
+		serializer.collect_seq(self.val.clone())		
 	}
 }
 
@@ -334,7 +334,7 @@ impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for
     fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
         where D: serde::de::Deserializer<'de> {
         	let vecvis :VecVisitor<T> = VecVisitor::new();
-        	let val :Vec<T> = deserializer.deserialize_seq(vecvis)?;
+        	let val :Vec<T> = deserializer.deserialize_any(vecvis)?;
         	let mut retv :Asn1Seq<T> = Asn1Seq::init_asn1();
         	retv.val = val;
         	Ok(retv)
