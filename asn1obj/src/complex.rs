@@ -705,13 +705,13 @@ pub struct Asn1Imp<T : Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:
 	data : Vec<u8>,
 }
 
-impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned> serde::ser::Serialize for Asn1Imp<T>{
+impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:u8> serde::ser::Serialize for Asn1Imp<T,TAG>{
 	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
 		return serializer.serialize_some(&self.val);
 	}
 }
 
-impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for Asn1Imp<T> {
+impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:u8> Deserialize<'de> for Asn1Imp<T,TAG> {
 	fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
 	where D: serde::de::Deserializer<'de> {
 		let vecvis :OptionVisitor<T> = OptionVisitor::new();
@@ -720,7 +720,7 @@ impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for
 			let err = serde::de::Error::custom(format!("no some"));
 			return Err(err);
 		}
-		let mut retv :Asn1Imp<T> = Asn1Imp::init_asn1();
+		let mut retv :Asn1Imp<T,TAG> = Asn1Imp::init_asn1();
 		retv.val = val.as_ref().unwrap().clone();
 		Ok(retv)
 	}
@@ -821,13 +821,13 @@ pub struct Asn1Exp<T : Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:
 	data : Vec<u8>,
 }
 
-impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned> serde::ser::Serialize for Asn1Exp<T>{
+impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:u8> serde::ser::Serialize for Asn1Exp<T,TAG>{
 	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
 		return serializer.serialize_some(&self.val);
 	}
 }
 
-impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for Asn1Exp<T> {
+impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:u8> Deserialize<'de> for Asn1Exp<T,TAG> {
 	fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
 	where D: serde::de::Deserializer<'de> {
 		let vecvis :OptionVisitor<T> = OptionVisitor::new();
@@ -836,7 +836,7 @@ impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for
 			let err = serde::de::Error::custom(format!("no some"));
 			return Err(err);
 		}
-		let mut retv :Asn1Exp<T> = Asn1Exp::init_asn1();
+		let mut retv :Asn1Exp<T,TAG> = Asn1Exp::init_asn1();
 		retv.val = val.as_ref().unwrap().clone();
 		Ok(retv)
 	}
@@ -932,18 +932,18 @@ pub struct Asn1Ndef<T : Asn1Op + Clone +  Serialize + DeserializeOwned, const TA
 	data : Vec<u8>,
 }
 
-impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned> serde::ser::Serialize for Asn1Ndef<T>{
+impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:u8> serde::ser::Serialize for Asn1Ndef<T,TAG>{
 	fn serialize<S>(&self,serializer: S) -> Result<S::Ok, S::Error> where S: serde::ser::Serializer {
 		return serializer.serialize_some(&self.val);
 	}
 }
 
-impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for Asn1Ndef<T> {
+impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:u8> Deserialize<'de> for Asn1Ndef<T,TAG> {
 	fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
 	where D: serde::de::Deserializer<'de> {
 		let vecvis :OptionVisitor<T> = OptionVisitor::new();
 		let val :Option<T> = deserializer.deserialize_option(vecvis)?;
-		let mut retv :Asn1Ndef<T> = Asn1Ndef::init_asn1();
+		let mut retv :Asn1Ndef<T,TAG> = Asn1Ndef::init_asn1();
 		retv.val = val;
 		Ok(retv)
 	}

@@ -36,6 +36,7 @@ pub (crate) fn filter_attrib(_v :&mut syn::Field) -> Result<(String,String,SynKV
 		let _a = &_v.attrs[idx];
 
 		let v = format!("{}",_a.path().get_ident().as_ref().unwrap());
+		asn1_gen_log_trace!("v [{}]",v);
 		if v == ASN1_EXTMACRO {
 			removed.push(idx);
 			asn1_gen_log_trace!("[{}]=[{}][{}]",n,v,_a.meta.to_token_stream().to_string());

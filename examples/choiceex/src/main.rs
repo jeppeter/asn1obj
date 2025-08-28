@@ -12,14 +12,12 @@ use std::io::Write;
 use serde_json;
 
 #[asn1_sequence()]
-#[derive(Clone)]
 pub struct Asn1RsaPubkeyElem {
 	pub n :Asn1BigNum,
 	pub e :Asn1BigNum,
 }
 
 #[asn1_sequence()]
-#[derive(Clone)]
 pub struct Asn1RsaPubkey {
 	pub elem :Asn1Seq<Asn1RsaPubkeyElem>,
 }
@@ -27,7 +25,6 @@ pub struct Asn1RsaPubkey {
 
 
 #[asn1_obj_selector(selector=val,any=default,rsa="1.2.840.113549.1.1.1")]
-#[derive(Clone)]
 pub struct Asn1X509PubkeySelector {
 	#[asn1_gen(initfn=obji_default)]
 	pub obji :i32,
@@ -40,7 +37,6 @@ fn obji_default() -> i32 {
 }
 
 #[asn1_choice(selector=valid)]
-#[derive(Clone)]
 pub struct Asn1X509PubkeyElem {
 	#[asn1_gen(initfn=vv_default)]
 	pub vv :i32,
@@ -54,7 +50,6 @@ fn vv_default() -> i32 {
 }
 
 #[asn1_sequence()]
-#[derive(Clone)]
 pub struct Asn1X509Pubkey {
 	pub elem :Asn1Seq<Asn1X509PubkeyElem>,
 }

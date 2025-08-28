@@ -10,28 +10,25 @@ use std::io::Write;
 use serde_json;
 
 
-#[derive(Clone)]
 #[asn1_int_choice(unicode=0,ascii=1,selector=stype)]
 pub struct SpcString {
 	#[asn1_gen(initfn=si_default)]
 	pub si :i32,
 	pub stype :i32,
 	pub unicode : Asn1Imp<Asn1OctData,0>,
-	pub ascii :Asn1Imp<Asn1OctData,1>,
+	pub ascii : Asn1Imp<Asn1OctData,1>,
 }
 
 fn si_default() -> i32 {
 	0
 }
 
-#[derive(Clone)]
 #[asn1_sequence()]
 pub struct SpcSerializedObject {
 	pub classid :Asn1OctData,
 	pub serializeddata : Asn1OctData,
 }
 
-#[derive(Clone)]
 #[asn1_int_choice(selector=stype,url=0,moniker=1,file=2)]
 pub struct SpcLink {
 	pub stype :i32,

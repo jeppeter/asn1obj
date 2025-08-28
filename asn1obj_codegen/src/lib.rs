@@ -50,14 +50,12 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 /// use serde_json;
 /// 
 /// #[asn1_sequence()]
-/// #[derive(Clone)]
 /// pub struct Asn1RsaPubkeyElem {
 /// 	pub n :Asn1BigNum,
 /// 	pub e :Asn1BigNum,
 /// }
 /// 
 /// #[asn1_sequence()]
-/// #[derive(Clone)]
 /// pub struct Asn1RsaPubkey {
 /// 	pub elem :Asn1Seq<Asn1RsaPubkeyElem>,
 /// }
@@ -65,14 +63,18 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 /// 
 /// 
 /// #[asn1_obj_selector(selector=val,any=default,rsa="1.2.840.113549.1.1.1")]
-/// #[derive(Clone)]
 /// pub struct Asn1X509PubkeySelector {
+/// 	#[asn1_gen(initfn=obji_default)]
+/// 	pub obji :i32,
 /// 	pub val : Asn1Object,
 /// 	pub padded : Asn1Any,
 /// }
 /// 
+/// fn obji_default() -> i32 {
+/// 	0
+/// }
+/// 
 /// #[asn1_choice(selector=valid)]
-/// #[derive(Clone)]
 /// pub struct Asn1X509PubkeyElem {
 /// 	#[asn1_gen(initfn=vv_default)]
 /// 	pub vv :i32,
@@ -86,7 +88,6 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 /// }
 /// 
 /// #[asn1_sequence()]
-/// #[derive(Clone)]
 /// pub struct Asn1X509Pubkey {
 /// 	pub elem :Asn1Seq<Asn1X509PubkeyElem>,
 /// }
@@ -213,14 +214,12 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 ///  internal handle
 /// ```rust
 /// #[asn1_sequence()]
-/// #[derive(Clone)]
 /// pub struct Asn1RsaPubkeyElem {
 /// 	pub n :Asn1BigNum,
 /// 	pub e :Asn1BigNum,
 /// }
 /// 
 /// #[asn1_sequence()]
-/// #[derive(Clone)]
 /// pub struct Asn1RsaPubkey {
 /// 	pub elem :Asn1Seq<Asn1RsaPubkeyElem>,
 /// }
@@ -228,14 +227,18 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 /// 
 /// 
 /// #[asn1_obj_selector(selector=val,any=default,rsa="1.2.840.113549.1.1.1")]
-/// #[derive(Clone)]
 /// pub struct Asn1X509PubkeySelector {
+/// 	#[asn1_gen(initfn=obji_default)]
+/// 	pub obji :i32,
 /// 	pub val : Asn1Object,
 /// 	pub padded : Asn1Any,
 /// }
 /// 
+/// fn obji_default() -> i32 {
+/// 	0
+/// }
+/// 
 /// #[asn1_choice(selector=valid)]
-/// #[derive(Clone)]
 /// pub struct Asn1X509PubkeyElem {
 /// 	#[asn1_gen(initfn=vv_default)]
 /// 	pub vv :i32,
@@ -249,7 +252,6 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 /// }
 /// 
 /// #[asn1_sequence()]
-/// #[derive(Clone)]
 /// pub struct Asn1X509Pubkey {
 /// 	pub elem :Asn1Seq<Asn1X509PubkeyElem>,
 /// }
@@ -257,13 +259,9 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 /// ```
 ///  transfer into
 /// ```rust
-/// #[derive(Clone)] pub struct Asn1RsaPubkeyElem
-/// { 
-///     pub c : Asn1BigNum, 
-///     pub n : Asn1BigNum, 
-///     pub e : Asn1BigNum, 
-/// }
-/// asn1obj_error_class!{Asn1RsaPubkeyElemError5ls5zG4eMwGUwrRfuWz9}
+/// #[derive(Clone)] #[derive(serde :: Serialize)] #[derive(serde :: Deserialize)]
+/// pub struct Asn1RsaPubkeyElem { pub n : Asn1BigNum, pub e : Asn1BigNum, }
+/// asn1obj_error_class!{Asn1RsaPubkeyElemErrorEdrk8es4XcOgavsl22NM}
 /// 
 /// impl Asn1Op for Asn1RsaPubkeyElem {
 ///     
@@ -300,7 +298,7 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 ///         }
 ///         
 ///         if !mainv.is_object() {
-///             asn1obj_new_error!{Asn1RsaPubkeyElemError5ls5zG4eMwGUwrRfuWz9,"not object to decode"}
+///             asn1obj_new_error!{Asn1RsaPubkeyElemErrorEdrk8es4XcOgavsl22NM,"not object to decode"}
 ///         }
 ///         
 ///         idx += self.n.decode_json("n",&mainv)?;
@@ -313,7 +311,6 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 ///         Asn1RsaPubkeyElem {
 ///             n : Asn1BigNum::init_asn1(),
 ///             e : Asn1BigNum::init_asn1(),
-///             c : c_default(),
 ///         }
 ///     }
 ///     
@@ -374,6 +371,418 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 ///     
 /// }
 /// 
+/// 
+/// #[derive(Clone)] #[derive(serde :: Serialize)] #[derive(serde :: Deserialize)]
+/// pub struct Asn1RsaPubkey { pub elem : Asn1Seq < Asn1RsaPubkeyElem > , }
+/// asn1obj_error_class!{Asn1RsaPubkeyError3fVsRgZcPpDojrNZKlPy}
+/// 
+/// impl Asn1Op for Asn1RsaPubkey {
+///     
+///     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+///         return self.elem.encode_json(key,val);
+///     }
+///     
+///     fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+///         return self.elem.decode_json(key,val);
+///     }
+///     
+///     fn init_asn1() -> Self {
+///         Asn1RsaPubkey {
+///             elem : Asn1Seq::init_asn1(),
+///         }
+///     }
+///     
+///     fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+///         let mut retv :usize = 0;
+///         let mut _endsize :usize = code.len();
+///         
+///         let ro = self.elem.decode_asn1(&code[retv.._endsize]);
+///         if ro.is_err() {
+///             let e = ro.err().unwrap();
+///             return Err(e);
+///         }
+///         retv += ro.unwrap();
+///         
+///         Ok(retv)
+///         
+///     }
+///     
+///     fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+///         let mut _v8 :Vec<u8> = Vec::new();
+///         let encv :Vec<u8>;
+///         
+///         encv = self.elem.encode_asn1()?;
+///         for i in 0..encv.len() {
+///             _v8.push(encv[i]);
+///         }
+///         
+///         Ok(_v8)
+///         
+///     }
+///     
+///     fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+///         return self.elem.print_asn1(name,tab,iowriter);
+///     }
+///     
+/// }
+/// 
+/// 
+/// #[derive(Clone)] #[derive(serde :: Serialize)] #[derive(serde :: Deserialize)]
+/// pub struct Asn1X509PubkeySelector
+/// { pub obji : i32, pub val : Asn1Object, pub padded : Asn1Any, }
+/// asn1obj_error_class!{ Asn1X509PubkeySelectorError0O9gGJvAUzZYpQpaXIB0 }
+/// 
+/// impl Asn1Selector for Asn1X509PubkeySelector {
+///     
+///     fn encode_select(&self) -> Result<String,Box<dyn Error>> {
+///         let k = format!("{}",self.val.get_value());
+///         let retv :String;
+///         
+///         if k == "1.2.840.113549.1.1.1" || k == "1.2.840.113549.1.1.1" {
+///             retv = format!("rsa");
+///         } else {
+///             retv = format!("any");
+///         }
+///         Ok(retv)
+///     }
+///     
+///     fn decode_select(&self) -> Result<String,Box<dyn Error>> {
+///         let k = format!("{}",self.val.get_value());
+///         let retv :String;
+///         
+///         if k == "1.2.840.113549.1.1.1" || k == "1.2.840.113549.1.1.1" {
+///             retv = format!("rsa");
+///         } else {
+///             retv = format!("any");
+///         }
+///         Ok(retv)
+///     }
+///     
+/// }
+/// 
+/// impl Asn1Op for Asn1X509PubkeySelector {
+///     
+///     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+///         let mut mainv = serde_json::json!({});
+///         let mut idx :i32 = 0;
+///          
+///         idx += self.val.encode_json("val",&mut mainv)?;
+///         idx += self.padded.encode_json("padded",&mut mainv)?;
+///          
+///         if key.len() > 0 {
+///             val[key] = mainv;
+///         } else {
+///             *val = mainv;
+///         }
+///          
+///         Ok(idx)
+///         
+///     }
+///     
+///     fn decode_json(&mut self, key :&str,val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+///         let mainv : serde_json::value::Value;
+///         let mut idx :i32 = 0;
+///          
+///         if key.len() > 0 {
+///             let k = val.get(key);
+///             if k.is_none() {
+///                 self.val = Asn1Object::init_asn1();
+///                 self.padded = Asn1Any::init_asn1();
+///                 return Ok(0);
+///             }
+///             mainv = serde_json::json!(k.clone());
+///         } else {
+///             mainv = val.clone();
+///         }
+///          
+///         if !mainv.is_object() {
+///             asn1obj_new_error!{Asn1X509PubkeySelectorError0O9gGJvAUzZYpQpaXIB0,"[{}] not valid object",key}
+///         }
+///          
+///         idx += self.val.decode_json("val",&mainv)?;
+///         idx += self.padded.decode_json("padded",&mainv)?;
+///          
+///         return Ok(idx);
+///         
+///     }
+///     
+///     fn init_asn1() -> Self {
+///         Asn1X509PubkeySelector {
+///             val : Asn1Object::init_asn1(),
+///             padded : Asn1Any::init_asn1(),
+///             obji : obji_default(),
+///         }
+///     }
+///     
+///     fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+///         let mut retv :usize = 0;
+///         let mut _endsize :usize = code.len();
+///         
+///         let ro = self.val.decode_asn1(&code[retv.._endsize]);
+///         if ro.is_err() {
+///             let e = ro.err().unwrap();
+///             return Err(e);
+///         }
+///         retv += ro.unwrap();
+///         
+///         let ro = self.padded.decode_asn1(&code[retv.._endsize]);
+///         if ro.is_err() {
+///             let e = ro.err().unwrap();
+///             return Err(e);
+///         }
+///         retv += ro.unwrap();
+///         
+///         Ok(retv)
+///         
+///     }
+///     
+///     fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+///         let mut _v8 :Vec<u8> = Vec::new();
+///         let mut encv :Vec<u8>;
+///         
+///         encv = self.val.encode_asn1()?;
+///         for i in 0..encv.len() {
+///             _v8.push(encv[i]);
+///         }
+///         
+///         encv = self.padded.encode_asn1()?;
+///         for i in 0..encv.len() {
+///             _v8.push(encv[i]);
+///         }
+///         
+///         Ok(_v8)
+///         
+///     }
+///     
+///     fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+///         let mut s :String;
+///         s = asn1_format_line(tab,&format!("{} Asn1X509PubkeySelector", name));
+///         iowriter.write(s.as_bytes())?;
+///         
+///         s = format!("val");
+///         self.val.print_asn1(&s,tab + 1, iowriter)?;
+///         
+///         s = format!("padded");
+///         self.padded.print_asn1(&s,tab + 1, iowriter)?;
+///         
+///         Ok(())
+///         
+///     }
+///     
+/// }
+/// 
+/// fn obji_default() -> i32 {
+///     0
+/// }
+/// 
+/// 
+/// #[derive(Clone)] #[derive(serde :: Serialize)] #[derive(serde :: Deserialize)]
+/// pub struct Asn1X509PubkeyElem
+/// {
+///     pub vv : i32, pub valid : Asn1SeqSelector < Asn1X509PubkeySelector > , pub
+///     rsa : Asn1BitSeq < Asn1RsaPubkey > , pub any : Asn1Any,
+/// }
+/// asn1obj_error_class!{ Asn1X509PubkeyElemErrormvhM71LDl1JaLUvas7p0 }
+/// 
+/// impl Asn1Op for Asn1X509PubkeyElem {
+///     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>>{
+///         let mut mainv :serde_json::value::Value = serde_json::json!({});
+///         let mut idx :i32 = 0;
+///          
+///         idx += self.valid.encode_json("valid",&mut mainv)?;
+///         let c :String = self.valid.encode_select()?;
+///         if c == "rsa" {
+///             idx += self.rsa.encode_json("rsa",&mut mainv)?;
+///         } else if c == "any" {
+///             idx += self.any.encode_json("any",&mut mainv)?;
+///         } else {
+///             asn1obj_new_error!{Asn1X509PubkeyElemErrormvhM71LDl1JaLUvas7p0,"not support [{}]",c}
+///         }
+///          
+///         if key.len() > 0 {
+///             val[key] = mainv;
+///         } else {
+///             *val = mainv;
+///         }
+///          
+///         return Ok(idx);
+///     }
+///     
+///     fn decode_json(&mut self, key :&str,val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>>{
+///         let mainv :serde_json::value::Value;
+///         let mut idx :i32=0;
+///         if key.len() > 0 {
+///             let k = val.get(key);
+///             if k.is_none() {
+///                 self.valid = Asn1SeqSelector::init_asn1();
+///                 self.rsa = Asn1BitSeq::init_asn1();
+///                 self.any = Asn1Any::init_asn1();
+///             return Ok(0);
+///             }
+///             mainv = serde_json::json!(k.clone());
+///         } else {
+///             mainv = val.clone();
+///         }
+///          
+///         if !mainv.is_object() {
+///             asn1obj_new_error!{Asn1X509PubkeyElemErrormvhM71LDl1JaLUvas7p0,"not object to decode"}
+///         }
+///          
+///         idx += self.valid.decode_json("valid",&mainv)?;
+///         self.rsa = Asn1BitSeq::init_asn1();
+///         self.any = Asn1Any::init_asn1();
+///          
+///         let c :String = self.valid.decode_select()?;
+///         if c == "rsa" {
+///             idx += self.rsa.decode_json("rsa",&mainv)?;
+///         } else if c == "any" {
+///             idx += self.any.decode_json("any",&mainv)?;
+///         } else {
+///             asn1obj_new_error!{Asn1X509PubkeyElemErrormvhM71LDl1JaLUvas7p0,"not support [{}]",c}
+///         }
+///          
+///         return Ok(idx);
+///     }
+///     
+///     fn init_asn1() -> Self {
+///         Asn1X509PubkeyElem {
+///             valid : Asn1SeqSelector::init_asn1(),
+///             rsa : Asn1BitSeq::init_asn1(),
+///             any : Asn1Any::init_asn1(),
+///             vv : vv_default(),
+///         }
+///     }
+///     
+///     fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+///         let mut retv :usize = 0;
+///         let mut _endsize :usize = code.len();
+///         
+///         retv += self.valid.decode_asn1(&code[retv.._endsize])?;
+///         
+///         let k = self.valid.decode_select()?;
+///         
+///         if k == "rsa" {
+///             retv += self.rsa.decode_asn1(&code[retv.._endsize])?;
+///         } else if k == "any" {
+///             retv += self.any.decode_asn1(&code[retv.._endsize])?;
+///         } else {
+///             asn1obj_new_error!{ Asn1X509PubkeyElemErrormvhM71LDl1JaLUvas7p0, "can not find [{}] selector", k}
+///         }
+///         
+///         Ok(retv)
+///     }
+///     
+///     fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+///         let mut retv : Vec<u8>;
+///         let mut _encv : Vec<u8>;
+///         
+///         _encv = self.valid.encode_asn1()?;
+///         
+///         let k = self.valid.encode_select()?;
+///         if k == "rsa" {
+///             let vk = self.rsa.encode_asn1()?;
+///             for i in 0..vk.len() {
+///                 _encv.push(vk[i]);
+///             }
+///         } else if k == "any" {
+///             let vk = self.any.encode_asn1()?;
+///             for i in 0..vk.len() {
+///                 _encv.push(vk[i]);
+///             }
+///         } else {
+///             asn1obj_new_error!{ Asn1X509PubkeyElemErrormvhM71LDl1JaLUvas7p0, "can not support [{}]", k }
+///         }
+///         retv = Vec::new();
+///         for i in 0.._encv.len() {
+///             retv.push(_encv[i]);
+///         }
+///         
+///         Ok(retv)
+///     }
+///     
+///     fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+///         let k = self.valid.encode_select()?;
+///         let _outs :String;
+///         
+///         _outs = asn1_format_line(tab,&format!("{} ASN1_CHOICE Asn1X509PubkeyElem",name));
+///         let _ = iowriter.write(_outs.as_bytes())?;
+///         
+///         let selname = format!("valid");
+///         let _ = self.valid.print_asn1(&selname,tab + 1, iowriter)?;
+///         
+///         if k == "rsa" {
+///             let nname = format!("rsa");
+///             let _ = self.rsa.print_asn1(&nname,tab+1, iowriter)?;
+///         } else if k == "any" {
+///             let nname = format!("any");
+///             let _ = self.any.print_asn1(&nname,tab+1, iowriter)?;
+///         } else {
+///             asn1obj_new_error!{ Asn1X509PubkeyElemErrormvhM71LDl1JaLUvas7p0, "can not support [{}]", k }
+///         }
+///         Ok(())
+///     }
+///     
+/// }
+/// 
+/// fn vv_default() -> i32 {
+///     0
+/// }
+/// 
+/// 
+/// #[derive(Clone)] #[derive(serde :: Serialize)] #[derive(serde :: Deserialize)]
+/// pub struct Asn1X509Pubkey { pub elem : Asn1Seq < Asn1X509PubkeyElem > , }
+/// asn1obj_error_class!{Asn1X509PubkeyErrorEUjXDRAQx9CFuhQmawPp}
+/// 
+/// impl Asn1Op for Asn1X509Pubkey {
+///     
+///     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+///         return self.elem.encode_json(key,val);
+///     }
+///     
+///     fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+///         return self.elem.decode_json(key,val);
+///     }
+///     
+///     fn init_asn1() -> Self {
+///         Asn1X509Pubkey {
+///             elem : Asn1Seq::init_asn1(),
+///         }
+///     }
+///     
+///     fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+///         let mut retv :usize = 0;
+///         let mut _endsize :usize = code.len();
+///         
+///         let ro = self.elem.decode_asn1(&code[retv.._endsize]);
+///         if ro.is_err() {
+///             let e = ro.err().unwrap();
+///             return Err(e);
+///         }
+///         retv += ro.unwrap();
+///         
+///         Ok(retv)
+///         
+///     }
+///     
+///     fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+///         let mut _v8 :Vec<u8> = Vec::new();
+///         let encv :Vec<u8>;
+///         
+///         encv = self.elem.encode_asn1()?;
+///         for i in 0..encv.len() {
+///             _v8.push(encv[i]);
+///         }
+///         
+///         Ok(_v8)
+///         
+///     }
+///     
+///     fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+///         return self.elem.print_asn1(name,tab,iowriter);
+///     }
+///     
+/// }
+/// 
 /// ```
 #[proc_macro_attribute]
 pub fn asn1_choice(_attr :proc_macro::TokenStream,item :proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -383,627 +792,638 @@ pub fn asn1_choice(_attr :proc_macro::TokenStream,item :proc_macro::TokenStream)
 
 ///  the macro to expand for stype set
 ///  exampl
-///  ```rust
-///  use asn1obj_codegen::{asn1_sequence,asn1_int_choice};
-///  use asn1obj::{asn1obj_error_class,asn1obj_new_error};
-///  use asn1obj::base::*;
-///  use asn1obj::complex::*;
-///  use asn1obj::asn1impl::{Asn1Op};
-///  use asn1obj::strop::asn1_format_line;
-///  
-///  use std::error::Error;
-///  use std::io::Write;
-///  use serde_json;
-///  
-///  
-///  #[derive(Clone)]
-///  #[asn1_int_choice(unicode=0,ascii=1,selector=stype)]
-///  pub struct SpcString {
-///  	pub stype :i32,
-///  	pub unicode : Asn1Imp<Asn1OctData,0>,
-///  	pub ascii :Asn1Imp<Asn1OctData,1>,
-///  }
-///  
-///  
-///  #[derive(Clone)]
-///  #[asn1_sequence()]
-///  pub struct SpcSerializedObject {
-///  	pub classid :Asn1OctData,
-///  	pub serializeddata : Asn1OctData,
-///  }
-///  
-///  #[derive(Clone)]
-///  #[asn1_int_choice(selector=stype,url=0,moniker=1,file=2)]
-///  pub struct SpcLink {
-///  	pub stype :i32,
-///  	pub url :Asn1ImpSet<Asn1OctData,0>,
-///  	pub moniker :Asn1ImpSet<SpcSerializedObject,1>,
-///  	pub file :Asn1ImpSet<SpcString,2>,
-///  }
-///  
-///  fn format_vecs(buf :&[u8], tab :i32) -> String {
-///  	let mut outs :String = "".to_string();
-///  	let mut lasti : usize = 0;
-///  	let mut ki :usize;
-///  	for i in 0..buf.len() {
-///  		if (i%16) == 0 {
-///  			if i > 0 {
-///  				outs.push_str("    ");
-///  				while lasti != i {
-///  					if buf[lasti] >= 0x20 && buf[lasti] <= 0x7e {
-///  						outs.push(buf[lasti] as char);
-///  					} else {
-///  						outs.push_str(".");
-///  					}
-///  					lasti += 1;
-///  				}
-///  				outs.push_str("\n");
-///  			}
-///  
-///  			for _j in 0..tab {
-///  				outs.push_str("    ");
-///  			}
-///  		}
-///  		if (i % 16) == 0 {
-///  			outs.push_str(&format!("{:02x}", buf[i]));	
-///  		} else {
-///  			outs.push_str(&format!(":{:02x}", buf[i]));	
-///  		}
-///  		
-///  	}
-///  
-///  	if lasti != buf.len() {
-///  		ki = buf.len();
-///  		while (ki % 16) != 0 {
-///  			outs.push_str("   ");
-///  			ki += 1;
-///  		}
-///  		outs.push_str("    ");
-///  		while lasti != buf.len() {
-///  			if buf[lasti] >= 0x20 && buf[lasti] <= 0x7e {
-///  				outs.push(buf[lasti] as char);
-///  			} else {
-///  				outs.push_str(".");
-///  			}
-///  			lasti += 1;
-///  		}
-///  	}
-///  	outs.push_str("\n");
-///  	return outs;
-///  }
-///  
-///  fn main() -> Result<(),Box<dyn Error>> {
-///  	let mut sps :SpcString = SpcString::init_asn1();
-///  	sps.stype = 0;
-///  	sps.unicode.val.data = vec![0x1,0x2,0x3];
-///  	let mut spl :SpcLink = SpcLink::init_asn1();
-///  	spl.stype = 2;
-///  	spl.file.val.push(sps.clone());
-///  	let outd = spl.encode_asn1()?;
-///  	let mut outf = std::io::stdout();
-///  	let outs = format!("outdata\n{}",format_vecs(&outd,1));
-///  	outf.write(outs.as_bytes())?;
-///  	spl.print_asn1("SpcLink",0,&mut outf)?;
-///  	let mut outspl :SpcLink = SpcLink::init_asn1();
-///  	let _ = outspl.decode_asn1(&outd)?;
-///  	outspl.print_asn1("Out SpcLink",0,&mut outf)?;
-///  
-///  	let mut sps :SpcString = SpcString::init_asn1();
-///  	sps.stype = 1;
-///  	sps.ascii.val.data = vec![0x1,0x2,0x3];
-///  	let mut spl :SpcLink = SpcLink::init_asn1();
-///  	spl.stype = 2;
-///  	spl.file.val.push(sps.clone());
-///  	let outd = spl.encode_asn1()?;
-///  	let mut outf = std::io::stdout();
-///  	let outs = format!("outdata\n{}",format_vecs(&outd,1));
-///  	outf.write(outs.as_bytes())?;
-///  	spl.print_asn1("SpcLink",0,&mut outf)?;
-///  	let mut outspl :SpcLink = SpcLink::init_asn1();
-///  	let _ = outspl.decode_asn1(&outd)?;
-///  	outspl.print_asn1("Out SpcLink",0,&mut outf)?;
-///  
-///  
-///  
-///  	let mut sps :SpcSerializedObject = SpcSerializedObject::init_asn1();
-///  	sps.classid.data = vec![0x1,0x2,0x3];
-///  	sps.serializeddata.data = vec![0x4,0x5,0x6];
-///  	let mut spl :SpcLink = SpcLink::init_asn1();
-///  	spl.stype = 1;
-///  	spl.moniker.val.push(sps.clone());
-///  	let outd = spl.encode_asn1()?;
-///  	let outs = format!("outdata\n{}",format_vecs(&outd,1));
-///  	outf.write(outs.as_bytes())?;
-///  	spl.print_asn1("SpcLink",0,&mut outf)?;
-///  	let mut outspl :SpcLink = SpcLink::init_asn1();
-///  	let _ = outspl.decode_asn1(&outd)?;
-///  	outspl.print_asn1("Out SpcLink",0,&mut outf)?;
-///  
-///  
-///  	let mut sps :Asn1OctData = Asn1OctData::init_asn1();
-///  	sps.data = vec![0x33,0x44,0x55];
-///  	let mut spl :SpcLink = SpcLink::init_asn1();
-///  	spl.stype = 0;
-///  	spl.url.val.push(sps.clone());
-///  	let outd = spl.encode_asn1()?;
-///  	let outs = format!("outdata\n{}",format_vecs(&outd,1));
-///  	outf.write(outs.as_bytes())?;
-///  	spl.print_asn1("SpcLink",0,&mut outf)?;
-///  	let mut outspl :SpcLink = SpcLink::init_asn1();
-///  	let _ = outspl.decode_asn1(&outd)?;
-///  	outspl.print_asn1("Out SpcLink",0,&mut outf)?;
-///  
-///  
-///  	Ok(())
-///  }
-///  
-///  /*
-///  output:
-///  outdata
-///      a2:05:80:03:01:02:03                               .......
-///  SpcLink.stype type 2
-///      file[0].stype type 0
-///          unicode IMP
-///          unicode: ASN1_OCT_DATA
-///              01:02:03                                           ...
-///  Out SpcLink.stype type 2
-///      file[0].stype type 0
-///          unicode IMP
-///          unicode: ASN1_OCT_DATA
-///              01:02:03                                           ...
-///  outdata
-///      a2:05:81:03:01:02:03                               .......
-///  SpcLink.stype type 2
-///      file[0].stype type 1
-///          ascii IMP
-///          ascii: ASN1_OCT_DATA
-///              01:02:03                                           ...
-///  Out SpcLink.stype type 2
-///      file[0].stype type 1
-///          ascii IMP
-///          ascii: ASN1_OCT_DATA
-///              01:02:03                                           ...
-///  outdata
-///      a1:0a:04:03:01:02:03:04:03:04:05:06                ............
-///  SpcLink.stype type 1
-///      moniker[0] SpcSerializedObject
-///          classid: ASN1_OCT_DATA
-///              01:02:03                                           ...
-///          serializeddata: ASN1_OCT_DATA
-///              04:05:06                                           ...
-///  Out SpcLink.stype type 1
-///      moniker[0] SpcSerializedObject
-///          classid: ASN1_OCT_DATA
-///              01:02:03                                           ...
-///          serializeddata: ASN1_OCT_DATA
-///              04:05:06                                           ...
-///  outdata
-///      a0:05:04:03:33:44:55                               ....3DU
-///  SpcLink.stype type 0
-///      url[0]: ASN1_OCT_DATA
-///          33:44:55                                           3DU
-///  Out SpcLink.stype type 0
-///      url[0]: ASN1_OCT_DATA
-///          33:44:55                                           3DU
-///  */
-///  ```
-///  ```rust
-///  #[asn1_int_choice(unicode=0,ascii=1,selector=stype)]
-///  #[derive(Clone)]
-///  pub struct SpcString {
-///  	pub stype :i32,
-///  	pub unicode : Asn1Imp<Asn1OctData,0>,
-///  	pub ascii :Asn1Imp<Asn1OctData,1>,
-///  }
-///  
-///  
-///  #[asn1_sequence()]
-///  #[derive(Clone)]
-///  pub struct SpcSerializedObject {
-///  	pub classid :Asn1OctData,
-///  	pub serializeddata : Asn1OctData,
-///  }
-///  
-///  #[asn1_int_choice(selector=stype,url=0,moniker=1,file=2)]
-///  #[derive(Clone)]
-///  pub struct SpcLink {
-///  	pub stype :i32,
-///  	pub url :Asn1ImpSet<Asn1OctData,0>,
-///  	pub moniker :Asn1ImpSet<SpcSerializedObject,1>,
-///  	pub file :Asn1ImpSet<SpcString,2>,
-///  }
-///  ```
+/// ```rust
+/// use asn1obj_codegen::{asn1_sequence,asn1_int_choice};
+/// use asn1obj::{asn1obj_error_class,asn1obj_new_error};
+/// use asn1obj::base::*;
+/// use asn1obj::complex::*;
+/// use asn1obj::asn1impl::{Asn1Op};
+/// use asn1obj::strop::asn1_format_line;
+/// 
+/// use std::error::Error;
+/// use std::io::Write;
+/// use serde_json;
+/// 
+/// 
+/// #[asn1_int_choice(unicode=0,ascii=1,selector=stype)]
+/// pub struct SpcString {
+/// 	#[asn1_gen(initfn=si_default)]
+/// 	pub si :i32,
+/// 	pub stype :i32,
+/// 	pub unicode : Asn1Imp<Asn1OctData,0>,
+/// 	pub ascii : Asn1Imp<Asn1OctData,1>,
+/// }
+/// 
+/// fn si_default() -> i32 {
+/// 	0
+/// }
+/// 
+/// #[asn1_sequence()]
+/// pub struct SpcSerializedObject {
+/// 	pub classid :Asn1OctData,
+/// 	pub serializeddata : Asn1OctData,
+/// }
+/// 
+/// #[asn1_int_choice(selector=stype,url=0,moniker=1,file=2)]
+/// pub struct SpcLink {
+/// 	pub stype :i32,
+/// 	pub url :Asn1ImpSet<Asn1OctData,0>,
+/// 	pub moniker :Asn1ImpSet<SpcSerializedObject,1>,
+/// 	pub file :Asn1ImpSet<SpcString,2>,
+/// }
+/// 
+/// fn format_vecs(buf :&[u8], tab :i32) -> String {
+/// 	let mut outs :String = "".to_string();
+/// 	let mut lasti : usize = 0;
+/// 	let mut ki :usize;
+/// 	for i in 0..buf.len() {
+/// 		if (i%16) == 0 {
+/// 			if i > 0 {
+/// 				outs.push_str("    ");
+/// 				while lasti != i {
+/// 					if buf[lasti] >= 0x20 && buf[lasti] <= 0x7e {
+/// 						outs.push(buf[lasti] as char);
+/// 					} else {
+/// 						outs.push_str(".");
+/// 					}
+/// 					lasti += 1;
+/// 				}
+/// 				outs.push_str("\n");
+/// 			}
+/// 
+/// 			for _j in 0..tab {
+/// 				outs.push_str("    ");
+/// 			}
+/// 		}
+/// 		if (i % 16) == 0 {
+/// 			outs.push_str(&format!("{:02x}", buf[i]));	
+/// 		} else {
+/// 			outs.push_str(&format!(":{:02x}", buf[i]));	
+/// 		}
+/// 		
+/// 	}
+/// 
+/// 	if lasti != buf.len() {
+/// 		ki = buf.len();
+/// 		while (ki % 16) != 0 {
+/// 			outs.push_str("   ");
+/// 			ki += 1;
+/// 		}
+/// 		outs.push_str("    ");
+/// 		while lasti != buf.len() {
+/// 			if buf[lasti] >= 0x20 && buf[lasti] <= 0x7e {
+/// 				outs.push(buf[lasti] as char);
+/// 			} else {
+/// 				outs.push_str(".");
+/// 			}
+/// 			lasti += 1;
+/// 		}
+/// 	}
+/// 	outs.push_str("\n");
+/// 	return outs;
+/// }
+/// 
+/// fn main() -> Result<(),Box<dyn Error>> {
+/// 	let mut sps :SpcString = SpcString::init_asn1();
+/// 	sps.stype = 0;
+/// 	sps.unicode.val.data = vec![0x1,0x2,0x3];
+/// 	let mut spl :SpcLink = SpcLink::init_asn1();
+/// 	spl.stype = 2;
+/// 	spl.file.val.push(sps.clone());
+/// 	let outd = spl.encode_asn1()?;
+/// 	let mut outf = std::io::stdout();
+/// 	let outs = format!("outdata\n{}",format_vecs(&outd,1));
+/// 	outf.write(outs.as_bytes())?;
+/// 	spl.print_asn1("SpcLink",0,&mut outf)?;
+/// 	let mut outspl :SpcLink = SpcLink::init_asn1();
+/// 	let _ = outspl.decode_asn1(&outd)?;
+/// 	outspl.print_asn1("Out SpcLink",0,&mut outf)?;
+/// 
+/// 	let mut sps :SpcString = SpcString::init_asn1();
+/// 	sps.stype = 1;
+/// 	sps.ascii.val.data = vec![0x1,0x2,0x3];
+/// 	let mut spl :SpcLink = SpcLink::init_asn1();
+/// 	spl.stype = 2;
+/// 	spl.file.val.push(sps.clone());
+/// 	let outd = spl.encode_asn1()?;
+/// 	let mut outf = std::io::stdout();
+/// 	let outs = format!("outdata\n{}",format_vecs(&outd,1));
+/// 	outf.write(outs.as_bytes())?;
+/// 	spl.print_asn1("SpcLink",0,&mut outf)?;
+/// 	let mut outspl :SpcLink = SpcLink::init_asn1();
+/// 	let _ = outspl.decode_asn1(&outd)?;
+/// 	outspl.print_asn1("Out SpcLink",0,&mut outf)?;
+/// 
+/// 
+/// 
+/// 	let mut sps :SpcSerializedObject = SpcSerializedObject::init_asn1();
+/// 	sps.classid.data = vec![0x1,0x2,0x3];
+/// 	sps.serializeddata.data = vec![0x4,0x5,0x6];
+/// 	let mut spl :SpcLink = SpcLink::init_asn1();
+/// 	spl.stype = 1;
+/// 	spl.moniker.val.push(sps.clone());
+/// 	let outd = spl.encode_asn1()?;
+/// 	let outs = format!("outdata\n{}",format_vecs(&outd,1));
+/// 	outf.write(outs.as_bytes())?;
+/// 	spl.print_asn1("SpcLink",0,&mut outf)?;
+/// 	let mut outspl :SpcLink = SpcLink::init_asn1();
+/// 	let _ = outspl.decode_asn1(&outd)?;
+/// 	outspl.print_asn1("Out SpcLink",0,&mut outf)?;
+/// 
+/// 
+/// 	let mut sps :Asn1OctData = Asn1OctData::init_asn1();
+/// 	sps.data = vec![0x33,0x44,0x55];
+/// 	let mut spl :SpcLink = SpcLink::init_asn1();
+/// 	spl.stype = 0;
+/// 	spl.url.val.push(sps.clone());
+/// 	let outd = spl.encode_asn1()?;
+/// 	let outs = format!("outdata\n{}",format_vecs(&outd,1));
+/// 	outf.write(outs.as_bytes())?;
+/// 	spl.print_asn1("SpcLink",0,&mut outf)?;
+/// 	let mut outspl :SpcLink = SpcLink::init_asn1();
+/// 	let _ = outspl.decode_asn1(&outd)?;
+/// 	outspl.print_asn1("Out SpcLink",0,&mut outf)?;
+/// 
+/// 
+/// 	Ok(())
+/// }
+/// 
+/// /*
+/// output:
+/// outdata
+///     a2:05:80:03:01:02:03                               .......
+/// SpcLink.stype type 2
+///     file[0].stype type 0
+///         unicode IMP
+///         unicode: ASN1_OCT_DATA
+///             01:02:03                                           ...
+/// Out SpcLink.stype type 2
+///     file[0].stype type 0
+///         unicode IMP
+///         unicode: ASN1_OCT_DATA
+///             01:02:03                                           ...
+/// outdata
+///     a2:05:81:03:01:02:03                               .......
+/// SpcLink.stype type 2
+///     file[0].stype type 1
+///         ascii IMP
+///         ascii: ASN1_OCT_DATA
+///             01:02:03                                           ...
+/// Out SpcLink.stype type 2
+///     file[0].stype type 1
+///         ascii IMP
+///         ascii: ASN1_OCT_DATA
+///             01:02:03                                           ...
+/// outdata
+///     a1:0a:04:03:01:02:03:04:03:04:05:06                ............
+/// SpcLink.stype type 1
+///     moniker[0] SpcSerializedObject
+///         classid: ASN1_OCT_DATA
+///             01:02:03                                           ...
+///         serializeddata: ASN1_OCT_DATA
+///             04:05:06                                           ...
+/// Out SpcLink.stype type 1
+///     moniker[0] SpcSerializedObject
+///         classid: ASN1_OCT_DATA
+///             01:02:03                                           ...
+///         serializeddata: ASN1_OCT_DATA
+///             04:05:06                                           ...
+/// outdata
+///     a0:05:04:03:33:44:55                               ....3DU
+/// SpcLink.stype type 0
+///     url[0]: ASN1_OCT_DATA
+///         33:44:55                                           3DU
+/// Out SpcLink.stype type 0
+///     url[0]: ASN1_OCT_DATA
+///         33:44:55                                           3DU
+/// */
+/// 
+/// ```
+/// ```rust
+/// #[asn1_int_choice(unicode=0,ascii=1,selector=stype)]
+/// pub struct SpcString {
+/// 	#[asn1_gen(initfn=si_default)]
+/// 	pub si :i32,
+/// 	pub stype :i32,
+/// 	pub unicode : Asn1Imp<Asn1OctData,0>,
+/// 	pub ascii : Asn1Imp<Asn1OctData,1>,
+/// }
+/// 
+/// fn si_default() -> i32 {
+/// 	0
+/// }
+/// 
+/// #[asn1_sequence()]
+/// pub struct SpcSerializedObject {
+/// 	pub classid :Asn1OctData,
+/// 	pub serializeddata : Asn1OctData,
+/// }
+/// 
+/// #[asn1_int_choice(selector=stype,url=0,moniker=1,file=2)]
+/// pub struct SpcLink {
+/// 	pub stype :i32,
+/// 	pub url :Asn1ImpSet<Asn1OctData,0>,
+/// 	pub moniker :Asn1ImpSet<SpcSerializedObject,1>,
+/// 	pub file :Asn1ImpSet<SpcString,2>,
+/// }
+/// 
+/// ```
 ///  internal transfer
-///  ```rust
-///  pub struct SpcString
-///  {
-///      pub stype : i32, 
-///      pub unicode : Asn1Imp<Asn1OctData, 0>, 
-///      pub ascii :  Asn1Imp<Asn1OctData, 1>,
-///  }
+/// ```rust
+/// #[derive(Clone)] #[derive(serde :: Serialize)] #[derive(serde :: Deserialize)]
+/// pub struct SpcString
+/// {
+///     pub si : i32, pub stype : i32, pub unicode : Asn1Imp < Asn1OctData, 0 > ,
+///     pub ascii : Asn1Imp < Asn1OctData, 1 > ,
+/// }
+/// asn1obj_error_class!{SpcStringKbPtsVK5jxJPFrwnError}
 ///  
-///  asn1obj_error_class!{SpcStringoBxglRxcBmbANpbzError}
-///   
-///  impl Asn1Op for SpcString {
-///      fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-///          let mut mainv :serde_json::value::Value = serde_json::json!({});
-///          let mut idx :i32 = 0;
-///          let mut cint :Asn1Integer = Asn1Integer::init_asn1();
-///           
-///          cint.val = self.stype as i64;
-///          idx += cint.encode_json("stype",&mut mainv)?;
-///           
-///          if self.stype == 0 {
-///              idx += self.unicode.encode_json("unicode",&mut mainv)?;
-///          } else if self.stype == 1 {
-///              idx += self.ascii.encode_json("ascii",&mut mainv)?;
-///          } else {
-///              asn1obj_new_error!{SpcStringoBxglRxcBmbANpbzError,"not support {} value",self.stype}
-///          }
-///           
-///          if key.len() > 0 {
-///              val[key] = mainv;
-///          } else {
-///              *val = mainv;
-///          }
-///           
-///          return Ok(idx);
-///      }
-///      
-///      fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-///          let mainv :serde_json::value::Value;
-///          let mut idx :i32=0;
-///          let mut cint :Asn1Integer = Asn1Integer::init_asn1();
-///           
-///          if key.len() > 0 {
-///              let k = val.get(key);
-///              if k.is_none() {
-///                  self.stype = -1;
-///                  self.unicode = Asn1Imp::init_asn1();
-///                  self.ascii = Asn1Imp::init_asn1();
-///                  return Ok(0);
-///              }
-///              mainv = serde_json::json!(k.clone());
-///          } else {
-///              mainv = val.clone();
-///          }
-///           
-///          if !mainv.is_object() {
-///              asn1obj_new_error!{SpcStringoBxglRxcBmbANpbzError,"not object to decode"}
-///          }
-///           
-///          idx += cint.decode_json("stype",&mainv)?;
-///          self.stype = cint.val as i32;
-///           
-///          if self.stype == 0 {
-///              idx += self.unicode.decode_json("unicode",&mainv)?;
-///          } else if self.stype == 1 {
-///              idx += self.ascii.decode_json("ascii",&mainv)?;
-///          } else {
-///              asn1obj_new_error!{SpcStringoBxglRxcBmbANpbzError,"not support {} value decode",self.stype}
-///          }
-///           
-///          return Ok(idx);
-///      }
-///      
-///      fn init_asn1() -> Self {
-///          SpcString {
-///              stype : -1,
-///              unicode : Asn1Imp::init_asn1(),
-///              ascii : Asn1Imp::init_asn1(),
-///          }
-///      }
-///      
-///      fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
-///          let mut ores : Result<usize,Box<dyn Error>>;
-///           
-///          ores = self.unicode.decode_asn1(code);
-///          if ores.is_ok() {
-///              self.stype = 0;
-///              return Ok(ores.unwrap());
-///          }
-///           
-///          ores = self.ascii.decode_asn1(code);
-///          if ores.is_ok() {
-///              self.stype = 1;
-///              return Ok(ores.unwrap());
-///          }
-///           
-///          asn1obj_new_error!{SpcStringoBxglRxcBmbANpbzError,"not supported type"}
-///      }
-///      
-///      fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
-///          let retv :Vec<u8>;
-///           
-///          if self.stype == 0 {
-///              retv = self.unicode.encode_asn1()?;
-///          } else if self.stype == 1 {
-///              retv = self.ascii.encode_asn1()?;
-///          } else {
-///              asn1obj_new_error!{SpcStringoBxglRxcBmbANpbzError,"not supported type {}", self.stype}
-///          }
-///           
-///          Ok(retv)
-///      }
-///      
-///      fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
-///          let  s :String;
-///           
-///          s = asn1_format_line(tab,&format!("{}.stype type {}",name,self.stype));
-///          iowriter.write(s.as_bytes())?;
-///           
-///          if self.stype == 0 {
-///              self.unicode.print_asn1("unicode",tab+1,iowriter)?;
-///          } else if self.stype == 1 {
-///              self.ascii.print_asn1("ascii",tab+1,iowriter)?;
-///          } else {
-///              asn1obj_new_error!{SpcStringoBxglRxcBmbANpbzError,"not supported type {}", self.stype}
-///          }
-///           
-///          Ok(())
-///      }
-///  }
+/// impl Asn1Op for SpcString {
+///     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+///         let mut mainv :serde_json::value::Value = serde_json::json!({});
+///         let mut idx :i32 = 0;
+///         let mut cint :Asn1Integer = Asn1Integer::init_asn1();
+///          
+///         cint.val = self.stype as i64;
+///         idx += cint.encode_json("stype",&mut mainv)?;
+///          
+///         if self.stype == 1 {
+///             idx += self.ascii.encode_json("ascii",&mut mainv)?;
+///         } else if self.stype == 0 {
+///             idx += self.unicode.encode_json("unicode",&mut mainv)?;
+///         } else {
+///             asn1obj_new_error!{SpcStringKbPtsVK5jxJPFrwnError,"not support {} value",self.stype}
+///         }
+///          
+///         if key.len() > 0 {
+///             val[key] = mainv;
+///         } else {
+///             *val = mainv;
+///         }
+///          
+///         return Ok(idx);
+///     }
+///     
+///     fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+///         let mainv :serde_json::value::Value;
+///         let mut idx :i32=0;
+///         let mut cint :Asn1Integer = Asn1Integer::init_asn1();
+///          
+///         if key.len() > 0 {
+///             let k = val.get(key);
+///             if k.is_none() {
+///                 self.stype = -1;
+///                 self.unicode = Asn1Imp::init_asn1();
+///                 self.ascii = Asn1Imp::init_asn1();
+///                 return Ok(0);
+///             }
+///             mainv = serde_json::json!(k.clone());
+///         } else {
+///             mainv = val.clone();
+///         }
+///          
+///         if !mainv.is_object() {
+///             asn1obj_new_error!{SpcStringKbPtsVK5jxJPFrwnError,"not object to decode"}
+///         }
+///          
+///         idx += cint.decode_json("stype",&mainv)?;
+///         self.stype = cint.val as i32;
+///          
+///         if self.stype == 1 {
+///             idx += self.ascii.decode_json("ascii",&mainv)?;
+///         } else if self.stype == 0 {
+///             idx += self.unicode.decode_json("unicode",&mainv)?;
+///         } else {
+///             asn1obj_new_error!{SpcStringKbPtsVK5jxJPFrwnError,"not support {} value decode",self.stype}
+///         }
+///          
+///         return Ok(idx);
+///     }
+///     
+///     fn init_asn1() -> Self {
+///         SpcString {
+///             stype : -1,
+///             unicode : Asn1Imp::init_asn1(),
+///             ascii : Asn1Imp::init_asn1(),
+///             si : si_default(),
+///         }
+///     }
+///     
+///     fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
+///         let mut ores : Result<usize,Box<dyn Error>>;
+///          
+///         ores = self.ascii.decode_asn1(code);
+///         if ores.is_ok() {
+///             self.stype = 1;
+///             return Ok(ores.unwrap());
+///         }
+///          
+///         ores = self.unicode.decode_asn1(code);
+///         if ores.is_ok() {
+///             self.stype = 0;
+///             return Ok(ores.unwrap());
+///         }
+///          
+///         asn1obj_new_error!{SpcStringKbPtsVK5jxJPFrwnError,"not supported type"}
+///     }
+///     
+///     fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+///         let retv :Vec<u8>;
+///          
+///         if self.stype == 1 {
+///             retv = self.ascii.encode_asn1()?;
+///         } else if self.stype == 0 {
+///             retv = self.unicode.encode_asn1()?;
+///         } else {
+///             asn1obj_new_error!{SpcStringKbPtsVK5jxJPFrwnError,"not supported type {}", self.stype}
+///         }
+///          
+///         Ok(retv)
+///     }
+///     
+///     fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+///         let  s :String;
+///          
+///         s = asn1_format_line(tab,&format!("{}.stype type {}",name,self.stype));
+///         iowriter.write(s.as_bytes())?;
+///          
+///         if self.stype == 1 {
+///             self.ascii.print_asn1("ascii",tab+1,iowriter)?;
+///         } else if self.stype == 0 {
+///             self.unicode.print_asn1("unicode",tab+1,iowriter)?;
+///         } else {
+///             asn1obj_new_error!{SpcStringKbPtsVK5jxJPFrwnError,"not supported type {}", self.stype}
+///         }
+///          
+///         Ok(())
+///     }
+/// }
+/// 
+/// fn si_default() -> i32 {
+///     0
+/// }
+/// 
+/// 
+/// #[derive(Clone)] #[derive(serde :: Serialize)] #[derive(serde :: Deserialize)]
+/// pub struct SpcSerializedObject
+/// { pub classid : Asn1OctData, pub serializeddata : Asn1OctData, }
+/// asn1obj_error_class!{SpcSerializedObjectErrordOH1dDhMpVjPhyVLzDy2}
+/// 
+/// impl Asn1Op for SpcSerializedObject {
+///     
+///     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+///         let mut mainv :serde_json::value::Value = serde_json::json!({});
+///         let mut idx :i32 = 0;
+///         
+///         idx += self.classid.encode_json("classid",&mut mainv)?;
+///         idx += self.serializeddata.encode_json("serializeddata",&mut mainv)?;
+///         
+///         if key.len() > 0 {
+///             val[key] = mainv;
+///         } else {
+///             *val = mainv;
+///         }
+///         
+///         return Ok(idx);
+///     }
+///     
+///     fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+///         let mainv :serde_json::value::Value;
+///         let mut idx :i32=0;
+///         
+///         if key.len() > 0 {
+///             let k = val.get(key);
+///             if k.is_none() {
+///                 self.classid = Asn1OctData::init_asn1();
+///                 self.serializeddata = Asn1OctData::init_asn1();
+///                 return Ok(0);
+///             }
+///             mainv = serde_json::json!(k.clone());
+///         } else {
+///             mainv = val.clone();
+///         }
+///         
+///         if !mainv.is_object() {
+///             asn1obj_new_error!{SpcSerializedObjectErrordOH1dDhMpVjPhyVLzDy2,"not object to decode"}
+///         }
+///         
+///         idx += self.classid.decode_json("classid",&mainv)?;
+///         idx += self.serializeddata.decode_json("serializeddata",&mainv)?;
+///         
+///         return Ok(idx);
+///     }
+///     
+///     fn init_asn1() -> Self {
+///         SpcSerializedObject {
+///             classid : Asn1OctData::init_asn1(),
+///             serializeddata : Asn1OctData::init_asn1(),
+///         }
+///     }
+///     
+///     fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
+///         let mut retv :usize = 0;
+///         let mut _endsize :usize = code.len();
+///         
+///         let ro = self.classid.decode_asn1(&code[retv.._endsize]);
+///         if ro.is_err() {
+///             let e = ro.err().unwrap();
+///             return Err(e);
+///         }
+///         retv += ro.unwrap();
+///         
+///         let ro = self.serializeddata.decode_asn1(&code[retv.._endsize]);
+///         if ro.is_err() {
+///             let e = ro.err().unwrap();
+///             return Err(e);
+///         }
+///         retv += ro.unwrap();
+///         
+///         Ok(retv)
+///         
+///     }
+///     
+///     fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+///         let mut _v8 :Vec<u8> = Vec::new();
+///         let mut encv :Vec<u8>;
+///         
+///         encv = self.classid.encode_asn1()?;
+///         for i in 0..encv.len() {
+///             _v8.push(encv[i]);
+///         }
+///         
+///         encv = self.serializeddata.encode_asn1()?;
+///         for i in 0..encv.len() {
+///             _v8.push(encv[i]);
+///         }
+///         
+///         Ok(_v8)
+///         
+///     }
+///     
+///     fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+///         let mut s :String;
+///         s = asn1_format_line(tab,&format!("{} SpcSerializedObject", name));
+///         iowriter.write(s.as_bytes())?;
+///         
+///         s = format!("classid");
+///         self.classid.print_asn1(&s,tab + 1, iowriter)?;
+///         
+///         s = format!("serializeddata");
+///         self.serializeddata.print_asn1(&s,tab + 1, iowriter)?;
+///         
+///         Ok(())
+///         
+///     }
+///     
+/// }
+/// 
+/// 
+/// #[derive(Clone)] #[derive(serde :: Serialize)] #[derive(serde :: Deserialize)]
+/// pub struct SpcLink
+/// {
+///     pub stype : i32, pub url : Asn1ImpSet < Asn1OctData, 0 > , pub moniker :
+///     Asn1ImpSet < SpcSerializedObject, 1 > , pub file : Asn1ImpSet < SpcString,
+///     2 > ,
+/// }
+/// asn1obj_error_class!{SpcLinkUcpgQzfzIZYlVXm0Error}
 ///  
-///  pub struct SpcSerializedObject
-///  { 
-///  	pub classid : Asn1OctData, 
-///  	pub serializeddata : Asn1OctData, 
-///  }
-///  asn1obj_error_class!{SpcSerializedObjectErrorVn7V9sV9PRMPpFhGypOd}
-///  
-///  impl Asn1Op for SpcSerializedObject {
-///      
-///      fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-///          let mut mainv :serde_json::value::Value = serde_json::json!({});
-///          let mut idx :i32 = 0;
+/// impl Asn1Op for SpcLink {
+///     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+///         let mut mainv :serde_json::value::Value = serde_json::json!({});
+///         let mut idx :i32 = 0;
+///         let mut cint :Asn1Integer = Asn1Integer::init_asn1();
 ///          
-///          idx += self.classid.encode_json("classid",&mut mainv)?;
-///          idx += self.serializeddata.encode_json("serializeddata",&mut mainv)?;
+///         cint.val = self.stype as i64;
+///         idx += cint.encode_json("stype",&mut mainv)?;
 ///          
-///          if key.len() > 0 {
-///              val[key] = mainv;
-///          } else {
-///              *val = mainv;
-///          }
+///         if self.stype == 0 {
+///             idx += self.url.encode_json("url",&mut mainv)?;
+///         } else if self.stype == 2 {
+///             idx += self.file.encode_json("file",&mut mainv)?;
+///         } else if self.stype == 1 {
+///             idx += self.moniker.encode_json("moniker",&mut mainv)?;
+///         } else {
+///             asn1obj_new_error!{SpcLinkUcpgQzfzIZYlVXm0Error,"not support {} value",self.stype}
+///         }
 ///          
-///          return Ok(idx);
-///      }
-///      
-///      fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-///          let mainv :serde_json::value::Value;
-///          let mut idx :i32=0;
+///         if key.len() > 0 {
+///             val[key] = mainv;
+///         } else {
+///             *val = mainv;
+///         }
 ///          
-///          if key.len() > 0 {
-///              let k = val.get(key);
-///              if k.is_none() {
-///                  self.classid = Asn1OctData::init_asn1();
-///                  self.serializeddata = Asn1OctData::init_asn1();
-///                  return Ok(0);
-///              }
-///              mainv = serde_json::json!(k.clone());
-///          } else {
-///              mainv = val.clone();
-///          }
+///         return Ok(idx);
+///     }
+///     
+///     fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+///         let mainv :serde_json::value::Value;
+///         let mut idx :i32=0;
+///         let mut cint :Asn1Integer = Asn1Integer::init_asn1();
 ///          
-///          if !mainv.is_object() {
-///              asn1obj_new_error!{SpcSerializedObjectErrorVn7V9sV9PRMPpFhGypOd,"not object to decode"}
-///          }
+///         if key.len() > 0 {
+///             let k = val.get(key);
+///             if k.is_none() {
+///                 self.stype = -1;
+///                 self.url = Asn1ImpSet::init_asn1();
+///                 self.moniker = Asn1ImpSet::init_asn1();
+///                 self.file = Asn1ImpSet::init_asn1();
+///                 return Ok(0);
+///             }
+///             mainv = serde_json::json!(k.clone());
+///         } else {
+///             mainv = val.clone();
+///         }
 ///          
-///          idx += self.classid.decode_json("classid",&mainv)?;
-///          idx += self.serializeddata.decode_json("serializeddata",&mainv)?;
+///         if !mainv.is_object() {
+///             asn1obj_new_error!{SpcLinkUcpgQzfzIZYlVXm0Error,"not object to decode"}
+///         }
 ///          
-///          return Ok(idx);
-///      }
-///      
-///      fn init_asn1() -> Self {
-///          SpcSerializedObject {
-///              classid : Asn1OctData::init_asn1(),
-///              serializeddata : Asn1OctData::init_asn1(),
-///          }
-///      }
-///      
-///      fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
-///          let mut retv :usize = 0;
-///          let mut _endsize :usize = code.len();
+///         idx += cint.decode_json("stype",&mainv)?;
+///         self.stype = cint.val as i32;
 ///          
-///          let ro = self.classid.decode_asn1(&code[retv.._endsize]);
-///          if ro.is_err() {
-///              let e = ro.err().unwrap();
-///              return Err(e);
-///          }
-///          retv += ro.unwrap();
+///         if self.stype == 0 {
+///             idx += self.url.decode_json("url",&mainv)?;
+///         } else if self.stype == 2 {
+///             idx += self.file.decode_json("file",&mainv)?;
+///         } else if self.stype == 1 {
+///             idx += self.moniker.decode_json("moniker",&mainv)?;
+///         } else {
+///             asn1obj_new_error!{SpcLinkUcpgQzfzIZYlVXm0Error,"not support {} value decode",self.stype}
+///         }
 ///          
-///          let ro = self.serializeddata.decode_asn1(&code[retv.._endsize]);
-///          if ro.is_err() {
-///              let e = ro.err().unwrap();
-///              return Err(e);
-///          }
-///          retv += ro.unwrap();
+///         return Ok(idx);
+///     }
+///     
+///     fn init_asn1() -> Self {
+///         SpcLink {
+///             stype : -1,
+///             url : Asn1ImpSet::init_asn1(),
+///             moniker : Asn1ImpSet::init_asn1(),
+///             file : Asn1ImpSet::init_asn1(),
+///         }
+///     }
+///     
+///     fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
+///         let mut ores : Result<usize,Box<dyn Error>>;
 ///          
-///          Ok(retv)
+///         ores = self.url.decode_asn1(code);
+///         if ores.is_ok() {
+///             self.stype = 0;
+///             return Ok(ores.unwrap());
+///         }
 ///          
-///      }
-///      
-///      fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
-///          let mut _v8 :Vec<u8> = Vec::new();
-///          let mut encv :Vec<u8>;
+///         ores = self.file.decode_asn1(code);
+///         if ores.is_ok() {
+///             self.stype = 2;
+///             return Ok(ores.unwrap());
+///         }
 ///          
-///          encv = self.classid.encode_asn1()?;
-///          for i in 0..encv.len() {
-///              _v8.push(encv[i]);
-///          }
+///         ores = self.moniker.decode_asn1(code);
+///         if ores.is_ok() {
+///             self.stype = 1;
+///             return Ok(ores.unwrap());
+///         }
 ///          
-///          encv = self.serializeddata.encode_asn1()?;
-///          for i in 0..encv.len() {
-///              _v8.push(encv[i]);
-///          }
+///         asn1obj_new_error!{SpcLinkUcpgQzfzIZYlVXm0Error,"not supported type"}
+///     }
+///     
+///     fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
+///         let retv :Vec<u8>;
 ///          
-///          Ok(_v8)
+///         if self.stype == 0 {
+///             retv = self.url.encode_asn1()?;
+///         } else if self.stype == 2 {
+///             retv = self.file.encode_asn1()?;
+///         } else if self.stype == 1 {
+///             retv = self.moniker.encode_asn1()?;
+///         } else {
+///             asn1obj_new_error!{SpcLinkUcpgQzfzIZYlVXm0Error,"not supported type {}", self.stype}
+///         }
 ///          
-///      }
-///      
-///      fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
-///          let mut s :String;
-///          s = asn1_format_line(tab,&format!("{} SpcSerializedObject", name));
-///          iowriter.write(s.as_bytes())?;
+///         Ok(retv)
+///     }
+///     
+///     fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
+///         let  s :String;
 ///          
-///          s = format!("classid");
-///          self.classid.print_asn1(&s,tab + 1, iowriter)?;
+///         s = asn1_format_line(tab,&format!("{}.stype type {}",name,self.stype));
+///         iowriter.write(s.as_bytes())?;
 ///          
-///          s = format!("serializeddata");
-///          self.serializeddata.print_asn1(&s,tab + 1, iowriter)?;
+///         if self.stype == 0 {
+///             self.url.print_asn1("url",tab+1,iowriter)?;
+///         } else if self.stype == 2 {
+///             self.file.print_asn1("file",tab+1,iowriter)?;
+///         } else if self.stype == 1 {
+///             self.moniker.print_asn1("moniker",tab+1,iowriter)?;
+///         } else {
+///             asn1obj_new_error!{SpcLinkUcpgQzfzIZYlVXm0Error,"not supported type {}", self.stype}
+///         }
 ///          
-///          Ok(())
-///          
-///      }
-///      
-///  }
-///  
-///  pub struct SpcLink
-///  {
-///      pub stype : i32, 
-///      pub url : Asn1ImpSet<Asn1OctData, 0>, 
-///      pub moniker :   Asn1ImpSet<SpcSerializedObject, 1>, 
-///      pub file : Asn1ImpSet<SpcString,2>,
-///  }
-///  asn1obj_error_class!{SpcLinkfsdJjYNtcxy2KBuyError}
-///   
-///  impl Asn1Op for SpcLink {
-///      fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-///          let mut mainv :serde_json::value::Value = serde_json::json!({});
-///          let mut idx :i32 = 0;
-///          let mut cint :Asn1Integer = Asn1Integer::init_asn1();
-///           
-///          cint.val = self.stype as i64;
-///          idx += cint.encode_json("stype",&mut mainv)?;
-///           
-///          if self.stype == 1 {
-///              idx += self.moniker.encode_json("moniker",&mut mainv)?;
-///          } else if self.stype == 0 {
-///              idx += self.url.encode_json("url",&mut mainv)?;
-///          } else if self.stype == 2 {
-///              idx += self.file.encode_json("file",&mut mainv)?;
-///          } else {
-///              asn1obj_new_error!{SpcLinkfsdJjYNtcxy2KBuyError,"not support {} value",self.stype}
-///          }
-///           
-///          if key.len() > 0 {
-///              val[key] = mainv;
-///          } else {
-///              *val = mainv;
-///          }
-///           
-///          return Ok(idx);
-///      }
-///      
-///      fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-///          let mainv :serde_json::value::Value;
-///          let mut idx :i32=0;
-///          let mut cint :Asn1Integer = Asn1Integer::init_asn1();
-///           
-///          if key.len() > 0 {
-///              let k = val.get(key);
-///              if k.is_none() {
-///                  self.stype = -1;
-///                  self.url = Asn1ImpSet::init_asn1();
-///                  self.moniker = Asn1ImpSet::init_asn1();
-///                  self.file = Asn1ImpSet::init_asn1();
-///                  return Ok(0);
-///              }
-///              mainv = serde_json::json!(k.clone());
-///          } else {
-///              mainv = val.clone();
-///          }
-///           
-///          if !mainv.is_object() {
-///              asn1obj_new_error!{SpcLinkfsdJjYNtcxy2KBuyError,"not object to decode"}
-///          }
-///           
-///          idx += cint.decode_json("stype",&mainv)?;
-///          self.stype = cint.val as i32;
-///           
-///          if self.stype == 1 {
-///              idx += self.moniker.decode_json("moniker",&mainv)?;
-///          } else if self.stype == 0 {
-///              idx += self.url.decode_json("url",&mainv)?;
-///          } else if self.stype == 2 {
-///              idx += self.file.decode_json("file",&mainv)?;
-///          } else {
-///              asn1obj_new_error!{SpcLinkfsdJjYNtcxy2KBuyError,"not support {} value decode",self.stype}
-///          }
-///           
-///          return Ok(idx);
-///      }
-///      
-///      fn init_asn1() -> Self {
-///          SpcLink {
-///              stype : -1,
-///              url : Asn1ImpSet::init_asn1(),
-///              moniker : Asn1ImpSet::init_asn1(),
-///              file : Asn1ImpSet::init_asn1(),
-///          }
-///      }
-///      
-///      fn decode_asn1(&mut self,code :&[u8]) -> Result<usize,Box<dyn Error>> {
-///          let mut ores : Result<usize,Box<dyn Error>>;
-///           
-///          ores = self.moniker.decode_asn1(code);
-///          if ores.is_ok() {
-///              self.stype = 1;
-///              return Ok(ores.unwrap());
-///          }
-///           
-///          ores = self.url.decode_asn1(code);
-///          if ores.is_ok() {
-///              self.stype = 0;
-///              return Ok(ores.unwrap());
-///          }
-///           
-///          ores = self.file.decode_asn1(code);
-///          if ores.is_ok() {
-///              self.stype = 2;
-///              return Ok(ores.unwrap());
-///          }
-///           
-///          asn1obj_new_error!{SpcLinkfsdJjYNtcxy2KBuyError,"not supported type"}
-///      }
-///      
-///      fn encode_asn1(&self) -> Result<Vec<u8>,Box<dyn Error>> {
-///          let retv :Vec<u8>;
-///           
-///          if self.stype == 1 {
-///              retv = self.moniker.encode_asn1()?;
-///          } else if self.stype == 0 {
-///              retv = self.url.encode_asn1()?;
-///          } else if self.stype == 2 {
-///              retv = self.file.encode_asn1()?;
-///          } else {
-///              asn1obj_new_error!{SpcLinkfsdJjYNtcxy2KBuyError,"not supported type {}", self.stype}
-///          }
-///           
-///          Ok(retv)
-///      }
-///      
-///      fn print_asn1<U :Write>(&self,name :&str,tab :i32, iowriter :&mut U) -> Result<(),Box<dyn Error>> {
-///          let  s :String;
-///           
-///          s = asn1_format_line(tab,&format!("{}.stype type {}",name,self.stype));
-///          iowriter.write(s.as_bytes())?;
-///           
-///          if self.stype == 1 {
-///              self.moniker.print_asn1("moniker",tab+1,iowriter)?;
-///          } else if self.stype == 0 {
-///              self.url.print_asn1("url",tab+1,iowriter)?;
-///          } else if self.stype == 2 {
-///              self.file.print_asn1("file",tab+1,iowriter)?;
-///          } else {
-///              asn1obj_new_error!{SpcLinkfsdJjYNtcxy2KBuyError,"not supported type {}", self.stype}
-///          }
-///           
-///          Ok(())
-///      }
-///  }
-///  ```
+///         Ok(())
+///     }
+/// }
+/// 
+/// ```
 #[proc_macro_attribute]
 pub fn asn1_int_choice(_attr :proc_macro::TokenStream, item :proc_macro::TokenStream) -> proc_macro::TokenStream {
 	return choice::asn1_int_choice(_attr,item);
@@ -1013,12 +1433,12 @@ pub fn asn1_int_choice(_attr :proc_macro::TokenStream, item :proc_macro::TokenSt
 ///  this will expand sequence 
 ///  example
 /// ```rust
-/// use asn1obj_codegen::{asn1_sequence,asn1_ext};
+/// use asn1obj_codegen::{asn1_sequence};
 /// use asn1obj::{asn1obj_error_class,asn1obj_new_error};
 /// use asn1obj::base::*;
 /// use asn1obj::complex::*;
 /// use asn1obj::asn1impl::Asn1Op;
-///  use asn1obj::strop::asn1_format_line;
+/// use asn1obj::strop::asn1_format_line;
 /// 
 /// use num_bigint::{BigUint};
 /// use hex::FromHex;
@@ -1027,9 +1447,8 @@ pub fn asn1_int_choice(_attr :proc_macro::TokenStream, item :proc_macro::TokenSt
 /// use serde_json;
 /// 
 /// #[asn1_sequence()]
-/// #[derive(Clone)]
 /// pub struct Asn1RsaPubkeyElem {
-/// 	#[asn1_ext(initfn=c_default)]
+/// 	#[asn1_gen(initfn=c_default)]
 /// 	pub c :Asn1BigNum,
 /// 	pub n :Asn1BigNum,
 /// 	pub e :Asn1BigNum,
@@ -1040,7 +1459,6 @@ pub fn asn1_int_choice(_attr :proc_macro::TokenStream, item :proc_macro::TokenSt
 /// }
 /// 
 /// #[asn1_sequence()]
-/// #[derive(Clone)]
 /// pub struct Asn1RsaPubkey {
 /// 	pub elem :Asn1Seq<Asn1RsaPubkeyElem>,
 /// }
@@ -1155,11 +1573,11 @@ pub fn asn1_int_choice(_attr :proc_macro::TokenStream, item :proc_macro::TokenSt
 ///         66:bf:0d:44:76:30:68:3d:ea:07:82:74:d8:d3:06:9d    f..Dv0h=...t....
 ///     e: ASN1_BIGNUM 0x00010001
 /// */
+/// 
 /// ```
 ///  internal expand will give
 /// ```rust
 /// #[asn1_sequence()]
-/// #[derive(Clone)]
 /// pub struct Asn1RsaPubkeyElem {
 /// 	#[asn1_ext(initfn=c_default)]
 /// 	pub c :Asn1BigNum,
@@ -1172,7 +1590,6 @@ pub fn asn1_int_choice(_attr :proc_macro::TokenStream, item :proc_macro::TokenSt
 /// }
 /// 
 /// #[asn1_sequence()]
-/// #[derive(Clone)]
 /// pub struct Asn1RsaPubkey {
 /// 	pub elem :Asn1Seq<Asn1RsaPubkeyElem>,
 /// }
@@ -1180,16 +1597,13 @@ pub fn asn1_int_choice(_attr :proc_macro::TokenStream, item :proc_macro::TokenSt
 /// ```
 ///  transfer into
 /// ```rust
-/// #[derive(Clone)] pub struct Asn1RsaPubkeyElem
-/// { 
-///     pub c : Asn1BigNum, 
-///     pub n : Asn1BigNum, 
-///     pub e : Asn1BigNum, 
-/// }
-/// asn1obj_error_class!{Asn1RsaPubkeyElemErrorCDrzpsmb4YFcGAwXvxP4}
+/// #[derive(Clone)] #[derive(serde :: Serialize)] #[derive(serde :: Deserialize)]
+/// pub struct Asn1RsaPubkeyElem
+/// { pub c : Asn1BigNum, pub n : Asn1BigNum, pub e : Asn1BigNum, }
+/// asn1obj_error_class!{Asn1RsaPubkeyElemErrorE3oAm4mPOuymYdvWjdjx}
 /// 
 /// impl Asn1Op for Asn1RsaPubkeyElem {
-/// 
+///     
 ///     fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
 ///         let mut mainv :serde_json::value::Value = serde_json::json!({});
 ///         let mut idx :i32 = 0;
@@ -1223,7 +1637,7 @@ pub fn asn1_int_choice(_attr :proc_macro::TokenStream, item :proc_macro::TokenSt
 ///         }
 ///         
 ///         if !mainv.is_object() {
-///             asn1obj_new_error!{Asn1RsaPubkeyElemErrorCDrzpsmb4YFcGAwXvxP4,"not object to decode"}
+///             asn1obj_new_error!{Asn1RsaPubkeyElemErrorE3oAm4mPOuymYdvWjdjx,"not object to decode"}
 ///         }
 ///         
 ///         idx += self.n.decode_json("n",&mainv)?;
@@ -1297,11 +1711,13 @@ pub fn asn1_int_choice(_attr :proc_macro::TokenStream, item :proc_macro::TokenSt
 ///     
 /// }
 /// 
-/// #[derive(Clone)] pub struct Asn1RsaPubkey
-/// { 
-///     pub elem : Asn1Seq < Asn1RsaPubkeyElem > , 
+/// fn c_default() -> Asn1BigNum {
+///     Asn1BigNum::init_asn1()
 /// }
-/// asn1obj_error_class!{Asn1RsaPubkeyErrorGWvcOeiW8Tlueso6BX95}
+/// 
+/// #[derive(Clone)] #[derive(serde :: Serialize)] #[derive(serde :: Deserialize)]
+/// pub struct Asn1RsaPubkey { pub elem : Asn1Seq < Asn1RsaPubkeyElem > , }
+/// asn1obj_error_class!{Asn1RsaPubkeyErrorRq2Jst3fJUwzyo035vkX}
 /// 
 /// impl Asn1Op for Asn1RsaPubkey {
 ///     

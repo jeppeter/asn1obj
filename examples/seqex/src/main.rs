@@ -3,7 +3,7 @@ use asn1obj::{asn1obj_error_class,asn1obj_new_error};
 use asn1obj::base::*;
 use asn1obj::complex::*;
 use asn1obj::asn1impl::Asn1Op;
- use asn1obj::strop::asn1_format_line;
+use asn1obj::strop::asn1_format_line;
 
 use num_bigint::{BigUint};
 use hex::FromHex;
@@ -12,7 +12,6 @@ use std::io::Write;
 use serde_json;
 
 #[asn1_sequence()]
-#[derive(Clone)]
 pub struct Asn1RsaPubkeyElem {
 	#[asn1_gen(initfn=c_default)]
 	pub c :Asn1BigNum,
@@ -25,7 +24,6 @@ fn c_default() -> Asn1BigNum {
 }
 
 #[asn1_sequence()]
-#[derive(Clone)]
 pub struct Asn1RsaPubkey {
 	pub elem :Asn1Seq<Asn1RsaPubkeyElem>,
 }

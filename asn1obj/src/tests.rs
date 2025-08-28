@@ -2724,11 +2724,11 @@ struct Oany {
 	#[serde(default = "setval_default")]
 	pub setval :Asn1Set<Asn1Any>,
 	#[serde(default = "imp_default")]
-	pub impval :Asn1Imp<Asn1Any>,
+	pub impval :Asn1Imp<Asn1Any,1>,
 	#[serde(default = "exp_default")]
-	pub expval :Asn1Exp<Asn1Any>,
+	pub expval :Asn1Exp<Asn1Any,2>,
 	#[serde(default = "ndef_default")]
-	pub ndefval :Asn1Ndef<Asn1Any>,
+	pub ndefval :Asn1Ndef<Asn1Any,4>,
 	#[serde(default = "bitseq_default")]
 	pub bitseqval :Asn1BitSeq<Asn1Any>,
 }
@@ -2749,15 +2749,15 @@ fn setval_default() -> Asn1Set<Asn1Any> {
 	Asn1Set::init_asn1()
 }
 
-fn imp_default() -> Asn1Imp<Asn1Any> {
+fn imp_default() -> Asn1Imp<Asn1Any,1> {
 	Asn1Imp::init_asn1()
 }
 
-fn exp_default() -> Asn1Exp<Asn1Any> {
+fn exp_default() -> Asn1Exp<Asn1Any,2> {
 	Asn1Exp::init_asn1()
 }
 
-fn ndef_default() -> Asn1Ndef<Asn1Any> {
+fn ndef_default() -> Asn1Ndef<Asn1Any,4> {
 	Asn1Ndef::init_asn1()
 }
 
