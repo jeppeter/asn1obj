@@ -2350,6 +2350,7 @@ impl Asn1Op for IntTest {
 	}
 }
 
+#[derive(Clone,Serialize,Deserialize)]
 struct IntTestSeq {
 	pub elem :Asn1Seq<IntTest>,
 }
@@ -2384,27 +2385,33 @@ impl Asn1Op for IntTestSeq {
 
 #[test]
 fn test_a050() {
-	let mut a1 :IntTestSeq = IntTestSeq::init_asn1();
-	let s = format!(r#"
+	let mut a1 :IntTestSeq ;
+	let s = format!(r#"{{
+		"elem" : [
 		{{
 			"seltype" : 1,
-			"ccv" : "1.7.222"
-		}}
+			"ccv" : "1.7.222",
+			"bbv" : "0x0",
+			"ddv" : ""
+		}}] }}
 		"#);
-	let val = serde_json::from_str(&s).unwrap();
-	let _ = a1.decode_json("",&val).unwrap();
+	a1 = serde_json::from_str(&s).unwrap();
 	assert!(a1.elem.val[0].ccv.get_value() == "1.7.222");
 	assert_eq!(a1.elem.val[0].bbv.val, BigUint::parse_bytes(b"0",16).unwrap());
 	assert_eq!(a1.elem.val[0].ddv.val, "");
 	assert_eq!(a1.elem.val[0].ddv.flag, ASN1_PRINTABLE_FLAG);
-	let val = serde_json::json!([{
+	let ns = format!(r#"{{ "elem" : [{{
 			"seltype" : 1,
-			"ccv" : "1.7.222"
-	},{
+			"ccv" : "1.7.222",
+			"bbv" : "0x0",
+			"ddv" : ""
+	}},{{
 			"seltype" : 2,
-			"bbv" : "22ddee0000000222"
-	}]);
-	let _ = a1.decode_json("",&val).unwrap();
+			"ccv" : "{}",
+			"bbv" : "0x22ddee0000000222",
+			"ddv" : ""
+	}}] }}"#,ASN1_OBJECT_DEFAULT_STR);
+	a1 = serde_json::from_str(&ns).unwrap();
 	assert_eq!(a1.elem.val.len(), 2);
 	assert!(a1.elem.val[0].seltype  == 1);
 	assert!(a1.elem.val[0].ccv.get_value() == "1.7.222");
@@ -2418,15 +2425,20 @@ fn test_a050() {
 	assert_eq!(a1.elem.val[1].ddv.val, "");
 	assert_eq!(a1.elem.val[1].ddv.flag, ASN1_PRINTABLE_FLAG);
 
-	let mut cv = serde_json::json!({});
-	let _ = a1.encode_json("",&mut cv).unwrap();
-	assert!(cv == serde_json::json!([{
-		"seltype" : 1,
-		"ccv" : "1.7.222"
-	},{
-		"seltype" : 2,
-		"bbv" : "22ddee0000000222"
-	}]));
+	let ncs = serde_json::to_string(&a1).unwrap();
+	let  cv :serde_json::value::Value = serde_json::from_str(&ncs).unwrap();
+	assert!(cv["elem"][0]["seltype"] == serde_json::json!(1));
+	assert!(cv["elem"][0]["ccv"] == serde_json::json!("1.7.222"));
+	assert!(cv["elem"][0]["bbv"] == serde_json::json!("0x0"));
+	assert!(cv["elem"][0]["ddv"][ASN1_JSON_PRINTABLE_STRING] == serde_json::json!(""));
+	assert!(cv["elem"][0]["ddv"][ASN1_JSON_INNER_FLAG] == serde_json::json!(ASN1_PRINTABLE_FLAG));
+
+	assert!(cv["elem"][1]["seltype"] == serde_json::json!(2));
+	assert!(cv["elem"][1]["ccv"] == serde_json::json!(ASN1_OBJECT_DEFAULT_STR));
+	assert!(cv["elem"][1]["bbv"] == serde_json::json!("0x22ddee0000000222"));
+	assert!(cv["elem"][1]["ddv"][ASN1_JSON_PRINTABLE_STRING] == serde_json::json!(""));
+	assert!(cv["elem"][1]["ddv"][ASN1_JSON_INNER_FLAG] == serde_json::json!(ASN1_PRINTABLE_FLAG));
+
 }
 
 #[asn1_sequence()]
@@ -2443,31 +2455,30 @@ struct CCTestautoSeq {
 
 #[test]
 fn test_a051() {
-	let mut a1 :CCTestautoSeq = CCTestautoSeq::init_asn1();
-	let s = format!(r#"
-		{{
+	let mut a1 :CCTestautoSeq;
+	let s = format!(r#"{{
+		"elem":[{{
 			"ccv" : "1.7.222",
-			"bbv" : "22ddee0000000222",
+			"bbv" : "0x22ddee0000000222",
 			"ddv" : "hello world"
-		}}
+		}}] }}
 		"#);
-	let val = serde_json::from_str(&s).unwrap();
-	let _ = a1.decode_json("",&val).unwrap();
+	a1 = serde_json::from_str(&s).unwrap();
 	assert!(a1.elem.val[0].ccv.get_value() == "1.7.222");
 	assert_eq!(a1.elem.val[0].bbv.val, BigUint::parse_bytes(b"22ddee0000000222",16).unwrap());
 	assert_eq!(a1.elem.val[0].ddv.val, "hello world");
 	assert_eq!(a1.elem.val[0].ddv.flag, ASN1_PRINTABLE_FLAG);
-	let val = serde_json::json!([{
+	let ns = format!(r#"{{ "elem" :  [{{
 			"ccv" : "1.7.227",
-			"bbv" : "22ddee000000022d",
+			"bbv" : "0x22ddee000000022d",
 			"ddv" : "hello worldst"		
-	},{
+	}},{{
 			"ccv" : "1.7.222",
-			"bbv" : "22ddee0000000222",
+			"bbv" : "0x22ddee0000000222",
 			"ddv" : "hello world"
 
-	}]);
-	let _ = a1.decode_json("",&val).unwrap();
+	}}]"#);
+	a1 = serde_json::from_str(&ns).unwrap();
 	assert_eq!(a1.elem.val.len(), 2);
 	assert!(a1.elem.val[0].ccv.get_value() == "1.7.227");
 	assert_eq!(a1.elem.val[0].bbv.val, BigUint::parse_bytes(b"22ddee000000022d",16).unwrap());
@@ -2479,11 +2490,18 @@ fn test_a051() {
 	assert_eq!(a1.elem.val[1].ddv.val, "hello world");
 	assert_eq!(a1.elem.val[1].ddv.flag, ASN1_PRINTABLE_FLAG);
 
-	let mut cv = serde_json::json!({});
-	let _ = a1.encode_json("",&mut cv).unwrap();
-	assert!(cv[0]["ccv"] == serde_json::json!("1.7.227"));
-	assert!(cv[0]["bbv"] == serde_json::json!("22ddee000000022d"));
-	assert!(cv[0]["ddv"][ASN1_JSON_PRINTABLE_STRING] == serde_json::json!("hello worldst"));
+	let ncs = serde_json::to_string(&a1).unwrap();
+	let  cv :serde_json::value::Value = serde_json::from_str(&ncs).unwrap();
+	assert!(cv["elem"][0]["ccv"] == serde_json::json!("1.7.227"));
+	assert!(cv["elem"][0]["bbv"] == serde_json::json!("0x22ddee000000022d"));
+	assert!(cv["elem"][0]["ddv"][ASN1_JSON_PRINTABLE_STRING] == serde_json::json!("hello worldst"));
+	assert!(cv["elem"][0]["ddv"][ASN1_JSON_INNER_FLAG] == serde_json::json!(ASN1_PRINTABLE_FLAG));
+
+	assert!(cv["elem"][1]["ccv"] == serde_json::json!("1.7.222"));
+	assert!(cv["elem"][1]["bbv"] == serde_json::json!("0x22ddee0000000222"));
+	assert!(cv["elem"][1]["ddv"][ASN1_JSON_PRINTABLE_STRING] == serde_json::json!("hello world"));
+	assert!(cv["elem"][1]["ddv"][ASN1_JSON_INNER_FLAG] == serde_json::json!(ASN1_PRINTABLE_FLAG));
+
 }
 
 #[asn1_obj_selector(selector=stype,ccv="1.2.3",bbv="1.2.4",ddv="1.2.5",ddv=default)]
