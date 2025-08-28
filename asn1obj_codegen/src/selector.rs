@@ -69,7 +69,7 @@ impl ObjSelectorSyn {
 	}
 
 	pub fn set_matches(&mut self, k :&str, v :&str) -> Result<(),Box<dyn Error>> {
-		//asn1_gen_log_trace!("k [{}] v [{}]",k,v);
+		asn1_gen_log_trace!("k [{}] v [{}]",k,v);
 		if k == "selector" {
 			self.selname = format!("{}",v);
 		} else if v == "default" {
@@ -563,6 +563,7 @@ impl syn::parse::Parse for ObjSelectorSyn {
 		loop {
 			if input.peek(syn::Ident) {
 				let c :syn::Ident = input.parse()?;
+				asn1_gen_log_trace!("c [{}]",c);
 				if iskey {
 					k.push_str(&format!("{}",c));
 				} else {
@@ -576,6 +577,7 @@ impl syn::parse::Parse for ObjSelectorSyn {
 					}
 				}
 			} else if input.peek(syn::LitStr) {
+				asn1_gen_log_trace!(" ");
 				let c :syn::LitStr = input.parse()?;
 				if iskey {
 					k.push_str(&format!("{}",c.value()));
@@ -591,6 +593,7 @@ impl syn::parse::Parse for ObjSelectorSyn {
 				}
 
 			} else if input.peek(syn::token::Bracket) {
+				asn1_gen_log_trace!(" ");
 				let con ;
 				if iskey {
 					let c = format!("need must set after =");
@@ -652,12 +655,21 @@ impl syn::parse::Parse for ObjSelectorSyn {
 					}
 				}
 			} else if input.peek(syn::Token![=]) {
+				asn1_gen_log_trace!(" ");
 				let _c : syn::token::Eq = input.parse()?;
 				iskey = false;
 			} else if input.peek(syn::Token![,]) {
+				asn1_gen_log_trace!(" ");
 				let _c : syn::token::Comma = input.parse()?;
 				if k.len() == 0  {
 					let c = format!("need set k format");
+					asn1_gen_log_error!("{}",c);
+					return Err(syn::Error::new(input.span(),&c));
+				}
+				let ores = retv.set_matches(&k,&v);
+				if ores.is_err() {
+					let e = ores.err().unwrap();
+					let c =format!("{:?}",e);
 					asn1_gen_log_error!("{}",c);
 					return Err(syn::Error::new(input.span(),&c));
 				}
@@ -665,6 +677,7 @@ impl syn::parse::Parse for ObjSelectorSyn {
 				k = "".to_string();
 				v = "".to_string();
 			} else if input.peek(syn::Token![.]) {
+				asn1_gen_log_trace!(" ");
 				let _c : syn::token::Dot = input.parse()?;
 				if iskey {
 					k.push_str(".");
@@ -672,7 +685,9 @@ impl syn::parse::Parse for ObjSelectorSyn {
 					v.push_str(".");
 				}
 			} else {
+				asn1_gen_log_trace!(" ");
 				if input.is_empty() {
+					asn1_gen_log_trace!(" ");
 					if k.len() != 0  {
 						let ov = retv.set_matches(&k,&v);
 						if ov.is_err() {
@@ -788,7 +803,7 @@ pub fn asn1_obj_selector(_attr :proc_macro::TokenStream,item :proc_macro::TokenS
 		}
 	}
 
-	if !isclone {
+	if !isclone && selcs.tokenvalue.is_clone {
 		let cloneattr = syn::parse_quote!{
 			#[derive(Clone)]
 		};

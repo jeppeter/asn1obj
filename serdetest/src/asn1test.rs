@@ -35,10 +35,10 @@ use std::io::Write;
 
 use asn1obj::base::*;
 use asn1obj::complex::*;
-use asn1obj::asn1impl::Asn1Op;
+use asn1obj::asn1impl::{Asn1Op,Asn1Selector};
 use asn1obj::strop::asn1_format_line;
 use asn1obj::{asn1obj_new_error,asn1obj_error_class};
-use asn1obj_codegen::asn1_sequence;
+use asn1obj_codegen::{asn1_sequence,asn1_obj_selector,asn1_int_choice,asn1_choice};
 
 
 extargs_error_class!{Asn1TestError}
@@ -92,13 +92,100 @@ fn asn1load_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSetImp
 }
 
 
+#[derive(Clone,Serialize,Deserialize)]
+#[asn1_obj_selector(noclone,noserialize,nodeserialize,selector=stype,ccv="1.2.3",bbv="1.2.4",ddv="1.2.5",ddv=default)]
+struct BBSelectorauto {
+	pub stype :Asn1Object,
+}
+
+#[derive(Clone,Serialize,Deserialize)]
+#[asn1_choice(noclone,noserialize,nodeserialize,selector=seltype)]
+struct BBTestauto {
+	pub seltype :BBSelectorauto,
+	pub ccv :Asn1Object,
+	pub bbv :Asn1BigNum,
+	pub ddv :Asn1PrintableString,
+}
+
+#[derive(Clone,Serialize,Deserialize)]
+#[asn1_sequence(noclone,noserialize,nodeserialize)]
+struct BBTestautoSeq {
+	pub elem :Asn1Seq<BBTestauto>,
+}
 
 
-#[extargs_map_function(asn1load_handler)]
+fn asn1objload_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSetImpl>>>,_ctx :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
+	let sarr :Vec<String> = ns.get_array("subnargs");
+
+	init_log(ns.clone())?;
+
+	if sarr.len() < 1 {
+		extargs_new_error!{Asn1TestError,"need binfile"}
+	}
+
+	for f in sarr.iter() {
+		let s = read_file(f)?;
+		let pat :BBTestautoSeq = serde_json::from_str(&s)?;
+		let mut f = std::io::stdout();
+		pat.print_asn1("BBTestautoSeq",0,&mut f)?;
+
+		let outs = serde_json::to_string_pretty(&pat)?;
+		println!("outs\n{}",outs);
+	}
+
+	Ok(())
+}
+
+#[derive(Clone,Serialize,Deserialize)]
+#[asn1_int_choice(noclone,noserialize,nodeserialize,ccv=1,bbv=2,ddv=3,selector=seltype)]
+struct IntTestauto {
+	pub seltype :i32,
+	pub ccv :Asn1Object,
+	pub bbv :Asn1BigNum,
+	pub ddv :Asn1PrintableString,
+}
+
+
+#[derive(Clone,Serialize,Deserialize)]
+#[asn1_sequence(noclone,noserialize,nodeserialize)]
+struct IntTestautoSeq {
+	pub elem :Asn1Seq<IntTestauto>,
+}
+
+fn asn1intload_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSetImpl>>>,_ctx :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
+	let sarr :Vec<String> = ns.get_array("subnargs");
+
+	init_log(ns.clone())?;
+
+	if sarr.len() < 1 {
+		extargs_new_error!{Asn1TestError,"need binfile"}
+	}
+
+	for f in sarr.iter() {
+		let s = read_file(f)?;
+		let pat :IntTestautoSeq = serde_json::from_str(&s)?;
+		let mut f = std::io::stdout();
+		pat.print_asn1("IntTestautoSeq",0,&mut f)?;
+
+		let outs = serde_json::to_string_pretty(&pat)?;
+		println!("outs\n{}",outs);
+	}
+
+	Ok(())
+}
+
+
+#[extargs_map_function(asn1load_handler,asn1objload_handler,asn1intload_handler)]
 pub fn load_asn1_command(parser :ExtArgsParser) -> Result<(),Box<dyn Error>> {
 	let cmdline = format!(r#"
 	{{
 		"asn1load<asn1load_handler>##jsonfile ... to load ##" : {{
+			"$" : "+"
+		}},
+		"asn1objload<asn1objload_handler>##jsonfile ... to load ##" : {{
+			"$" : "+"
+		}},
+		"asn1intload<asn1intload_handler>##jsonfile ... to load ##" : {{
 			"$" : "+"
 		}}
 	}}

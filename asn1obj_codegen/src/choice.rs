@@ -1197,7 +1197,7 @@ pub fn asn1_choice(_attr : proc_macro::TokenStream,item : proc_macro::TokenStrea
 		}
 	}
 
-	if !isclone {
+	if !isclone && cs.tokenvalue.is_clone {
 		let cloneattr = syn::parse_quote!{
 			#[derive(Clone)]
 		};
@@ -1317,7 +1317,7 @@ pub fn asn1_int_choice(_attr : proc_macro::TokenStream, item : proc_macro::Token
 		}
 	}
 
-	if !isclone {
+	if !isclone && cs.tokenvalue.is_clone {
 		let cloneattr = syn::parse_quote!{
 			#[derive(Clone)]
 		};

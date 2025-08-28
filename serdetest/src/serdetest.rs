@@ -9,7 +9,7 @@ use extargsparse_worker::argset::{ArgSetImpl};
 use extargsparse_worker::parser::{ExtArgsParser};
 use extargsparse_worker::funccall::{ExtArgsParseFunc};
 
-use serde::{Serialize,Deserialize,de::DeserializeOwned};
+use serde::{Serialize,Deserialize};
 
 use std::cell::RefCell;
 use std::sync::Arc;
