@@ -1755,48 +1755,22 @@ fn test_a039() {
 
 #[test]
 fn test_a040() {
-	let mut a1 :Asn1BigNum = Asn1BigNum::init_asn1();
-	let val :serde_json::value::Value = serde_json::from_str(&format!(r#""2244ccddeeff""#)).unwrap();
-	let _ = a1.decode_json("",&val).unwrap();
+	let s = format!(r#""0x2244ccddeeff""#);
+	let a1 :Asn1BigNum = serde_json::from_str(&s).unwrap();
 	assert!(a1.val == BigUint::parse_bytes(b"2244ccddeeff",16).unwrap());
-	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-	let _ = a1.encode_json("",&mut cv).unwrap();
-	assert!(cv == serde_json::json!("2244ccddeeff"));
-	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
-		"hello" : "2244ccddeefe"
-	}}"#)).unwrap();
-	let _ = a1.decode_json("hello",&val).unwrap();
-	assert!(a1.val == BigUint::parse_bytes(b"2244ccddeefe",16).unwrap());
-	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-	let _ = a1.encode_json("hello",&mut cv).unwrap();
-	assert!(cv["hello"] == serde_json::json!("2244ccddeefe"));
+	let ns = serde_json::to_string(&a1).unwrap();
+	let cv :serde_json::value::Value = serde_json::from_str(&ns).unwrap();
+	assert!(cv == serde_json::json!("0x2244ccddeeff"));
 }
 
 #[test]
 fn test_a041() {
-	let mut a1 :Asn1Opt<Asn1BigNum> = Asn1Opt::init_asn1();
-	let val :serde_json::value::Value = serde_json::from_str(&format!(r#""2244ccddeeff""#)).unwrap();
-	let _ = a1.decode_json("",&val).unwrap();
+	let s = format!(r#""0x2244ccddeeff""#);
+	let a1 :Asn1Opt<Asn1BigNum> = serde_json::from_str(&s).unwrap();
 	assert!(a1.val.as_ref().unwrap().val == BigUint::parse_bytes(b"2244ccddeeff",16).unwrap());
-	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-	let _ = a1.encode_json("",&mut cv).unwrap();
-	assert!(cv == serde_json::json!("2244ccddeeff"));
-	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
-		"hello" : "2244ccddeefe"
-	}}"#)).unwrap();
-	let _ = a1.decode_json("hello",&val).unwrap();
-	assert!(a1.val.as_ref().unwrap().val == BigUint::parse_bytes(b"2244ccddeefe",16).unwrap());
-	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-	let _ = a1.encode_json("hello",&mut cv).unwrap();
-	assert!(cv["hello"] == serde_json::json!("2244ccddeefe"));
-	let val :serde_json::value::Value = serde_json::from_str(&format!(r#"{{
-		"hello2" : "2244ccddeefe"
-	}}"#)).unwrap();
-	let _ = a1.decode_json("hello",&val).unwrap();
-	assert!(a1.val.is_none());
-	let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-	let _ = a1.encode_json("hello",&mut cv).unwrap();
-	assert!(cv  == serde_json::json!({}));
+	let ns = serde_json::to_string(&a1).unwrap();
+	let cv :serde_json::value::Value = serde_json::from_str(&ns).unwrap();
+	assert!(cv == serde_json::json!("0x2244ccddeeff"));
 }
 
 #[test]
