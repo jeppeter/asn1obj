@@ -2477,7 +2477,7 @@ fn test_a051() {
 			"bbv" : "0x22ddee0000000222",
 			"ddv" : "hello world"
 
-	}}]"#);
+	}}] }}"#);
 	a1 = serde_json::from_str(&ns).unwrap();
 	assert_eq!(a1.elem.val.len(), 2);
 	assert!(a1.elem.val[0].ccv.get_value() == "1.7.227");
