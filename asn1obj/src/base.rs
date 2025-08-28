@@ -2525,7 +2525,7 @@ impl<'de> serde::de::Deserialize<'de> for Asn1PrintableString {
     fn deserialize<D>(deserializer :D) -> Result<Self, D::Error>
         where D: serde::de::Deserializer<'de> {
             let visitor :Asn1PrintableStringVisitor = Asn1PrintableStringVisitor::new();
-            deserializer.deserialize_map(visitor)
+            deserializer.deserialize_any(visitor)
         }
 }
 

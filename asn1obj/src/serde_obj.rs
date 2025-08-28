@@ -473,6 +473,20 @@ impl<'de> serde::de::Visitor<'de> for Asn1PrintableStringVisitor {
 	}
 
 
+	fn visit_str<E>(self,val :&str) -> Result<Asn1PrintableString,E> 
+	where E: serde::de::Error {
+		let mut retv :Asn1PrintableString = Asn1PrintableString::init_asn1();
+		retv.val = format!("{}", val);
+		Ok(retv)
+	}
+
+	fn visit_string<E>(self,val :String) -> Result<Asn1PrintableString,E> 
+	where E: serde::de::Error {
+		let mut retv :Asn1PrintableString = Asn1PrintableString::init_asn1();
+		retv.val = format!("{}", val);
+		Ok(retv)
+	}
+
 
 	fn visit_map<A>(self, mut mapv: A) -> Result<Asn1PrintableString, A::Error>
 	where A: serde::de::MapAccess<'de>,
@@ -506,6 +520,9 @@ impl<'de> serde::de::Visitor<'de> for Asn1PrintableStringVisitor {
 
 		if tagv.is_some() {
 			oany.flag = (*tagv.as_ref().unwrap()) as u8;
+			if oany.flag != ASN1_PRINTABLE_FLAG && oany.flag != ASN1_PRINTABLE2_FLAG && oany.flag != ASN1_UTF8STRING_FLAG && oany.flag != ASN1_T61STRING_FLAG {
+				return Err(serde::de::Error::custom(&format!("{} not valid flag", oany.flag)));
+			}
 		}
 
 		if contentv.is_some() {
