@@ -3008,17 +3008,76 @@ fn bmp_default() -> Asn1BMPString {
 fn test_a058() {
 	let mut iv :Iany = Iany::init_asn1();
 	let mut s :String;
-	let mut fo = std::io::stderr();
+	let mut cv :serde_json::value::Value;
 	let ival :Asn1Integer = Asn1Integer::init_asn1();
 
 	s = serde_json::to_string(&iv).unwrap();
-	s.push_str("\n");
-	fo.write_all(s.as_bytes()).unwrap();
+	cv = serde_json::from_str(&s).unwrap();
+	assert_eq!(cv["ibval"],serde_json::json!(null));
+	assert_eq!(cv["bbval"],serde_json::json!(null));
+	assert_eq!(cv["iimpsetval"],serde_json::json!([]));
+	assert_eq!(cv["iseqval"],serde_json::json!([]));
+	assert_eq!(cv["isetval"],serde_json::json!([]));
+	assert_eq!(cv["bisetval"],serde_json::json!([]));
+	assert_eq!(cv["iimpval"],serde_json::json!(0));
+	assert_eq!(cv["iexpval"],serde_json::json!(0));
+	assert_eq!(cv["indefval"],serde_json::json!(null));
+	assert_eq!(cv["ibitseqval"],serde_json::json!(0));
+	assert_eq!(cv["bitdataval"],serde_json::json!([]));
+	assert_eq!(cv["bitdataflagval"][ASN1_JSON_INNER_FLAG],serde_json::json!(0));
+	assert_eq!(cv["bitdataflagval"][ASN1_JSON_BITDATA],serde_json::json!([]));
+	assert_eq!(cv["octstrval"],serde_json::json!(""));
+	assert_eq!(cv["octdataval"],serde_json::json!([]));
+	assert_eq!(cv["nulval"],serde_json::json!(null));
+	assert_eq!(cv["objval"],serde_json::json!(ASN1_OBJECT_DEFAULT_STR));
+	assert_eq!(cv["enumval"],serde_json::json!(0));
+	assert_eq!(cv["strval"],serde_json::json!(""));
+	assert_eq!(cv["psval"][ASN1_JSON_INNER_FLAG],serde_json::json!(ASN1_PRINTABLE_FLAG));
+	assert_eq!(cv["psval"][ASN1_JSON_PRINTABLE_STRING],serde_json::json!(""));
+
+	assert_eq!(cv["ia5val"][ASN1_JSON_INNER_FLAG],serde_json::json!(ASN1_PRINTABLE2_FLAG));
+	assert_eq!(cv["ia5val"][ASN1_JSON_IA5STRING],serde_json::json!(""));
+	assert_eq!(cv["tmval"][ASN1_JSON_INNER_FLAG],serde_json::json!(ASN1_UTCTIME_FLAG));
+	assert_eq!(cv["tmval"][ASN1_JSON_TIME],serde_json::json!(ASN1_TIME_DEFAULT_STR));
+	assert_eq!(cv["bnval"],serde_json::json!("0x0"));
+	assert_eq!(cv["bmpval"],serde_json::json!(""));
+
+
 
 	iv.ibval.val = Some(ival.clone());
 	s = serde_json::to_string(&iv).unwrap();
-	s.push_str("\n");
-	fo.write_all(s.as_bytes()).unwrap();
+	cv = serde_json::from_str(&s).unwrap();
+
+	assert_eq!(cv["ibval"],serde_json::json!(0));
+	assert_eq!(cv["bbval"],serde_json::json!(null));
+	assert_eq!(cv["iimpsetval"],serde_json::json!([]));
+	assert_eq!(cv["iseqval"],serde_json::json!([]));
+	assert_eq!(cv["isetval"],serde_json::json!([]));
+	assert_eq!(cv["bisetval"],serde_json::json!([]));
+	assert_eq!(cv["iimpval"],serde_json::json!(0));
+	assert_eq!(cv["iexpval"],serde_json::json!(0));
+	assert_eq!(cv["indefval"],serde_json::json!(null));
+	assert_eq!(cv["ibitseqval"],serde_json::json!(0));
+	assert_eq!(cv["bitdataval"],serde_json::json!([]));
+	assert_eq!(cv["bitdataflagval"][ASN1_JSON_INNER_FLAG],serde_json::json!(0));
+	assert_eq!(cv["bitdataflagval"][ASN1_JSON_BITDATA],serde_json::json!([]));
+	assert_eq!(cv["octstrval"],serde_json::json!(""));
+	assert_eq!(cv["octdataval"],serde_json::json!([]));
+	assert_eq!(cv["nulval"],serde_json::json!(null));
+	assert_eq!(cv["objval"],serde_json::json!(ASN1_OBJECT_DEFAULT_STR));
+	assert_eq!(cv["enumval"],serde_json::json!(0));
+	assert_eq!(cv["strval"],serde_json::json!(""));
+	assert_eq!(cv["psval"][ASN1_JSON_INNER_FLAG],serde_json::json!(ASN1_PRINTABLE_FLAG));
+	assert_eq!(cv["psval"][ASN1_JSON_PRINTABLE_STRING],serde_json::json!(""));
+
+	assert_eq!(cv["ia5val"][ASN1_JSON_INNER_FLAG],serde_json::json!(ASN1_PRINTABLE2_FLAG));
+	assert_eq!(cv["ia5val"][ASN1_JSON_IA5STRING],serde_json::json!(""));
+	assert_eq!(cv["tmval"][ASN1_JSON_INNER_FLAG],serde_json::json!(ASN1_UTCTIME_FLAG));
+	assert_eq!(cv["tmval"][ASN1_JSON_TIME],serde_json::json!(ASN1_TIME_DEFAULT_STR));
+	assert_eq!(cv["bnval"],serde_json::json!("0x0"));
+	assert_eq!(cv["bmpval"],serde_json::json!(""));
+
+
 		
 	s = format!(r#"{{
 		"ibval" : 5,
@@ -3050,9 +3109,32 @@ fn test_a058() {
 		ASN1_JSON_INNER_FLAG,ASN1_PRINTABLE2_FLAG,ASN1_JSON_PRINTABLE_STRING,
 		ASN1_JSON_INNER_FLAG,ASN1_PRINTABLE2_FLAG,ASN1_JSON_IA5STRING);
 	iv = serde_json::from_str(&s).unwrap();
-	let _ = iv.print_asn1("co",0,&mut fo).unwrap();
+	assert_eq!(iv.ibval.val.as_ref().unwrap().val,5);
+	assert_eq!(iv.bbval.val.as_ref().unwrap().val,true);
+	assert_eq!(iv.iimpsetval.val.len(),0);
+	assert_eq!(iv.iseqval.val.len(),0);
+	assert_eq!(iv.isetval.val.len(),0);
+	assert_eq!(iv.bisetval.val[0].val,"ccss");
+	assert_eq!(iv.iimpval.val.val, 0);
+	assert_eq!(iv.iexpval.val.val,0);
+	assert!(iv.indefval.val.is_none());
+	assert_eq!(iv.ibitseqval.val.val,0);
+	assert_eq!(iv.bitdataval.data,vec![33,21]);
+	assert_eq!(iv.bitdataflagval.data,vec![20,30]);
+	assert_eq!(iv.bitdataflagval.flag,0);
+	assert_eq!(iv.octstrval.val,"xxs2w2");
+	assert_eq!(iv.octdataval.data,vec![99,123,251]);
+	assert_eq!(iv.objval.get_value(),"2.111019.22.99");
+	assert_eq!(iv.enumval.val,0x29992992);
+	assert_eq!(iv.strval.val,"long str value");
+	assert_eq!(iv.psval.val,"printable string");
+	assert_eq!(iv.psval.flag,ASN1_PRINTABLE2_FLAG);
+	assert_eq!(iv.ia5val.val,"ia5 string");
+	assert_eq!(iv.ia5val.flag,ASN1_PRINTABLE2_FLAG);
+	assert_eq!(iv.tmval.get_value_str(),"2022-02-05 02:15:22");
+	assert_eq!(iv.tmval.get_utag(),ASN1_UTCTIME_FLAG);
+	let data = vec![20,22,210,202,99,11,11,33,22,11,112,221,99,190];
+	assert_eq!(iv.bnval.val,BigUint::from_bytes_be(&data));
+	assert_eq!(iv.bmpval.val,"BMP String");
 
-	s = format!("ibval {}", iv.ibval.val.as_ref().unwrap().val);
-	s.push_str("\n");
-	fo.write_all(s.as_bytes()).unwrap();
 }
