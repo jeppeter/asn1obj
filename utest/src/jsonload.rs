@@ -175,9 +175,7 @@ fn safebagjsondec_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn Arg
 		let code = read_file_bytes(f)?;
 		let mut bag :Asn1Pkcs12SafeBag = Asn1Pkcs12SafeBag::init_asn1();
 		bag.decode_asn1(&code)?;
-		let mut jval :serde_json::Value = serde_json::from_str("{}")?;
-		bag.encode_json("",&mut jval)?;
-		let s = serde_json::to_string_pretty(&jval)?;
+		let s = serde_json::to_string_pretty(&bag)?;
 		let cstr = format!("{} Bag\n",f);
 		let mut outf = std::io::stdout();
 		let _ = bag.print_asn1(&cstr,0,&mut outf)?;
@@ -196,9 +194,8 @@ fn safebagjsonenc_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn Arg
 	}
 
 	let jsons = read_file(&sarr[0])?;
-	let jval :serde_json::Value = serde_json::from_str(&jsons)?;
-	let mut bag :Asn1Pkcs12SafeBag = Asn1Pkcs12SafeBag::init_asn1();
-	let _ = bag.decode_json("",&jval)?;
+	let bag :Asn1Pkcs12SafeBag ;
+	bag = serde_json::from_str(&jsons)?;
 	let cstr = format!("[{}] format Asn1Pkcs12SafeBag\n",sarr[0]);
 	let mut outf = std::io::stdout();
 	let _ = bag.print_asn1(&cstr,0,&mut outf)?;

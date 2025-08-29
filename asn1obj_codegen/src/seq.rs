@@ -287,92 +287,92 @@ impl SequenceSyn {
 		}
 	}
 
-	fn format_encode_json(&self,tab :i32) -> String {
-		let mut rets :String = "".to_string();
-		rets.push_str(&format_tab_line(tab,"fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
-		if self.parsenames.len() == 1 && self.is_asn1_seqname(&self.parsenames[0]) {
-			if self.debugenable {
-				// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
+	// fn format_encode_json(&self,tab :i32) -> String {
+	// 	let mut rets :String = "".to_string();
+	// 	rets.push_str(&format_tab_line(tab,"fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
+	// 	if self.parsenames.len() == 1 && self.is_asn1_seqname(&self.parsenames[0]) {
+	// 		if self.debugenable {
+	// 			// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
 
-				rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
-			}
-			rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.encode_json(key,val);",self.parsenames[0])));
-		} else {
-			rets.push_str(&format_tab_line(tab + 1, "let mut mainv :serde_json::value::Value = serde_json::json!({});"));
-			rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32 = 0;"));
-			rets.push_str(&format_tab_line(tab + 1, ""));
-			for k in self.parsenames.iter() {
-				let jsonk :String = self._get_json_alias(k);
-				if self.debugenable {
-					// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
+	// 			rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
+	// 		}
+	// 		rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.encode_json(key,val);",self.parsenames[0])));
+	// 	} else {
+	// 		rets.push_str(&format_tab_line(tab + 1, "let mut mainv :serde_json::value::Value = serde_json::json!({});"));
+	// 		rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32 = 0;"));
+	// 		rets.push_str(&format_tab_line(tab + 1, ""));
+	// 		for k in self.parsenames.iter() {
+	// 			let jsonk :String = self._get_json_alias(k);
+	// 			if self.debugenable {
+	// 				// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
 
-					rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
-					rets.push_str(&format_tab_line(tab + 1,&format!("asn1_enter_debug();")));
-				}
-				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,jsonk)));
+	// 				rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
+	// 				rets.push_str(&format_tab_line(tab + 1,&format!("asn1_enter_debug();")));
+	// 			}
+	// 			rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,jsonk)));
 
-				if self.debugenable {
-					rets.push_str(&format_tab_line(tab + 1,&format!("asn1_leave_debug();")));
-				}
-			}
-			rets.push_str(&format_tab_line(tab + 1, ""));
-			rets.push_str(&format_tab_line(tab + 1, "if key.len() > 0 {"));
-			rets.push_str(&format_tab_line(tab + 2, "val[key] = mainv;"));
-			rets.push_str(&format_tab_line(tab + 1, "} else {"));
-			rets.push_str(&format_tab_line(tab + 2, "*val = mainv;"));
-			rets.push_str(&format_tab_line(tab + 1, "}"));
-			rets.push_str(&format_tab_line(tab + 1, ""));
-			rets.push_str(&format_tab_line(tab + 1, "return Ok(idx);"));			
-		}
-		rets.push_str(&format_tab_line(tab,"}"));
-		return rets;
-	}
+	// 			if self.debugenable {
+	// 				rets.push_str(&format_tab_line(tab + 1,&format!("asn1_leave_debug();")));
+	// 			}
+	// 		}
+	// 		rets.push_str(&format_tab_line(tab + 1, ""));
+	// 		rets.push_str(&format_tab_line(tab + 1, "if key.len() > 0 {"));
+	// 		rets.push_str(&format_tab_line(tab + 2, "val[key] = mainv;"));
+	// 		rets.push_str(&format_tab_line(tab + 1, "} else {"));
+	// 		rets.push_str(&format_tab_line(tab + 2, "*val = mainv;"));
+	// 		rets.push_str(&format_tab_line(tab + 1, "}"));
+	// 		rets.push_str(&format_tab_line(tab + 1, ""));
+	// 		rets.push_str(&format_tab_line(tab + 1, "return Ok(idx);"));			
+	// 	}
+	// 	rets.push_str(&format_tab_line(tab,"}"));
+	// 	return rets;
+	// }
 
-	fn format_decode_json(&self,tab :i32) -> String {
-		let mut rets :String = "".to_string();
-		rets.push_str(&format_tab_line(tab, "fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
-		if self.parsenames.len() == 1 && self.is_asn1_seqname(&(self.parsenames[0])) {
-			if self.debugenable {
-				// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
+	// fn format_decode_json(&self,tab :i32) -> String {
+	// 	let mut rets :String = "".to_string();
+	// 	rets.push_str(&format_tab_line(tab, "fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
+	// 	if self.parsenames.len() == 1 && self.is_asn1_seqname(&(self.parsenames[0])) {
+	// 		if self.debugenable {
+	// 			// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
 
-				rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.decode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
-			}
-			rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.decode_json(key,val);",self.parsenames[0])));
-		} else {
-			rets.push_str(&format_tab_line(tab + 1, "let mainv :serde_json::value::Value;"));
-			rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32=0;"));
-			rets.push_str(&format_tab_line(tab + 1, ""));
-			rets.push_str(&format_tab_line(tab + 1, "if key.len() > 0 {"));
-			rets.push_str(&format_tab_line(tab + 2, "let k = val.get(key);"));
-			rets.push_str(&format_tab_line(tab + 2, "if k.is_none() {"));
-			for k in self.parsenames.iter() {
-				let v = self.kmap.get(k).unwrap();
-				rets.push_str(&format_tab_line(tab + 3, &format!("self.{} = {}::init_asn1();",k,extract_type_name(v))));
-			}
-			rets.push_str(&format_tab_line(tab + 3, "return Ok(0);"));
-			rets.push_str(&format_tab_line(tab + 2, "}"));
-			rets.push_str(&format_tab_line(tab + 2, "mainv = serde_json::json!(k.clone());"));
-			rets.push_str(&format_tab_line(tab + 1, "} else {"));
-			rets.push_str(&format_tab_line(tab + 2, "mainv = val.clone();"));
-			rets.push_str(&format_tab_line(tab + 1, "}"));
-			rets.push_str(&format_tab_line(tab + 1, ""));
-			rets.push_str(&format_tab_line(tab + 1, "if !mainv.is_object() {"));
-			rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{{},\"not object to decode\"}}",self.errname)));
-			rets.push_str(&format_tab_line(tab + 1, "}"));
-			rets.push_str(&format_tab_line(tab + 1, ""));
-			for k in self.parsenames.iter() {
-				let jsonk :String = self._get_json_alias(k);
-				if self.debugenable {
-					rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
-				}
-				rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,jsonk)));
-			}
-			rets.push_str(&format_tab_line(tab + 1, ""));
-			rets.push_str(&format_tab_line(tab + 1, "return Ok(idx);"));
-		}
-		rets.push_str(&format_tab_line(tab, "}"));
-		return rets;
-	}
+	// 			rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.decode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.parsenames[0])));
+	// 		}
+	// 		rets.push_str(&format_tab_line(tab + 1, &format!("return self.{}.decode_json(key,val);",self.parsenames[0])));
+	// 	} else {
+	// 		rets.push_str(&format_tab_line(tab + 1, "let mainv :serde_json::value::Value;"));
+	// 		rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32=0;"));
+	// 		rets.push_str(&format_tab_line(tab + 1, ""));
+	// 		rets.push_str(&format_tab_line(tab + 1, "if key.len() > 0 {"));
+	// 		rets.push_str(&format_tab_line(tab + 2, "let k = val.get(key);"));
+	// 		rets.push_str(&format_tab_line(tab + 2, "if k.is_none() {"));
+	// 		for k in self.parsenames.iter() {
+	// 			let v = self.kmap.get(k).unwrap();
+	// 			rets.push_str(&format_tab_line(tab + 3, &format!("self.{} = {}::init_asn1();",k,extract_type_name(v))));
+	// 		}
+	// 		rets.push_str(&format_tab_line(tab + 3, "return Ok(0);"));
+	// 		rets.push_str(&format_tab_line(tab + 2, "}"));
+	// 		rets.push_str(&format_tab_line(tab + 2, "mainv = serde_json::json!(k.clone());"));
+	// 		rets.push_str(&format_tab_line(tab + 1, "} else {"));
+	// 		rets.push_str(&format_tab_line(tab + 2, "mainv = val.clone();"));
+	// 		rets.push_str(&format_tab_line(tab + 1, "}"));
+	// 		rets.push_str(&format_tab_line(tab + 1, ""));
+	// 		rets.push_str(&format_tab_line(tab + 1, "if !mainv.is_object() {"));
+	// 		rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{{},\"not object to decode\"}}",self.errname)));
+	// 		rets.push_str(&format_tab_line(tab + 1, "}"));
+	// 		rets.push_str(&format_tab_line(tab + 1, ""));
+	// 		for k in self.parsenames.iter() {
+	// 			let jsonk :String = self._get_json_alias(k);
+	// 			if self.debugenable {
+	// 				rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
+	// 			}
+	// 			rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,jsonk)));
+	// 		}
+	// 		rets.push_str(&format_tab_line(tab + 1, ""));
+	// 		rets.push_str(&format_tab_line(tab + 1, "return Ok(idx);"));
+	// 	}
+	// 	rets.push_str(&format_tab_line(tab, "}"));
+	// 	return rets;
+	// }
 
 
 	pub fn format_asn1_code(&mut self) -> Result<String,Box<dyn Error>> {
@@ -389,10 +389,10 @@ impl SequenceSyn {
 		}
 
 		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
-		rets.push_str(&format_tab_line(1,""));
-		rets.push_str(&self.format_encode_json(1));
-		rets.push_str(&format_tab_line(1,""));
-		rets.push_str(&self.format_decode_json(1));
+		// rets.push_str(&format_tab_line(1,""));
+		// rets.push_str(&self.format_encode_json(1));
+		// rets.push_str(&format_tab_line(1,""));
+		// rets.push_str(&self.format_decode_json(1));
 		rets.push_str(&format_tab_line(1,""));
 		rets.push_str(&self.format_init_asn1(1));
 		rets.push_str(&format_tab_line(1,""));

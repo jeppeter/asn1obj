@@ -1848,48 +1848,48 @@ struct CCTest {
 }
 
 impl Asn1Op for CCTest {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mut mainv :serde_json::value::Value = serde_json::json!({});
-		let mut idx :i32 = 0;
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	let mut mainv :serde_json::value::Value = serde_json::json!({});
+	// 	let mut idx :i32 = 0;
 
-		idx += self.ccv.encode_json("ccv",&mut mainv)?;
-		idx += self.bbv.encode_json("bbv",&mut mainv)?;
-		idx += self.ddv.encode_json("ddv",&mut mainv)?;
-		if key.len() > 0 {
-			val[key] = mainv;
-		} else {
-			*val = mainv;
-		}
+	// 	idx += self.ccv.encode_json("ccv",&mut mainv)?;
+	// 	idx += self.bbv.encode_json("bbv",&mut mainv)?;
+	// 	idx += self.ddv.encode_json("ddv",&mut mainv)?;
+	// 	if key.len() > 0 {
+	// 		val[key] = mainv;
+	// 	} else {
+	// 		*val = mainv;
+	// 	}
 
-		Ok(idx)
-	}
+	// 	Ok(idx)
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mainv :serde_json::value::Value;
-		let mut idx :i32=0;
-		if key.len() > 0 {
-			let k = val.get(key);
-			if k.is_none() {
-				self.ccv = Asn1Object::init_asn1();
-				self.bbv = Asn1BigNum::init_asn1();
-				self.ddv = Asn1PrintableString::init_asn1();
-				return Ok(0);
-			}
-			mainv = serde_json::json!(k.clone());
-		} else {
-			mainv = val.clone();
-		}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	let mainv :serde_json::value::Value;
+	// 	let mut idx :i32=0;
+	// 	if key.len() > 0 {
+	// 		let k = val.get(key);
+	// 		if k.is_none() {
+	// 			self.ccv = Asn1Object::init_asn1();
+	// 			self.bbv = Asn1BigNum::init_asn1();
+	// 			self.ddv = Asn1PrintableString::init_asn1();
+	// 			return Ok(0);
+	// 		}
+	// 		mainv = serde_json::json!(k.clone());
+	// 	} else {
+	// 		mainv = val.clone();
+	// 	}
 
-		if !mainv.is_object() {
-			asn1obj_new_error!{Asn1TestError,"not object to decode"}
-		}
+	// 	if !mainv.is_object() {
+	// 		asn1obj_new_error!{Asn1TestError,"not object to decode"}
+	// 	}
 
-		idx += self.ccv.decode_json("ccv",&mainv)?;
-		idx += self.bbv.decode_json("bbv",&mainv)?;
-		idx += self.ddv.decode_json("ddv",&mainv)?;
+	// 	idx += self.ccv.decode_json("ccv",&mainv)?;
+	// 	idx += self.bbv.decode_json("bbv",&mainv)?;
+	// 	idx += self.ddv.decode_json("ddv",&mainv)?;
 
-		return Ok(idx);
-	}
+	// 	return Ok(idx);
+	// }
 
 	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		Ok(0)
@@ -1920,13 +1920,13 @@ struct CCTestSeq {
 
 
 impl Asn1Op for CCTestSeq {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.elem.encode_json(key,val);
-	}
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.elem.encode_json(key,val);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.elem.decode_json(key,val);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.elem.decode_json(key,val);
+	// }
 
 	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		Ok(0)
@@ -2027,13 +2027,13 @@ impl Asn1Selector for BBSelector {
 }
 
 impl Asn1Op for BBSelector {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.stype.encode_json(key,val);
-	}
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.stype.encode_json(key,val);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.stype.decode_json(key,val);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.stype.decode_json(key,val);
+	// }
 
 	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		Ok(0)
@@ -2063,71 +2063,71 @@ struct BBTest {
 }
 
 impl Asn1Op for BBTest {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mut mainv :serde_json::value::Value = serde_json::json!({});
-		let mut idx :i32 = 0;
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	let mut mainv :serde_json::value::Value = serde_json::json!({});
+	// 	let mut idx :i32 = 0;
 
-		idx += self.seltype.encode_json("seltype",&mut mainv)?;
-		let c :String = self.seltype.encode_select()?;
-		if c == "ccv" {
-			idx += self.ccv.encode_json("ccv",&mut mainv)?;	
-		} else if c == "bbv" {
-			idx += self.bbv.encode_json("bbv",&mut mainv)?;	
-		} else if c == "ddv" {
-			idx += self.ddv.encode_json("ddv",&mut mainv)?;	
-		} else {
-			asn1obj_new_error!{Asn1TestError,"not support type {}", c}
-		}
+	// 	idx += self.seltype.encode_json("seltype",&mut mainv)?;
+	// 	let c :String = self.seltype.encode_select()?;
+	// 	if c == "ccv" {
+	// 		idx += self.ccv.encode_json("ccv",&mut mainv)?;	
+	// 	} else if c == "bbv" {
+	// 		idx += self.bbv.encode_json("bbv",&mut mainv)?;	
+	// 	} else if c == "ddv" {
+	// 		idx += self.ddv.encode_json("ddv",&mut mainv)?;	
+	// 	} else {
+	// 		asn1obj_new_error!{Asn1TestError,"not support type {}", c}
+	// 	}
 		
 		
-		if key.len() > 0 {
-			val[key] = mainv;
-		} else {
-			*val = mainv;
-		}
+	// 	if key.len() > 0 {
+	// 		val[key] = mainv;
+	// 	} else {
+	// 		*val = mainv;
+	// 	}
 
-		Ok(idx)
-	}
+	// 	Ok(idx)
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mainv :serde_json::value::Value;
-		let mut idx :i32=0;
-		if key.len() > 0 {
-			let k = val.get(key);
-			if k.is_none() {
-				self.seltype = BBSelector::init_asn1();
-				self.ccv = Asn1Object::init_asn1();
-				self.bbv = Asn1BigNum::init_asn1();
-				self.ddv = Asn1PrintableString::init_asn1();
-				return Ok(0);
-			}
-			mainv = serde_json::json!(k.clone());
-		} else {
-			mainv = val.clone();
-		}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	let mainv :serde_json::value::Value;
+	// 	let mut idx :i32=0;
+	// 	if key.len() > 0 {
+	// 		let k = val.get(key);
+	// 		if k.is_none() {
+	// 			self.seltype = BBSelector::init_asn1();
+	// 			self.ccv = Asn1Object::init_asn1();
+	// 			self.bbv = Asn1BigNum::init_asn1();
+	// 			self.ddv = Asn1PrintableString::init_asn1();
+	// 			return Ok(0);
+	// 		}
+	// 		mainv = serde_json::json!(k.clone());
+	// 	} else {
+	// 		mainv = val.clone();
+	// 	}
 
-		if !mainv.is_object() {
-			asn1obj_new_error!{Asn1TestError,"not object to decode"}
-		}
+	// 	if !mainv.is_object() {
+	// 		asn1obj_new_error!{Asn1TestError,"not object to decode"}
+	// 	}
 
-		idx += self.seltype.decode_json("seltype",&mainv)?;
-		self.ccv = Asn1Object::init_asn1();
-		self.bbv = Asn1BigNum::init_asn1();
-		self.ddv = Asn1PrintableString::init_asn1();
-		let c :String = self.seltype.decode_select()?;
-		if c == "ccv" {
-			idx += self.ccv.decode_json("ccv",&mainv)?;	
-		} else if c == "bbv" {
-			idx += self.bbv.decode_json("bbv",&mainv)?;	
-		} else if c == "ddv" {
-			idx += self.ddv.decode_json("ddv",&mainv)?;	
-		} else {
-			asn1obj_new_error!{Asn1TestError,"not support decode {}",c}
-		}	
+	// 	idx += self.seltype.decode_json("seltype",&mainv)?;
+	// 	self.ccv = Asn1Object::init_asn1();
+	// 	self.bbv = Asn1BigNum::init_asn1();
+	// 	self.ddv = Asn1PrintableString::init_asn1();
+	// 	let c :String = self.seltype.decode_select()?;
+	// 	if c == "ccv" {
+	// 		idx += self.ccv.decode_json("ccv",&mainv)?;	
+	// 	} else if c == "bbv" {
+	// 		idx += self.bbv.decode_json("bbv",&mainv)?;	
+	// 	} else if c == "ddv" {
+	// 		idx += self.ddv.decode_json("ddv",&mainv)?;	
+	// 	} else {
+	// 		asn1obj_new_error!{Asn1TestError,"not support decode {}",c}
+	// 	}	
 		
 
-		return Ok(idx);
-	}
+	// 	return Ok(idx);
+	// }
 
 	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		Ok(0)
@@ -2157,13 +2157,13 @@ struct BBTestSeq {
 }
 
 impl Asn1Op for BBTestSeq {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.elem.encode_json(key,val);
-	}
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.elem.encode_json(key,val);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.elem.decode_json(key,val);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.elem.decode_json(key,val);
+	// }
 
 	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		Ok(0)
@@ -2264,69 +2264,69 @@ struct IntTest {
 }
 
 impl Asn1Op for IntTest {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mut mainv :serde_json::value::Value = serde_json::json!({});
-		let mut idx :i32 = 0;
-		let mut cint :Asn1Integer = Asn1Integer::init_asn1();
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	let mut mainv :serde_json::value::Value = serde_json::json!({});
+	// 	let mut idx :i32 = 0;
+	// 	let mut cint :Asn1Integer = Asn1Integer::init_asn1();
 
-		cint.val = self.seltype as i64;
-		idx += cint.encode_json("seltype",&mut mainv)?;
+	// 	cint.val = self.seltype as i64;
+	// 	idx += cint.encode_json("seltype",&mut mainv)?;
 
-		if self.seltype == 1 {
-			idx += self.ccv.encode_json("ccv",&mut mainv)?;	
-		} else if self.seltype == 2 {
-			idx += self.bbv.encode_json("bbv",&mut mainv)?;	
-		} else if self.seltype == 3 {
-			idx += self.ddv.encode_json("ddv",&mut mainv)?;	
-		} else {
-			asn1obj_new_error!{Asn1TestError,"not support type {}", self.seltype}
-		}	
+	// 	if self.seltype == 1 {
+	// 		idx += self.ccv.encode_json("ccv",&mut mainv)?;	
+	// 	} else if self.seltype == 2 {
+	// 		idx += self.bbv.encode_json("bbv",&mut mainv)?;	
+	// 	} else if self.seltype == 3 {
+	// 		idx += self.ddv.encode_json("ddv",&mut mainv)?;	
+	// 	} else {
+	// 		asn1obj_new_error!{Asn1TestError,"not support type {}", self.seltype}
+	// 	}	
 		
-		if key.len() > 0 {
-			val[key] = mainv;
-		} else {
-			*val = mainv;
-		}
+	// 	if key.len() > 0 {
+	// 		val[key] = mainv;
+	// 	} else {
+	// 		*val = mainv;
+	// 	}
 
-		Ok(idx)
-	}
+	// 	Ok(idx)
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mainv :serde_json::value::Value;
-		let mut idx :i32=0;
-		let mut cint :Asn1Integer = Asn1Integer::init_asn1();
-		if key.len() > 0 {
-			let k = val.get(key);
-			if k.is_none() {
-				self.seltype = -1;
-				self.ccv = Asn1Object::init_asn1();
-				self.bbv = Asn1BigNum::init_asn1();
-				self.ddv = Asn1PrintableString::init_asn1();
-				return Ok(0);
-			}
-			mainv = serde_json::json!(k.clone());
-		} else {
-			mainv = val.clone();
-		}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	let mainv :serde_json::value::Value;
+	// 	let mut idx :i32=0;
+	// 	let mut cint :Asn1Integer = Asn1Integer::init_asn1();
+	// 	if key.len() > 0 {
+	// 		let k = val.get(key);
+	// 		if k.is_none() {
+	// 			self.seltype = -1;
+	// 			self.ccv = Asn1Object::init_asn1();
+	// 			self.bbv = Asn1BigNum::init_asn1();
+	// 			self.ddv = Asn1PrintableString::init_asn1();
+	// 			return Ok(0);
+	// 		}
+	// 		mainv = serde_json::json!(k.clone());
+	// 	} else {
+	// 		mainv = val.clone();
+	// 	}
 
-		if !mainv.is_object() {
-			asn1obj_new_error!{Asn1TestError,"not object to decode"}
-		}
+	// 	if !mainv.is_object() {
+	// 		asn1obj_new_error!{Asn1TestError,"not object to decode"}
+	// 	}
 
-		idx += cint.decode_json("seltype",&mainv)?;
-		self.seltype = cint.val as i32;
-		if self.seltype == 1 {
-			idx += self.ccv.decode_json("ccv",&mainv)?;	
-		} else if self.seltype == 2 {
-			idx += self.bbv.decode_json("bbv",&mainv)?;	
-		} else if self.seltype == 3 {
-			idx += self.ddv.decode_json("ddv",&mainv)?;	
-		} else {
-			asn1obj_new_error!{Asn1TestError,"not support decode {}",self.seltype}
-		}	
+	// 	idx += cint.decode_json("seltype",&mainv)?;
+	// 	self.seltype = cint.val as i32;
+	// 	if self.seltype == 1 {
+	// 		idx += self.ccv.decode_json("ccv",&mainv)?;	
+	// 	} else if self.seltype == 2 {
+	// 		idx += self.bbv.decode_json("bbv",&mainv)?;	
+	// 	} else if self.seltype == 3 {
+	// 		idx += self.ddv.decode_json("ddv",&mainv)?;	
+	// 	} else {
+	// 		asn1obj_new_error!{Asn1TestError,"not support decode {}",self.seltype}
+	// 	}	
 
-		return Ok(idx);
-	}
+	// 	return Ok(idx);
+	// }
 
 	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		Ok(0)
@@ -2356,13 +2356,13 @@ struct IntTestSeq {
 }
 
 impl Asn1Op for IntTestSeq {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.elem.encode_json(key,val);
-	}
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.elem.encode_json(key,val);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.elem.decode_json(key,val);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.elem.decode_json(key,val);
+	// }
 
 	fn decode_asn1(&mut self, _code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		Ok(0)

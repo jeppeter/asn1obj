@@ -47,7 +47,6 @@ use asn1obj::*;
 extargs_error_class!{EcAsn1Error}
 
 #[asn1_sequence()]
-#[derive(Clone)]
 pub struct BaseAsn1 {
 	pub val :Asn1BigNum,
 	pub types :Asn1Object,
@@ -74,8 +73,7 @@ fn asn1bitdataflagenc_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn
 		bitdata.flag = flag as u64;
 		let odata = bitdata.encode_asn1()?;
 		let mut cv :serde_json::value::Value = serde_json::json!({});
-		let _ = bitdata.encode_json("",&mut cv)?;
-		let s = serde_json::to_string_pretty(&cv)?;
+		let s = serde_json::to_string_pretty(&bitdata)?;
 		debug_buffer_trace!(odata.as_ptr(),odata.len(),"outdata");
 		bitdata.print_asn1("Asn1BitDataLeftFlag",0,&mut sout)?;
 		println!("data\n{}", s);
@@ -94,10 +92,9 @@ fn asn1bitdataflagdec_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn
 
 	for f in sarr.iter() {
 		let s :String = read_file(f)?;
-		let cv :serde_json::value::Value;
-		cv = serde_json::from_str(&s)?;
-		let mut bitdata :Asn1BitDataFlag = Asn1BitDataFlag::init_asn1();
-		bitdata.decode_json("",&cv)?;
+		let  bitdata :Asn1BitDataFlag;
+
+		bitdata = serde_json::from_str(&s)?;		
 		bitdata.print_asn1("Asn1BitDataFlag",0,&mut sout)?;
 	}
 	Ok(())
@@ -114,10 +111,8 @@ fn asn1bitdatacheck_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn A
 
 	for f in sarr.iter() {
 		let s :String = read_file(f)?;
-		let cv :serde_json::value::Value;
-		cv = serde_json::from_str(&s)?;
-		let mut bitdata :Asn1BitDataFlag = Asn1BitDataFlag::init_asn1();
-		bitdata.decode_json("",&cv)?;
+		let bitdata :Asn1BitDataFlag ;
+		bitdata = serde_json::from_str(&s)?;
 		bitdata.print_asn1("Asn1BitDataFlag",0,&mut sout)?;
 		let mut bitd :Asn1BitData = Asn1BitData::init_asn1();
 		let vdata = bitdata.encode_asn1()?;

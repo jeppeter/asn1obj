@@ -336,140 +336,140 @@ impl ChoiceSyn {
 	}
 
 
-	fn format_encode_json(&self,tab :i32) -> String {
-		let mut rets :String = "".to_string();
-		let mut idx :usize;
-		let mut sidx :usize;
-		rets.push_str(&format_tab_line(tab,"fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>>{"));
-		rets.push_str(&format_tab_line(tab + 1, "let mut mainv :serde_json::value::Value = serde_json::json!({});"));
-		rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32 = 0;"));
-		rets.push_str(&format_tab_line(tab + 1, " "));
-		let jsonk = self._get_json_alias(&self.selname);
-		if self.debugenable {
-			// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.selname)));
+	// fn format_encode_json(&self,tab :i32) -> String {
+	// 	let mut rets :String = "".to_string();
+	// 	let mut idx :usize;
+	// 	let mut sidx :usize;
+	// 	rets.push_str(&format_tab_line(tab,"fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>>{"));
+	// 	rets.push_str(&format_tab_line(tab + 1, "let mut mainv :serde_json::value::Value = serde_json::json!({});"));
+	// 	rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32 = 0;"));
+	// 	rets.push_str(&format_tab_line(tab + 1, " "));
+	// 	let jsonk = self._get_json_alias(&self.selname);
+	// 	if self.debugenable {
+	// 		// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.selname)));
 
-			rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.selname)));
-		}
-		rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",self.selname,jsonk)));
-		rets.push_str(&format_tab_line(tab + 1, &format!("let c :String = self.{}.encode_select()?;",self.selname)));
-		idx = 0;
-		sidx = 0;
-		while idx < self.parsenames.len() {
-			let jsonk :String = self._get_json_alias(&self.parsenames[idx]);
-			if self.parsenames[idx] != self.selname {
-				if sidx > 0 {
-					rets.push_str(&format_tab_line(tab+1,&format!("}} else if c == \"{}\" {{",self.parsenames[idx])));
-				} else {
-					rets.push_str(&format_tab_line(tab+1,&format!("if c == \"{}\" {{",self.parsenames[idx])));
-				}
-				if self.debugenable {
-					// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
+	// 		rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.encode_json(\\\"{{}}\\\",val)\",key);",self.sname,self.selname)));
+	// 	}
+	// 	rets.push_str(&format_tab_line(tab + 1, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",self.selname,jsonk)));
+	// 	rets.push_str(&format_tab_line(tab + 1, &format!("let c :String = self.{}.encode_select()?;",self.selname)));
+	// 	idx = 0;
+	// 	sidx = 0;
+	// 	while idx < self.parsenames.len() {
+	// 		let jsonk :String = self._get_json_alias(&self.parsenames[idx]);
+	// 		if self.parsenames[idx] != self.selname {
+	// 			if sidx > 0 {
+	// 				rets.push_str(&format_tab_line(tab+1,&format!("}} else if c == \"{}\" {{",self.parsenames[idx])));
+	// 			} else {
+	// 				rets.push_str(&format_tab_line(tab+1,&format!("if c == \"{}\" {{",self.parsenames[idx])));
+	// 			}
+	// 			if self.debugenable {
+	// 				// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
 
-					rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
-				}
-				rets.push_str(&format_tab_line(tab + 2,&format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",self.parsenames[idx],jsonk)));
-				sidx += 1;
-			}
-			idx += 1;
-		}
-		if sidx > 0 {
-			rets.push_str(&format_tab_line(tab +1 ,"} else {"));
-			rets.push_str(&format_tab_line(tab + 2,&format!("asn1obj_new_error!{{{},\"not support [{{}}]\",c}}",self.errname)));
-			rets.push_str(&format_tab_line(tab +1 ,"}"));
-		} else{
-			rets.push_str(&format_tab_line(tab + 1,&format!("asn1obj_new_error!{{{},\"not support [{{}}]\",c}}",self.errname)));
-		}
+	// 				rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
+	// 			}
+	// 			rets.push_str(&format_tab_line(tab + 2,&format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",self.parsenames[idx],jsonk)));
+	// 			sidx += 1;
+	// 		}
+	// 		idx += 1;
+	// 	}
+	// 	if sidx > 0 {
+	// 		rets.push_str(&format_tab_line(tab +1 ,"} else {"));
+	// 		rets.push_str(&format_tab_line(tab + 2,&format!("asn1obj_new_error!{{{},\"not support [{{}}]\",c}}",self.errname)));
+	// 		rets.push_str(&format_tab_line(tab +1 ,"}"));
+	// 	} else{
+	// 		rets.push_str(&format_tab_line(tab + 1,&format!("asn1obj_new_error!{{{},\"not support [{{}}]\",c}}",self.errname)));
+	// 	}
 
-		rets.push_str(&format_tab_line(tab + 1," "));
-		rets.push_str(&format_tab_line(tab + 1,"if key.len() > 0 {"));
-		rets.push_str(&format_tab_line(tab + 2,"val[key] = mainv;"));
-		rets.push_str(&format_tab_line(tab + 1,"} else {"));
-		rets.push_str(&format_tab_line(tab + 2,"*val = mainv;"));
-		rets.push_str(&format_tab_line(tab + 1,"}"));
-		rets.push_str(&format_tab_line(tab + 1," "));
-		rets.push_str(&format_tab_line(tab + 1,"return Ok(idx);"));
+	// 	rets.push_str(&format_tab_line(tab + 1," "));
+	// 	rets.push_str(&format_tab_line(tab + 1,"if key.len() > 0 {"));
+	// 	rets.push_str(&format_tab_line(tab + 2,"val[key] = mainv;"));
+	// 	rets.push_str(&format_tab_line(tab + 1,"} else {"));
+	// 	rets.push_str(&format_tab_line(tab + 2,"*val = mainv;"));
+	// 	rets.push_str(&format_tab_line(tab + 1,"}"));
+	// 	rets.push_str(&format_tab_line(tab + 1," "));
+	// 	rets.push_str(&format_tab_line(tab + 1,"return Ok(idx);"));
 
-		rets.push_str(&format_tab_line(tab,"}"));
-		return rets;
-	}
+	// 	rets.push_str(&format_tab_line(tab,"}"));
+	// 	return rets;
+	// }
 
-	fn format_decode_json(&self,tab :i32) -> String {
-		let mut rets :String = "".to_string();
-		let mut idx :usize;
-		let mut sidx :usize;
-		rets.push_str(&format_tab_line(tab,"fn decode_json(&mut self, key :&str,val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>>{"));
-		rets.push_str(&format_tab_line(tab + 1,"let mainv :serde_json::value::Value;"));
-		rets.push_str(&format_tab_line(tab + 1,"let mut idx :i32=0;"));
-		rets.push_str(&format_tab_line(tab + 1,"if key.len() > 0 {"));
-		rets.push_str(&format_tab_line(tab + 2,"let k = val.get(key);"));
-		rets.push_str(&format_tab_line(tab + 2,"if k.is_none() {"));
-		for k in self.parsenames.iter() {
-			let v = self.typemap.get(k).unwrap();
-			rets.push_str(&format_tab_line(tab + 3,&format!("self.{} = {}::init_asn1();", k,extract_type_name(v))));
-		}
-		rets.push_str(&format_tab_line(tab + 2,"return Ok(0);"));
-		rets.push_str(&format_tab_line(tab + 2,"}"));
-		rets.push_str(&format_tab_line(tab + 2,"mainv = serde_json::json!(k.clone());"));
-		rets.push_str(&format_tab_line(tab + 1,"} else {"));
-		rets.push_str(&format_tab_line(tab + 2,"mainv = val.clone();"));
-		rets.push_str(&format_tab_line(tab + 1,"}"));
-		rets.push_str(&format_tab_line(tab + 1," "));
-		rets.push_str(&format_tab_line(tab + 1,"if !mainv.is_object() {"));
-		rets.push_str(&format_tab_line(tab + 2,&format!("asn1obj_new_error!{{{},\"not object to decode\"}}",self.errname)));
-		rets.push_str(&format_tab_line(tab + 1,"}"));
-		rets.push_str(&format_tab_line(tab + 1," "));
-		let jsonk = self._get_json_alias(&self.selname);
-		if self.debugenable {
-			// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.selname,jsonk)));
+	// fn format_decode_json(&self,tab :i32) -> String {
+	// 	let mut rets :String = "".to_string();
+	// 	let mut idx :usize;
+	// 	let mut sidx :usize;
+	// 	rets.push_str(&format_tab_line(tab,"fn decode_json(&mut self, key :&str,val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>>{"));
+	// 	rets.push_str(&format_tab_line(tab + 1,"let mainv :serde_json::value::Value;"));
+	// 	rets.push_str(&format_tab_line(tab + 1,"let mut idx :i32=0;"));
+	// 	rets.push_str(&format_tab_line(tab + 1,"if key.len() > 0 {"));
+	// 	rets.push_str(&format_tab_line(tab + 2,"let k = val.get(key);"));
+	// 	rets.push_str(&format_tab_line(tab + 2,"if k.is_none() {"));
+	// 	for k in self.parsenames.iter() {
+	// 		let v = self.typemap.get(k).unwrap();
+	// 		rets.push_str(&format_tab_line(tab + 3,&format!("self.{} = {}::init_asn1();", k,extract_type_name(v))));
+	// 	}
+	// 	rets.push_str(&format_tab_line(tab + 2,"return Ok(0);"));
+	// 	rets.push_str(&format_tab_line(tab + 2,"}"));
+	// 	rets.push_str(&format_tab_line(tab + 2,"mainv = serde_json::json!(k.clone());"));
+	// 	rets.push_str(&format_tab_line(tab + 1,"} else {"));
+	// 	rets.push_str(&format_tab_line(tab + 2,"mainv = val.clone();"));
+	// 	rets.push_str(&format_tab_line(tab + 1,"}"));
+	// 	rets.push_str(&format_tab_line(tab + 1," "));
+	// 	rets.push_str(&format_tab_line(tab + 1,"if !mainv.is_object() {"));
+	// 	rets.push_str(&format_tab_line(tab + 2,&format!("asn1obj_new_error!{{{},\"not object to decode\"}}",self.errname)));
+	// 	rets.push_str(&format_tab_line(tab + 1,"}"));
+	// 	rets.push_str(&format_tab_line(tab + 1," "));
+	// 	let jsonk = self._get_json_alias(&self.selname);
+	// 	if self.debugenable {
+	// 		// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.selname,jsonk)));
 
-			rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.selname,jsonk)));
-		}
-		rets.push_str(&format_tab_line(tab + 1,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.selname,jsonk)));
-		idx = 0;
-		while idx < self.parsenames.len() {
-			if self.parsenames[idx] != self.selname {
-				let k = &self.parsenames[idx];
-				let v = self.typemap.get(k).unwrap();
-				rets.push_str(&format_tab_line(tab + 1,&format!("self.{} = {}::init_asn1();", k,extract_type_name(v))));
-			}
-			idx += 1;
-		}
-		rets.push_str(&format_tab_line(tab + 1," "));
-		rets.push_str(&format_tab_line(tab + 1,&format!("let c :String = self.{}.decode_select()?;",self.selname)));
-		idx = 0;
-		sidx = 0;
-		while idx < self.parsenames.len() {
-			let jsonk :String = self._get_json_alias(&self.parsenames[idx]);
-			if self.parsenames[idx] != self.selname {
-				if sidx > 0 {
-					rets.push_str(&format_tab_line(tab + 1,&format!("}} else if c == \"{}\" {{", self.parsenames[idx])));
-				} else {
-					rets.push_str(&format_tab_line(tab + 1,&format!("if c == \"{}\" {{", self.parsenames[idx])));
-				}
-				if self.debugenable {
-					// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
+	// 		rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.selname,jsonk)));
+	// 	}
+	// 	rets.push_str(&format_tab_line(tab + 1,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.selname,jsonk)));
+	// 	idx = 0;
+	// 	while idx < self.parsenames.len() {
+	// 		if self.parsenames[idx] != self.selname {
+	// 			let k = &self.parsenames[idx];
+	// 			let v = self.typemap.get(k).unwrap();
+	// 			rets.push_str(&format_tab_line(tab + 1,&format!("self.{} = {}::init_asn1();", k,extract_type_name(v))));
+	// 		}
+	// 		idx += 1;
+	// 	}
+	// 	rets.push_str(&format_tab_line(tab + 1," "));
+	// 	rets.push_str(&format_tab_line(tab + 1,&format!("let c :String = self.{}.decode_select()?;",self.selname)));
+	// 	idx = 0;
+	// 	sidx = 0;
+	// 	while idx < self.parsenames.len() {
+	// 		let jsonk :String = self._get_json_alias(&self.parsenames[idx]);
+	// 		if self.parsenames[idx] != self.selname {
+	// 			if sidx > 0 {
+	// 				rets.push_str(&format_tab_line(tab + 1,&format!("}} else if c == \"{}\" {{", self.parsenames[idx])));
+	// 			} else {
+	// 				rets.push_str(&format_tab_line(tab + 1,&format!("if c == \"{}\" {{", self.parsenames[idx])));
+	// 			}
+	// 			if self.debugenable {
+	// 				// rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
 
-					rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
-				}
-				rets.push_str(&format_tab_line(tab + 2,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.parsenames[idx],jsonk)));
-				sidx += 1;
-			}
-			idx += 1;
-		}
+	// 				rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,self.parsenames[idx],jsonk)));
+	// 			}
+	// 			rets.push_str(&format_tab_line(tab + 2,&format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",self.parsenames[idx],jsonk)));
+	// 			sidx += 1;
+	// 		}
+	// 		idx += 1;
+	// 	}
 
-		if sidx > 0 {
-			rets.push_str(&format_tab_line(tab +1 ,"} else {"));
-			rets.push_str(&format_tab_line(tab + 2,&format!("asn1obj_new_error!{{{},\"not support [{{}}]\",c}}",self.errname)));
-			rets.push_str(&format_tab_line(tab +1 ,"}"));
-		} else{
-			rets.push_str(&format_tab_line(tab + 1,&format!("asn1obj_new_error!{{{},\"not support [{{}}]\",c}}",self.errname)));
-		}
+	// 	if sidx > 0 {
+	// 		rets.push_str(&format_tab_line(tab +1 ,"} else {"));
+	// 		rets.push_str(&format_tab_line(tab + 2,&format!("asn1obj_new_error!{{{},\"not support [{{}}]\",c}}",self.errname)));
+	// 		rets.push_str(&format_tab_line(tab +1 ,"}"));
+	// 	} else{
+	// 		rets.push_str(&format_tab_line(tab + 1,&format!("asn1obj_new_error!{{{},\"not support [{{}}]\",c}}",self.errname)));
+	// 	}
 
-		rets.push_str(&format_tab_line(tab + 1," "));
-		rets.push_str(&format_tab_line(tab + 1,"return Ok(idx);"));
-		rets.push_str(&format_tab_line(tab,"}"));
-		return rets;
-	}
+	// 	rets.push_str(&format_tab_line(tab + 1," "));
+	// 	rets.push_str(&format_tab_line(tab + 1,"return Ok(idx);"));
+	// 	rets.push_str(&format_tab_line(tab,"}"));
+	// 	return rets;
+	// }
 
 	pub fn format_asn1_code(&mut self) -> Result<String, Box<dyn Error>> {
 		let mut rets = "".to_string();
@@ -493,10 +493,10 @@ impl ChoiceSyn {
 		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
 
 		/**/
-		rets.push_str(&self.format_encode_json(1));
-		rets.push_str(&format_tab_line(1,""));
-		rets.push_str(&self.format_decode_json(1));
-		rets.push_str(&format_tab_line(1,""));
+		// rets.push_str(&self.format_encode_json(1));
+		// rets.push_str(&format_tab_line(1,""));
+		// rets.push_str(&self.format_decode_json(1));
+		// rets.push_str(&format_tab_line(1,""));
 		rets.push_str(&self.foramt_init_asn1(1));
 		rets.push_str(&format_tab_line(1,""));
 		rets.push_str(&self.format_decode_asn1(1));
@@ -891,124 +891,124 @@ impl IntChoiceSyn {
 	}
 
 
-	fn format_encode_json(&self,tab :i32) -> Result<String,Box<dyn Error>> {
-		let mut rets :String = "".to_string();
-		let mut idx :usize;
-		rets.push_str(&format_tab_line(tab,"fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
-		rets.push_str(&format_tab_line(tab + 1, "let mut mainv :serde_json::value::Value = serde_json::json!({});"));
-		rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32 = 0;"));
-		rets.push_str(&format_tab_line(tab + 1, "let mut cint :Asn1Integer = Asn1Integer::init_asn1();"));
-		rets.push_str(&format_tab_line(tab + 1, " "));
-		rets.push_str(&format_tab_line(tab + 1, &format!("cint.val = self.{} as i64;",self.seltypename)));
-		let jsonk :String = self._get_json_alias(&self.seltypename);
-		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.encode_json(\\\"{}\\\",val)\");",self.sname,jsonk)));
-		}
-		rets.push_str(&format_tab_line(tab + 1, &format!("idx += cint.encode_json(\"{}\",&mut mainv)?;",jsonk)));
-		rets.push_str(&format_tab_line(tab + 1, " "));
-		idx = 0;
-		for (k,v) in self.typmaps.iter() { 
-			let jsonk = self._get_json_alias(&k);
-			if idx > 0 {
-				rets.push_str(&format_tab_line(tab + 1,&format!("}} else if self.{} == {} {{",self.seltypename,v)));
-			} else {
-				rets.push_str(&format_tab_line(tab + 1,&format!("if self.{} == {} {{",self.seltypename,v)));
-			}
-			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 2,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
-			}
-			rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,jsonk)));	
-			idx += 1;
-		}
-		if idx > 0 {
-			rets.push_str(&format_tab_line(tab + 1, &format!("}} else {{")));
-			rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{{},\"not support {{}} value\",self.{}}}",self.errname,self.seltypename)));
-			rets.push_str(&format_tab_line(tab + 1, &format!("}}")));	
-		} else {
-			rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj_new_error!{{{},\"not support {{}} value\",self.{}}}",self.errname,self.seltypename)));
-		}
-		rets.push_str(&format_tab_line(tab + 1, " "));
-		rets.push_str(&format_tab_line(tab + 1, "if key.len() > 0 {"));
-		rets.push_str(&format_tab_line(tab + 2, "val[key] = mainv;"));
-		rets.push_str(&format_tab_line(tab + 1, "} else {"));
-		rets.push_str(&format_tab_line(tab + 2, "*val = mainv;"));
-		rets.push_str(&format_tab_line(tab + 1, "}"));
-		rets.push_str(&format_tab_line(tab + 1, " "));
-		rets.push_str(&format_tab_line(tab + 1, "return Ok(idx);"));
-		rets.push_str(&format_tab_line(tab,"}"));
-		return Ok(rets);
-	}
+	// fn format_encode_json(&self,tab :i32) -> Result<String,Box<dyn Error>> {
+	// 	let mut rets :String = "".to_string();
+	// 	let mut idx :usize;
+	// 	rets.push_str(&format_tab_line(tab,"fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
+	// 	rets.push_str(&format_tab_line(tab + 1, "let mut mainv :serde_json::value::Value = serde_json::json!({});"));
+	// 	rets.push_str(&format_tab_line(tab + 1, "let mut idx :i32 = 0;"));
+	// 	rets.push_str(&format_tab_line(tab + 1, "let mut cint :Asn1Integer = Asn1Integer::init_asn1();"));
+	// 	rets.push_str(&format_tab_line(tab + 1, " "));
+	// 	rets.push_str(&format_tab_line(tab + 1, &format!("cint.val = self.{} as i64;",self.seltypename)));
+	// 	let jsonk :String = self._get_json_alias(&self.seltypename);
+	// 	if self.debugenable {
+	// 		rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.encode_json(\\\"{}\\\",val)\");",self.sname,jsonk)));
+	// 	}
+	// 	rets.push_str(&format_tab_line(tab + 1, &format!("idx += cint.encode_json(\"{}\",&mut mainv)?;",jsonk)));
+	// 	rets.push_str(&format_tab_line(tab + 1, " "));
+	// 	idx = 0;
+	// 	for (k,v) in self.typmaps.iter() { 
+	// 		let jsonk = self._get_json_alias(&k);
+	// 		if idx > 0 {
+	// 			rets.push_str(&format_tab_line(tab + 1,&format!("}} else if self.{} == {} {{",self.seltypename,v)));
+	// 		} else {
+	// 			rets.push_str(&format_tab_line(tab + 1,&format!("if self.{} == {} {{",self.seltypename,v)));
+	// 		}
+	// 		if self.debugenable {
+	// 			rets.push_str(&format_tab_line(tab + 2,&format!("println!(\"{}.{}.encode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
+	// 		}
+	// 		rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.encode_json(\"{}\",&mut mainv)?;",k,jsonk)));	
+	// 		idx += 1;
+	// 	}
+	// 	if idx > 0 {
+	// 		rets.push_str(&format_tab_line(tab + 1, &format!("}} else {{")));
+	// 		rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{{},\"not support {{}} value\",self.{}}}",self.errname,self.seltypename)));
+	// 		rets.push_str(&format_tab_line(tab + 1, &format!("}}")));	
+	// 	} else {
+	// 		rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj_new_error!{{{},\"not support {{}} value\",self.{}}}",self.errname,self.seltypename)));
+	// 	}
+	// 	rets.push_str(&format_tab_line(tab + 1, " "));
+	// 	rets.push_str(&format_tab_line(tab + 1, "if key.len() > 0 {"));
+	// 	rets.push_str(&format_tab_line(tab + 2, "val[key] = mainv;"));
+	// 	rets.push_str(&format_tab_line(tab + 1, "} else {"));
+	// 	rets.push_str(&format_tab_line(tab + 2, "*val = mainv;"));
+	// 	rets.push_str(&format_tab_line(tab + 1, "}"));
+	// 	rets.push_str(&format_tab_line(tab + 1, " "));
+	// 	rets.push_str(&format_tab_line(tab + 1, "return Ok(idx);"));
+	// 	rets.push_str(&format_tab_line(tab,"}"));
+	// 	return Ok(rets);
+	// }
 
-	fn format_decode_json(&self,tab :i32) -> Result<String,Box<dyn Error>> {
-		let mut rets :String = "".to_string();
-		let mut idx :usize;
-		rets.push_str(&format_tab_line(tab,"fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
-		rets.push_str(&format_tab_line(tab+1,"let mainv :serde_json::value::Value;"));
-		rets.push_str(&format_tab_line(tab+1,"let mut idx :i32=0;"));
-		rets.push_str(&format_tab_line(tab+1,"let mut cint :Asn1Integer = Asn1Integer::init_asn1();"));
-		rets.push_str(&format_tab_line(tab+1," "));
-		rets.push_str(&format_tab_line(tab+1,"if key.len() > 0 {"));
-		rets.push_str(&format_tab_line(tab+2,"let k = val.get(key);"));
-		rets.push_str(&format_tab_line(tab+2,"if k.is_none() {"));
-		for c in self.valarr.iter() {
-			if c.eq(&self.seltypename) {
-				rets.push_str(&format_tab_line(tab + 3,&format!("self.{} = -1;", self.seltypename)));
-			} else {
-				match self.valmaps.get(c) {
-					Some(v) => {
-						rets.push_str(&format_tab_line(tab + 3,&format!("self.{} = {}::init_asn1();", c,extract_type_name(v))));
-					},
-					None => {
-						asn1_gen_new_error!{ChoiceSynError,"can not get [{}] variable", c}
-					}
-				}
-			}
-		}
-		rets.push_str(&format_tab_line(tab+3,"return Ok(0);"));
-		rets.push_str(&format_tab_line(tab+2,"}"));
-		rets.push_str(&format_tab_line(tab+2,"mainv = serde_json::json!(k.clone());"));
-		rets.push_str(&format_tab_line(tab+1,"} else {"));
-		rets.push_str(&format_tab_line(tab+2,"mainv = val.clone();"));
-		rets.push_str(&format_tab_line(tab+1,"}"));
-		rets.push_str(&format_tab_line(tab+1," "));
-		rets.push_str(&format_tab_line(tab+1,"if !mainv.is_object() {"));
-		rets.push_str(&format_tab_line(tab+2,&format!("asn1obj_new_error!{{{},\"not object to decode\"}}",self.errname)));
-		rets.push_str(&format_tab_line(tab+1,"}"));
-		rets.push_str(&format_tab_line(tab+1," "));
-		let jsonk = self._get_json_alias(&self.seltypename);
-		if self.debugenable {
-			rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.decode_json(\\\"{}\\\",val)\");",self.sname,jsonk)));
-		}
-		rets.push_str(&format_tab_line(tab+1,&format!("idx += cint.decode_json(\"{}\",&mainv)?;",jsonk)));
-		rets.push_str(&format_tab_line(tab+1,&format!("self.{} = cint.val as i32;",self.seltypename)));
-		rets.push_str(&format_tab_line(tab+1," "));
-		idx = 0;
-		for (k,v) in self.typmaps.iter() { 
-			let jsonk = self._get_json_alias(&k);
-			if idx > 0 {
-				rets.push_str(&format_tab_line(tab + 1,&format!("}} else if self.{} == {} {{",self.seltypename,v)));
-			} else {
-				rets.push_str(&format_tab_line(tab + 1,&format!("if self.{} == {} {{",self.seltypename,v)));
-			}
-			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 2,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
-			}
-			rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,jsonk)));	
-			idx += 1;
-		}
-		if idx > 0 {
-			rets.push_str(&format_tab_line(tab + 1, &format!("}} else {{")));
-			rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{{},\"not support {{}} value decode\",self.{}}}",self.errname,self.seltypename)));
-			rets.push_str(&format_tab_line(tab + 1, &format!("}}")));	
-		} else {
-			rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj_new_error!{{{},\"not support {{}} value decode\",self.{}}}",self.errname,self.seltypename)));
-		}
+	// fn format_decode_json(&self,tab :i32) -> Result<String,Box<dyn Error>> {
+	// 	let mut rets :String = "".to_string();
+	// 	let mut idx :usize;
+	// 	rets.push_str(&format_tab_line(tab,"fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {"));
+	// 	rets.push_str(&format_tab_line(tab+1,"let mainv :serde_json::value::Value;"));
+	// 	rets.push_str(&format_tab_line(tab+1,"let mut idx :i32=0;"));
+	// 	rets.push_str(&format_tab_line(tab+1,"let mut cint :Asn1Integer = Asn1Integer::init_asn1();"));
+	// 	rets.push_str(&format_tab_line(tab+1," "));
+	// 	rets.push_str(&format_tab_line(tab+1,"if key.len() > 0 {"));
+	// 	rets.push_str(&format_tab_line(tab+2,"let k = val.get(key);"));
+	// 	rets.push_str(&format_tab_line(tab+2,"if k.is_none() {"));
+	// 	for c in self.valarr.iter() {
+	// 		if c.eq(&self.seltypename) {
+	// 			rets.push_str(&format_tab_line(tab + 3,&format!("self.{} = -1;", self.seltypename)));
+	// 		} else {
+	// 			match self.valmaps.get(c) {
+	// 				Some(v) => {
+	// 					rets.push_str(&format_tab_line(tab + 3,&format!("self.{} = {}::init_asn1();", c,extract_type_name(v))));
+	// 				},
+	// 				None => {
+	// 					asn1_gen_new_error!{ChoiceSynError,"can not get [{}] variable", c}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// 	rets.push_str(&format_tab_line(tab+3,"return Ok(0);"));
+	// 	rets.push_str(&format_tab_line(tab+2,"}"));
+	// 	rets.push_str(&format_tab_line(tab+2,"mainv = serde_json::json!(k.clone());"));
+	// 	rets.push_str(&format_tab_line(tab+1,"} else {"));
+	// 	rets.push_str(&format_tab_line(tab+2,"mainv = val.clone();"));
+	// 	rets.push_str(&format_tab_line(tab+1,"}"));
+	// 	rets.push_str(&format_tab_line(tab+1," "));
+	// 	rets.push_str(&format_tab_line(tab+1,"if !mainv.is_object() {"));
+	// 	rets.push_str(&format_tab_line(tab+2,&format!("asn1obj_new_error!{{{},\"not object to decode\"}}",self.errname)));
+	// 	rets.push_str(&format_tab_line(tab+1,"}"));
+	// 	rets.push_str(&format_tab_line(tab+1," "));
+	// 	let jsonk = self._get_json_alias(&self.seltypename);
+	// 	if self.debugenable {
+	// 		rets.push_str(&format_tab_line(tab + 1,&format!("println!(\"{}.decode_json(\\\"{}\\\",val)\");",self.sname,jsonk)));
+	// 	}
+	// 	rets.push_str(&format_tab_line(tab+1,&format!("idx += cint.decode_json(\"{}\",&mainv)?;",jsonk)));
+	// 	rets.push_str(&format_tab_line(tab+1,&format!("self.{} = cint.val as i32;",self.seltypename)));
+	// 	rets.push_str(&format_tab_line(tab+1," "));
+	// 	idx = 0;
+	// 	for (k,v) in self.typmaps.iter() { 
+	// 		let jsonk = self._get_json_alias(&k);
+	// 		if idx > 0 {
+	// 			rets.push_str(&format_tab_line(tab + 1,&format!("}} else if self.{} == {} {{",self.seltypename,v)));
+	// 		} else {
+	// 			rets.push_str(&format_tab_line(tab + 1,&format!("if self.{} == {} {{",self.seltypename,v)));
+	// 		}
+	// 		if self.debugenable {
+	// 			rets.push_str(&format_tab_line(tab + 2,&format!("println!(\"{}.{}.decode_json(\\\"{}\\\",val)\");",self.sname,k,jsonk)));
+	// 		}
+	// 		rets.push_str(&format_tab_line(tab + 2, &format!("idx += self.{}.decode_json(\"{}\",&mainv)?;",k,jsonk)));	
+	// 		idx += 1;
+	// 	}
+	// 	if idx > 0 {
+	// 		rets.push_str(&format_tab_line(tab + 1, &format!("}} else {{")));
+	// 		rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj_new_error!{{{},\"not support {{}} value decode\",self.{}}}",self.errname,self.seltypename)));
+	// 		rets.push_str(&format_tab_line(tab + 1, &format!("}}")));	
+	// 	} else {
+	// 		rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj_new_error!{{{},\"not support {{}} value decode\",self.{}}}",self.errname,self.seltypename)));
+	// 	}
 
-		rets.push_str(&format_tab_line(tab+1," "));
-		rets.push_str(&format_tab_line(tab+1,"return Ok(idx);"));
-		rets.push_str(&format_tab_line(tab,"}"));
-		return Ok(rets);
-	}
+	// 	rets.push_str(&format_tab_line(tab+1," "));
+	// 	rets.push_str(&format_tab_line(tab+1,"return Ok(idx);"));
+	// 	rets.push_str(&format_tab_line(tab,"}"));
+	// 	return Ok(rets);
+	// }
 
 
 	pub fn format_asn1_code(&mut self) -> Result<String,Box<dyn Error>> {
@@ -1019,13 +1019,13 @@ impl IntChoiceSyn {
 
 		rets.push_str(&format_tab_line(0,&format!("impl Asn1Op for {} {{", self.sname)));
 
-		let c = self.format_encode_json(1)?;
-		rets.push_str(&c);
-		rets.push_str(&format_tab_line(1,""));
+		// let c = self.format_encode_json(1)?;
+		// rets.push_str(&c);
+		// rets.push_str(&format_tab_line(1,""));
 
-		let c = self.format_decode_json(1)?;
-		rets.push_str(&c);
-		rets.push_str(&format_tab_line(1,""));
+		// let c = self.format_decode_json(1)?;
+		// rets.push_str(&c);
+		// rets.push_str(&format_tab_line(1,""));
 
 		let c = self.format_init_asn1(1)?;
 		rets.push_str(&c);

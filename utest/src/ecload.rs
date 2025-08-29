@@ -49,7 +49,6 @@ use asn1obj_codegen::{asn1_choice,asn1_obj_selector,asn1_sequence,asn1_int_choic
 
 extargs_error_class!{EcLoadError}
 
-#[derive(Clone)]
 #[asn1_sequence()]
 pub struct X9_62_CURVEElem {
 	pub a :Asn1OctData,
@@ -57,7 +56,6 @@ pub struct X9_62_CURVEElem {
 	pub seed :Asn1Opt<Asn1BitDataFlag>,
 }
 
-#[derive(Clone)]
 #[asn1_sequence()]
 pub struct X9_62_PENTANOMIALELem {
 	pub k1 :Asn1Integer,
@@ -65,7 +63,6 @@ pub struct X9_62_PENTANOMIALELem {
 	pub k3 :Asn1Integer,
 }
 
-#[derive(Clone)]
 #[asn1_sequence()]
 pub struct X9_62_PENTANOMIAL {
 	pub elem :Asn1Seq<X9_62_PENTANOMIALELem>,
@@ -75,19 +72,16 @@ pub struct X9_62_PENTANOMIAL {
 
 
 
-#[derive(Clone)]
 #[asn1_sequence()]
 pub struct X9_62_CURVE {
 	pub elem :Asn1Seq<X9_62_CURVEElem>,
 }
 
-#[derive(Clone)]
 #[asn1_obj_selector(other=default,onBasis="1.2.840.10045.1.2.3.1",tpBasis="1.2.840.10045.1.2.3.2",ppBasis="1.2.840.10045.1.2.3.3")]
 pub struct X962Selector  {
 	pub val :Asn1Object,
 }
 
-#[derive(Clone)]
 #[asn1_choice(selector=otype)]
 pub struct X9_62_CHARACTERISTIC_TWO_ELEM_CHOICE {
 	pub otype : X962Selector,
@@ -97,27 +91,23 @@ pub struct X9_62_CHARACTERISTIC_TWO_ELEM_CHOICE {
 	pub other :Asn1Any,
 }
 
-#[derive(Clone)]
 #[asn1_sequence()]
 pub struct X9_62_CHARACTERISTIC_TWO_ELEM {
 	pub m :Asn1Integer,
 	pub elemchoice : X9_62_CHARACTERISTIC_TWO_ELEM_CHOICE,
 }
 
-#[derive(Clone)]
 #[asn1_sequence()]
 pub struct X9_62_CHARACTERISTIC_TWO {
 	pub elem :Asn1Seq<X9_62_CHARACTERISTIC_TWO_ELEM>,
 }
 
 
-#[derive(Clone)]
 #[asn1_obj_selector(prime="1.2.840.10045.1.1",char_two="1.2.840.10045.1.2")]
 pub struct X964FieldSelector {
 	pub val :Asn1Object,
 }
 
-#[derive(Clone)]
 #[asn1_choice(selector=fieldType)]
 pub struct X9_62_FIELDIDElem {
 	pub fieldType :X964FieldSelector,
@@ -125,14 +115,12 @@ pub struct X9_62_FIELDIDElem {
 	pub char_two :X9_62_CHARACTERISTIC_TWO,
 }
 
-#[derive(Clone)]
 #[asn1_sequence()]
 pub struct X9_62_FIELDID {
 	pub elem :Asn1Seq<X9_62_FIELDIDElem>,
 }
 
 
-#[derive(Clone)]
 #[asn1_sequence()]
 pub struct ECPARAMETERSElem {
 	pub version : Asn1Integer,
@@ -146,22 +134,18 @@ pub struct ECPARAMETERSElem {
 
 
 #[asn1_sequence()]
-#[derive(Clone)]
 pub struct ECPARAMETERS {
 	pub elem :Asn1Seq<ECPARAMETERSElem>,
 }
 
 
 #[asn1_int_choice(selector=itype,named_curve=0,parameters=1,implicitCA=2)]
-#[derive(Clone)]
 pub struct ECPKPARAMETERS {
 	pub itype :i32,
 	pub named_curve :Asn1Object,
 	pub parameters : ECPARAMETERS,
 	pub implicitCA : Asn1Null,
 }
-
-
 
 
 
@@ -174,9 +158,8 @@ fn ecprivjsonenc_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgS
 	}
 
 	let jsons = read_file(&sarr[0])?;
-	let jval :serde_json::Value = serde_json::from_str(&jsons)?;
-	let mut bag :ECPKPARAMETERS = ECPKPARAMETERS::init_asn1();
-	let _ = bag.decode_json("",&jval)?;
+	let bag :ECPKPARAMETERS;
+	bag = serde_json::from_str(&jsons)?;
 	let cstr = format!("[{}] format ECPKPARAMETERS\n",sarr[0]);
 	let mut outf = std::io::stdout();
 	let _ = bag.print_asn1(&cstr,0,&mut outf)?;

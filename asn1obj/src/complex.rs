@@ -50,29 +50,29 @@ impl<'de,T :Asn1Op + Clone + Serialize + DeserializeOwned> Deserialize<'de> for 
 }
 
 impl<T: Asn1Op + Clone + Serialize + DeserializeOwned> Asn1Op for Asn1Opt<T> {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		if self.val.is_none() {
-			return Ok(0);
-		}
-		let v :T;
-		v = self.val.as_ref().unwrap().clone();
-		let _ = v.encode_json(key,val)?;
-		return Ok(1);
-	}
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	if self.val.is_none() {
+	// 		return Ok(0);
+	// 	}
+	// 	let v :T;
+	// 	v = self.val.as_ref().unwrap().clone();
+	// 	let _ = v.encode_json(key,val)?;
+	// 	return Ok(1);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		if key.len() > 0 {
-			let k = val.get(key);
-			if k.is_none() {
-				self.val = None;
-				return Ok(0);
-			}			
-		}
-		let mut v :T = T::init_asn1();
-		let _ = v.decode_json(key,val)?;
-		self.val = Some(v.clone());
-		return Ok(1);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	if key.len() > 0 {
+	// 		let k = val.get(key);
+	// 		if k.is_none() {
+	// 			self.val = None;
+	// 			return Ok(0);
+	// 		}			
+	// 	}
+	// 	let mut v :T = T::init_asn1();
+	// 	let _ = v.decode_json(key,val)?;
+	// 	self.val = Some(v.clone());
+	// 	return Ok(1);
+	// }
 
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut v :T; 
@@ -160,70 +160,70 @@ impl<'de,T :Asn1Op + Clone + Serialize + DeserializeOwned,const TAG:u8> Deserial
 
 
 impl<T: Asn1Op + Clone + Serialize + DeserializeOwned, const TAG:u8> Asn1Op for Asn1ImpSet<T,TAG> {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mut mainv :Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
-		let mut idx :i32 = 0;
-		if self.val.len() == 1 {
-			let mut cvv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-			self.val[0].encode_json("",&mut cvv)?;
-			if key.len() > 0 {
-				val[key] = serde_json::json!(cvv);	
-			} else {
-				*val = serde_json::json!(cvv);
-			}
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	let mut mainv :Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
+	// 	let mut idx :i32 = 0;
+	// 	if self.val.len() == 1 {
+	// 		let mut cvv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	// 		self.val[0].encode_json("",&mut cvv)?;
+	// 		if key.len() > 0 {
+	// 			val[key] = serde_json::json!(cvv);	
+	// 		} else {
+	// 			*val = serde_json::json!(cvv);
+	// 		}
 
-			idx += 1;
-		} else {
-			for v in &self.val {
-				let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-				let _ = v.encode_json("", &mut cv)?;
-				mainv.push(cv.clone());
-				idx += 1;			
-			}
-			if key.len() > 0 {
-				val[key] = serde_json::json!(mainv);	
-			} else {
-				*val = serde_json::json!(mainv.clone());
-			}
+	// 		idx += 1;
+	// 	} else {
+	// 		for v in &self.val {
+	// 			let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	// 			let _ = v.encode_json("", &mut cv)?;
+	// 			mainv.push(cv.clone());
+	// 			idx += 1;			
+	// 		}
+	// 		if key.len() > 0 {
+	// 			val[key] = serde_json::json!(mainv);	
+	// 		} else {
+	// 			*val = serde_json::json!(mainv.clone());
+	// 		}
 
-		}
-		return Ok(idx);
-	}
+	// 	}
+	// 	return Ok(idx);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mainv :serde_json::value::Value;
-		let ck :serde_json::value::Value;
-		let mut idx :i32 = 0;
-		if key.len() > 0 {
-			let k = val.get(key);
-			if k.is_none() {
-				self.val = Vec::new();
-				return Ok(0);
-			}
-			ck = serde_json::json!(k.unwrap());
-		} else {
-			ck = val.clone();
-		}
-		self.val = Vec::new();
-		if ck.is_object() {	
-			mainv = serde_json::json!(ck.as_object().unwrap().clone());
-			let mut t = T::init_asn1();
-			let _ = t.decode_json("",&mainv)?;
-			self.val.push(t);
-			idx += 1;
-		} else if ck.is_array() {
-			let b = ck.as_array().unwrap();
-			for v in b.iter() {				
-				let mut t = T::init_asn1();
-				let _ = t.decode_json("",v)?;
-				self.val.push(t);
-				idx += 1;
-			}
-		} else {
-			asn1obj_new_error!{Asn1ComplexError,"{} not valid type",key}
-		}
-		return Ok(idx);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	let mainv :serde_json::value::Value;
+	// 	let ck :serde_json::value::Value;
+	// 	let mut idx :i32 = 0;
+	// 	if key.len() > 0 {
+	// 		let k = val.get(key);
+	// 		if k.is_none() {
+	// 			self.val = Vec::new();
+	// 			return Ok(0);
+	// 		}
+	// 		ck = serde_json::json!(k.unwrap());
+	// 	} else {
+	// 		ck = val.clone();
+	// 	}
+	// 	self.val = Vec::new();
+	// 	if ck.is_object() {	
+	// 		mainv = serde_json::json!(ck.as_object().unwrap().clone());
+	// 		let mut t = T::init_asn1();
+	// 		let _ = t.decode_json("",&mainv)?;
+	// 		self.val.push(t);
+	// 		idx += 1;
+	// 	} else if ck.is_array() {
+	// 		let b = ck.as_array().unwrap();
+	// 		for v in b.iter() {				
+	// 			let mut t = T::init_asn1();
+	// 			let _ = t.decode_json("",v)?;
+	// 			self.val.push(t);
+	// 			idx += 1;
+	// 		}
+	// 	} else {
+	// 		asn1obj_new_error!{Asn1ComplexError,"{} not valid type",key}
+	// 	}
+	// 	return Ok(idx);
+	// }
 
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize = 0;
@@ -343,66 +343,66 @@ impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for
 
 
 impl<T: Asn1Op + Clone + Serialize + DeserializeOwned> Asn1Op for Asn1Seq<T> {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mut mainv :Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
-		let mut idx :i32 = 0;
-		if self.val.len() == 1 {
-			let mut cvv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-			self.val[0].encode_json("", &mut cvv)?;
-			if key.len() > 0 {
-				val[key] = serde_json::json!(cvv);
-			} else {
-				*val = serde_json::json!(cvv);
-			}
-			idx += 1;
-		} else {
-			for v in &self.val {
-				let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-				let _ = v.encode_json("", &mut cv)?;
-				mainv.push(cv.clone());
-				idx += 1;			
-			}
-			if key.len() > 0 {
-				val[key] = serde_json::json!(mainv);	
-			} else {
-				*val = serde_json::json!(mainv);
-			}
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	let mut mainv :Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
+	// 	let mut idx :i32 = 0;
+	// 	if self.val.len() == 1 {
+	// 		let mut cvv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	// 		self.val[0].encode_json("", &mut cvv)?;
+	// 		if key.len() > 0 {
+	// 			val[key] = serde_json::json!(cvv);
+	// 		} else {
+	// 			*val = serde_json::json!(cvv);
+	// 		}
+	// 		idx += 1;
+	// 	} else {
+	// 		for v in &self.val {
+	// 			let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	// 			let _ = v.encode_json("", &mut cv)?;
+	// 			mainv.push(cv.clone());
+	// 			idx += 1;			
+	// 		}
+	// 		if key.len() > 0 {
+	// 			val[key] = serde_json::json!(mainv);	
+	// 		} else {
+	// 			*val = serde_json::json!(mainv);
+	// 		}
 
-		}
+	// 	}
 		
-		return Ok(idx);
-	}
+	// 	return Ok(idx);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let ck :serde_json::value::Value;
-		let mut idx :i32 = 0;
-		if key.len() > 0 {
-			let k = val.get(key);
-			if k.is_none() {
-				self.val = Vec::new();
-				return Ok(0);
-			}
-			ck = serde_json::json!(k.unwrap());
-		} else {
-			ck = val.clone();
-		}
-		self.val = Vec::new();
-		if ck.is_array() {
-			let b = ck.as_array().unwrap();
-			for v in b.iter() {
-				let mut t = T::init_asn1();
-				let _ = t.decode_json("",v)?;
-				self.val.push(t);
-				idx += 1;
-			}			
-		} else {
-			let mut t = T::init_asn1();
-			let _ = t.decode_json("",&ck)?;
-			self.val.push(t);
-			idx += 1;
-		}
-		return Ok(idx);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	let ck :serde_json::value::Value;
+	// 	let mut idx :i32 = 0;
+	// 	if key.len() > 0 {
+	// 		let k = val.get(key);
+	// 		if k.is_none() {
+	// 			self.val = Vec::new();
+	// 			return Ok(0);
+	// 		}
+	// 		ck = serde_json::json!(k.unwrap());
+	// 	} else {
+	// 		ck = val.clone();
+	// 	}
+	// 	self.val = Vec::new();
+	// 	if ck.is_array() {
+	// 		let b = ck.as_array().unwrap();
+	// 		for v in b.iter() {
+	// 			let mut t = T::init_asn1();
+	// 			let _ = t.decode_json("",v)?;
+	// 			self.val.push(t);
+	// 			idx += 1;
+	// 		}			
+	// 	} else {
+	// 		let mut t = T::init_asn1();
+	// 		let _ = t.decode_json("",&ck)?;
+	// 		self.val.push(t);
+	// 		idx += 1;
+	// 	}
+	// 	return Ok(idx);
+	// }
 
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize = 0;
@@ -545,65 +545,65 @@ impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned> Deserialize<'de> for
 
 
 impl<T: Asn1Op + Clone + Serialize + DeserializeOwned> Asn1Op for Asn1Set<T> {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mut mainv : Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
-		let mut idx :i32 = 0;
-		if self.val.len() == 1 {
-			let mut cvv :serde_json::value::Value = serde_json::from_str("{}")?;
-			self.val[0].encode_json("",&mut cvv)?;
-			if key.len() > 0 {
-				val[key] = serde_json::json!(cvv);	
-			} else {
-				*val = serde_json::json!(cvv);
-			}		
-			idx += 1;
-		} else {
-			for v in &self.val {
-				let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-				let _ = v.encode_json(ASN1_JSON_DUMMY, &mut cv)?;
-				mainv.push(cv[ASN1_JSON_DUMMY].clone());
-				idx += 1;			
-			}
-			if key.len() > 0 {
-				val[key] = serde_json::json!(mainv);	
-			} else {
-				*val = serde_json::json!(mainv);
-			}		
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	let mut mainv : Vec<serde_json::value::Value> = serde_json::from_str("[]").unwrap();
+	// 	let mut idx :i32 = 0;
+	// 	if self.val.len() == 1 {
+	// 		let mut cvv :serde_json::value::Value = serde_json::from_str("{}")?;
+	// 		self.val[0].encode_json("",&mut cvv)?;
+	// 		if key.len() > 0 {
+	// 			val[key] = serde_json::json!(cvv);	
+	// 		} else {
+	// 			*val = serde_json::json!(cvv);
+	// 		}		
+	// 		idx += 1;
+	// 	} else {
+	// 		for v in &self.val {
+	// 			let mut cv :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+	// 			let _ = v.encode_json(ASN1_JSON_DUMMY, &mut cv)?;
+	// 			mainv.push(cv[ASN1_JSON_DUMMY].clone());
+	// 			idx += 1;			
+	// 		}
+	// 		if key.len() > 0 {
+	// 			val[key] = serde_json::json!(mainv);	
+	// 		} else {
+	// 			*val = serde_json::json!(mainv);
+	// 		}		
 
-		}
-		return Ok(idx);
-	}
+	// 	}
+	// 	return Ok(idx);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		let mut idx :i32 = 0;
-		let ck :serde_json::value::Value;
-		if key.len() > 0 {
-			let k = val.get(key);
-			if k.is_none() {
-				self.val = Vec::new();
-				return Ok(0);
-			}
-			ck = serde_json::json!(k.unwrap());
-		} else {
-			ck = val.clone();
-		}
-		self.val = Vec::new();
-		if ck.is_array() {
-			let b = ck.as_array().unwrap();
-			for v in b.iter() {
-				let mut t = T::init_asn1();
-				let _ = t.decode_json("",v)?;
-				self.val.push(t);
-				idx += 1;
-			}
-		} else {
-			let mut t = T::init_asn1();
-			let _ = t.decode_json("",&ck)?;
-			self.val.push(t);
-			idx += 1;
-		}
-		return Ok(idx);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	let mut idx :i32 = 0;
+	// 	let ck :serde_json::value::Value;
+	// 	if key.len() > 0 {
+	// 		let k = val.get(key);
+	// 		if k.is_none() {
+	// 			self.val = Vec::new();
+	// 			return Ok(0);
+	// 		}
+	// 		ck = serde_json::json!(k.unwrap());
+	// 	} else {
+	// 		ck = val.clone();
+	// 	}
+	// 	self.val = Vec::new();
+	// 	if ck.is_array() {
+	// 		let b = ck.as_array().unwrap();
+	// 		for v in b.iter() {
+	// 			let mut t = T::init_asn1();
+	// 			let _ = t.decode_json("",v)?;
+	// 			self.val.push(t);
+	// 			idx += 1;
+	// 		}
+	// 	} else {
+	// 		let mut t = T::init_asn1();
+	// 		let _ = t.decode_json("",&ck)?;
+	// 		self.val.push(t);
+	// 		idx += 1;
+	// 	}
+	// 	return Ok(idx);
+	// }
 
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize = 0;
@@ -728,13 +728,13 @@ impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:u8> Deseria
 
 
 impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned, const TAG:u8> Asn1Op for Asn1Imp<T,TAG> {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.val.encode_json(key,val);
-	}
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.val.encode_json(key,val);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.val.decode_json(key,val);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.val.decode_json(key,val);
+	// }
 
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize = 0;
@@ -844,13 +844,13 @@ impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:u8> Deseria
 
 
 impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned, const TAG:u8> Asn1Op for Asn1Exp<T,TAG> {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.val.encode_json(key,val);
-	}
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.val.encode_json(key,val);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.val.decode_json(key,val);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.val.decode_json(key,val);
+	// }
 
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize = 0;
@@ -951,30 +951,30 @@ impl<'de,T :Asn1Op + Clone +  Serialize + DeserializeOwned,const TAG:u8> Deseria
 
 
 impl<T: Asn1Op + Clone +  Serialize + DeserializeOwned, const TAG:u8> Asn1Op for Asn1Ndef<T,TAG> {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		if self.val.is_none() {
-			return Ok(0);
-		}
-		let v :T;
-		v = self.val.as_ref().unwrap().clone();
-		let _ = v.encode_json(key,val)?;
-		return Ok(1);
-	}
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	if self.val.is_none() {
+	// 		return Ok(0);
+	// 	}
+	// 	let v :T;
+	// 	v = self.val.as_ref().unwrap().clone();
+	// 	let _ = v.encode_json(key,val)?;
+	// 	return Ok(1);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		if key.len() > 0 {
-			let k = val.get(key);
-			if k.is_none() {
-				self.val = None;
-				return Ok(0);
-			}			
-		}
-		let mut v :T = T::init_asn1();
-		self.val = None;
-		let _ = v.decode_json(key,val)?;
-		self.val = Some(v.clone());
-		return Ok(1);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	if key.len() > 0 {
+	// 		let k = val.get(key);
+	// 		if k.is_none() {
+	// 			self.val = None;
+	// 			return Ok(0);
+	// 		}			
+	// 	}
+	// 	let mut v :T = T::init_asn1();
+	// 	self.val = None;
+	// 	let _ = v.decode_json(key,val)?;
+	// 	self.val = Some(v.clone());
+	// 	return Ok(1);
+	// }
 
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize;
@@ -1086,13 +1086,13 @@ impl<'de,T :Asn1Op +  Asn1Selector + Clone + Serialize + DeserializeOwned> Deser
 
 
 impl<T: Asn1Op +  Asn1Selector + Clone + Serialize + DeserializeOwned> Asn1Op for Asn1SeqSelector<T> {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.val.encode_json(key,val);
-	}
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.val.encode_json(key,val);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.val.decode_json(key,val);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.val.decode_json(key,val);
+	// }
 
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize = 0;
@@ -1193,13 +1193,13 @@ impl<'de,T :Asn1Op +  Clone + Serialize + DeserializeOwned> Deserialize<'de> for
 
 
 impl<T: Asn1Op +  Clone + Serialize + DeserializeOwned> Asn1Op for Asn1BitSeq<T> {
-	fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.val.encode_json(key,val);
-	}
+	// fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.val.encode_json(key,val);
+	// }
 
-	fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-		return self.val.decode_json(key,val);
-	}
+	// fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+	// 	return self.val.decode_json(key,val);
+	// }
 
 	fn decode_asn1(&mut self, code :&[u8]) -> Result<usize,Box<dyn Error>> {
 		let mut retv :usize = 0;

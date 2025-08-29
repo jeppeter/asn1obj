@@ -16,7 +16,7 @@ use crate::logger::{asn1obj_debug_out,asn1obj_log_get_timestamp};
 
 use bytes::{BytesMut,BufMut};
 use regex::Regex;
-use serde_json;
+//use serde_json;
 
 use std::str::FromStr;
 use std::ops::Shr;
@@ -193,79 +193,79 @@ impl<'de> serde::de::Deserialize<'de> for Asn1Any {
 
 impl Asn1Op for Asn1Any {
 
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-        let mut s :String = "".to_string();
-        s.push_str("[");
-        for i in 0..self.content.len() {
-            if i > 0 {
-                s.push_str(",");
-            }
-            s.push_str(&format!("{}",self.content[i]));
-        }
-        s.push_str("]");
-        setjson[ASN1_JSON_CONTENT] = serde_json::from_str(&s).unwrap();
-        setjson[ASN1_JSON_TAG] = serde_json::json!(self.tag);
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+    //     let mut s :String = "".to_string();
+    //     s.push_str("[");
+    //     for i in 0..self.content.len() {
+    //         if i > 0 {
+    //             s.push_str(",");
+    //         }
+    //         s.push_str(&format!("{}",self.content[i]));
+    //     }
+    //     s.push_str("]");
+    //     setjson[ASN1_JSON_CONTENT] = serde_json::from_str(&s).unwrap();
+    //     setjson[ASN1_JSON_TAG] = serde_json::json!(self.tag);
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.content = Vec::new();
-                self.tag = ASN1_NULL_FLAG as u64;
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.content = Vec::new();
+    //             self.tag = ASN1_NULL_FLAG as u64;
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
 
-        } else {
-            vmap = val.clone();
-        }
-        let ores = vmap.get(ASN1_JSON_TAG);
-        if ores.is_none() {
-            asn1obj_new_error!{Asn1ObjBaseError,"no {} found in {}", ASN1_JSON_TAG,key}
-        }
-        let ores2 = vmap.get(ASN1_JSON_CONTENT);
-        if ores2.is_none() {
-            asn1obj_new_error!{Asn1ObjBaseError,"no {} found in {}",ASN1_JSON_CONTENT,key}
-        }
-        let tagv = ores.unwrap();
-        let conv = ores2.unwrap();
-        if !tagv.is_i64() && !tagv.is_string() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not i64", ASN1_JSON_TAG}
-        }
-        if !conv.is_array() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not array",ASN1_JSON_CONTENT}
-        }
-        if tagv.is_i64() {
-            let c = tagv.as_i64().unwrap();
-            self.tag = c as u64;
-        } else if tagv.is_string() {
-            let c = tagv.as_str().unwrap();
-            match c.parse::<i64>() {
-                Ok(fi) => {
-                    self.tag = fi as u64;
-                },
-                Err(e) => {
-                    asn1obj_new_error!{Asn1ObjBaseError,"{} val {} error {:?}", ASN1_JSON_TAG,c,e}
-                }
-            }
-        }
-        self.content = Vec::new();
-        for v in conv.as_array().unwrap().iter() {
-            let c = v.as_u64().unwrap();
-            self.content.push(c as u8);
-        }
-        return Ok(1);
-    }
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     let ores = vmap.get(ASN1_JSON_TAG);
+    //     if ores.is_none() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"no {} found in {}", ASN1_JSON_TAG,key}
+    //     }
+    //     let ores2 = vmap.get(ASN1_JSON_CONTENT);
+    //     if ores2.is_none() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"no {} found in {}",ASN1_JSON_CONTENT,key}
+    //     }
+    //     let tagv = ores.unwrap();
+    //     let conv = ores2.unwrap();
+    //     if !tagv.is_i64() && !tagv.is_string() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not i64", ASN1_JSON_TAG}
+    //     }
+    //     if !conv.is_array() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not array",ASN1_JSON_CONTENT}
+    //     }
+    //     if tagv.is_i64() {
+    //         let c = tagv.as_i64().unwrap();
+    //         self.tag = c as u64;
+    //     } else if tagv.is_string() {
+    //         let c = tagv.as_str().unwrap();
+    //         match c.parse::<i64>() {
+    //             Ok(fi) => {
+    //                 self.tag = fi as u64;
+    //             },
+    //             Err(e) => {
+    //                 asn1obj_new_error!{Asn1ObjBaseError,"{} val {} error {:?}", ASN1_JSON_TAG,c,e}
+    //             }
+    //         }
+    //     }
+    //     self.content = Vec::new();
+    //     for v in conv.as_array().unwrap().iter() {
+    //         let c = v.as_u64().unwrap();
+    //         self.content.push(c as u8);
+    //     }
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1Any {
@@ -395,49 +395,49 @@ impl Asn1Op for Asn1Integer {
     }
 
 
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.val = 0;
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        } else {
-            vmap = serde_json::json!(val.clone());
-        }
-        if !vmap.is_i64() && !vmap.is_string() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or i64",key}
-        }
-        if vmap.is_i64() {
-            let c = vmap.as_i64().unwrap();
-            self.val = c ;
-        } else if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            match c.parse::<i64>() {
-                Ok(fi) => {
-                    self.val = fi;
-                },
-                Err(e) => {
-                    asn1obj_new_error!{Asn1ObjBaseError,"{} val {} error {:?}", key,c,e}
-                }
-            }
-        }
-        return Ok(1);
-    }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.val = 0;
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = serde_json::json!(val.clone());
+    //     }
+    //     if !vmap.is_i64() && !vmap.is_string() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or i64",key}
+    //     }
+    //     if vmap.is_i64() {
+    //         let c = vmap.as_i64().unwrap();
+    //         self.val = c ;
+    //     } else if vmap.is_string() {
+    //         let c = vmap.as_str().unwrap();
+    //         match c.parse::<i64>() {
+    //             Ok(fi) => {
+    //                 self.val = fi;
+    //             },
+    //             Err(e) => {
+    //                 asn1obj_new_error!{Asn1ObjBaseError,"{} val {} error {:?}", key,c,e}
+    //             }
+    //         }
+    //     }
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1Integer {
@@ -627,37 +627,37 @@ impl Asn1Op for Asn1Boolean {
     }
 
 
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.val = false;
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if !vmap.is_boolean()  {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid bool",key}
-        }
-        let c = vmap.as_bool().unwrap();
-        self.val = c ;
-        return Ok(1);
-    }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.val = false;
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if !vmap.is_boolean()  {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid bool",key}
+    //     }
+    //     let c = vmap.as_bool().unwrap();
+    //     self.val = c ;
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1Boolean {
@@ -747,37 +747,37 @@ impl<'de> serde::de::Deserialize<'de> for Asn1BitString {
 
 
 impl Asn1Op for Asn1BitString {
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let setjson = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let setjson = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.val = "".to_string();
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if !vmap.is_string()  {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
-        }
-        let c = vmap.as_str().unwrap();
-        self.val = format!("{}",c) ;
-        return Ok(1);
-    }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.val = "".to_string();
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if !vmap.is_string()  {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
+    //     }
+    //     let c = vmap.as_str().unwrap();
+    //     self.val = format!("{}",c) ;
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1BitString {
@@ -945,61 +945,61 @@ impl<'de> serde::de::Deserialize<'de> for Asn1BitData {
 
 impl Asn1Op for Asn1BitData {
 
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let mut cs :String = "".to_string();
-        let mut idx :i32 = 0;
-        cs.push_str("[");
-        for v in self.data.iter() {
-            if idx > 0 {
-                cs.push_str(",");
-            }
-            cs.push_str(&format!("{}",v));
-            idx += 1;
-        }
-        cs.push_str("]");
-        let setjson = serde_json::from_str(&cs).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let mut cs :String = "".to_string();
+    //     let mut idx :i32 = 0;
+    //     cs.push_str("[");
+    //     for v in self.data.iter() {
+    //         if idx > 0 {
+    //             cs.push_str(",");
+    //         }
+    //         cs.push_str(&format!("{}",v));
+    //         idx += 1;
+    //     }
+    //     cs.push_str("]");
+    //     let setjson = serde_json::from_str(&cs).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if !vmap.is_string() && !vmap.is_array()  {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or array",key}
-        }
-        self.data = Vec::new();
-        if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            for v in c.as_bytes().iter() {
-                self.data.push((*v) as u8);
-            }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if !vmap.is_string() && !vmap.is_array()  {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or array",key}
+    //     }
+    //     self.data = Vec::new();
+    //     if vmap.is_string() {
+    //         let c = vmap.as_str().unwrap();
+    //         for v in c.as_bytes().iter() {
+    //             self.data.push((*v) as u8);
+    //         }
 
-        } else if vmap.is_array() {
-            let c = vmap.as_array().unwrap();
-            for v in c.iter() {
-                if !v.is_i64() {
-                    asn1obj_new_error!{Asn1ObjBaseError,"{} invalid element {:?}",key,c}
-                }
-                self.data.push(v.as_u64().unwrap() as u8);
-            }
-        }
-        return Ok(1);
-    }
+    //     } else if vmap.is_array() {
+    //         let c = vmap.as_array().unwrap();
+    //         for v in c.iter() {
+    //             if !v.is_i64() {
+    //                 asn1obj_new_error!{Asn1ObjBaseError,"{} invalid element {:?}",key,c}
+    //             }
+    //             self.data.push(v.as_u64().unwrap() as u8);
+    //         }
+    //     }
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1BitData {
@@ -1214,81 +1214,81 @@ impl<'de> serde::de::Deserialize<'de> for Asn1BitDataFlag {
 
 impl Asn1Op for Asn1BitDataFlag {
 
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let mut cs :String = "".to_string();
-        let mut idx :i32 = 0;
-        let mut bs :String = "".to_string();
-        bs.push_str("[");
-        for v in self.data.iter() {
-            if idx > 0 {
-                bs.push_str(",");
-            }
-            bs.push_str(&format!("{}",v));
-            idx += 1;
-        }
-        bs.push_str("]");
-        cs.push_str("{");
-        cs.push_str(&format!("\"{}\" : {},",ASN1_JSON_BITDATA,bs));
-        cs.push_str(&format!("\"{}\" : {}",ASN1_JSON_INNER_FLAG,self.flag));
-        cs.push_str("}");
-        let setjson = serde_json::from_str(&cs).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let mut cs :String = "".to_string();
+    //     let mut idx :i32 = 0;
+    //     let mut bs :String = "".to_string();
+    //     bs.push_str("[");
+    //     for v in self.data.iter() {
+    //         if idx > 0 {
+    //             bs.push_str(",");
+    //         }
+    //         bs.push_str(&format!("{}",v));
+    //         idx += 1;
+    //     }
+    //     bs.push_str("]");
+    //     cs.push_str("{");
+    //     cs.push_str(&format!("\"{}\" : {},",ASN1_JSON_BITDATA,bs));
+    //     cs.push_str(&format!("\"{}\" : {}",ASN1_JSON_INNER_FLAG,self.flag));
+    //     cs.push_str("}");
+    //     let setjson = serde_json::from_str(&cs).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let nvmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            nvmap = serde_json::json!(ores.unwrap());
-        } else {
-            nvmap = val.clone();
-        }
-        let vmap :serde_json::value::Value;
-        let k = nvmap.get(ASN1_JSON_BITDATA);
-        if k.is_none() {
-            asn1obj_new_error!{Asn1ObjBaseError,"no [{}] find",ASN1_JSON_BITDATA}
-        }
-        vmap = k.unwrap().clone();
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let nvmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         nvmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         nvmap = val.clone();
+    //     }
+    //     let vmap :serde_json::value::Value;
+    //     let k = nvmap.get(ASN1_JSON_BITDATA);
+    //     if k.is_none() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"no [{}] find",ASN1_JSON_BITDATA}
+    //     }
+    //     vmap = k.unwrap().clone();
 
-        if !vmap.is_string() && !vmap.is_array()  {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or array",key}
-        }
-        self.data = Vec::new();
-        if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            for v in c.as_bytes().iter() {
-                self.data.push((*v) as u8);
-            }
+    //     if !vmap.is_string() && !vmap.is_array()  {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or array",key}
+    //     }
+    //     self.data = Vec::new();
+    //     if vmap.is_string() {
+    //         let c = vmap.as_str().unwrap();
+    //         for v in c.as_bytes().iter() {
+    //             self.data.push((*v) as u8);
+    //         }
 
-        } else if vmap.is_array() {
-            let c = vmap.as_array().unwrap();
-            for v in c.iter() {
-                if !v.is_i64() {
-                    asn1obj_new_error!{Asn1ObjBaseError,"{} invalid element {:?}",key,c}
-                }
-                self.data.push(v.as_u64().unwrap() as u8);
-            }
-        }
-        let k = nvmap.get(ASN1_JSON_INNER_FLAG);
-        if k.is_some()  {
-            let k = k.unwrap();
-            if k.is_i64() {
-                let ival = k.as_i64().unwrap() as u8;
-                self.flag = ival as u64 ;
-            }
-        }
-        return Ok(1);
-    }
+    //     } else if vmap.is_array() {
+    //         let c = vmap.as_array().unwrap();
+    //         for v in c.iter() {
+    //             if !v.is_i64() {
+    //                 asn1obj_new_error!{Asn1ObjBaseError,"{} invalid element {:?}",key,c}
+    //             }
+    //             self.data.push(v.as_u64().unwrap() as u8);
+    //         }
+    //     }
+    //     let k = nvmap.get(ASN1_JSON_INNER_FLAG);
+    //     if k.is_some()  {
+    //         let k = k.unwrap();
+    //         if k.is_i64() {
+    //             let ival = k.as_i64().unwrap() as u8;
+    //             self.flag = ival as u64 ;
+    //         }
+    //     }
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1BitDataFlag {
@@ -1429,50 +1429,50 @@ impl<'de> serde::de::Deserialize<'de> for Asn1OctString {
 
 
 impl Asn1Op for Asn1OctString {
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let setjson = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let setjson = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if !vmap.is_string() && !vmap.is_array()  {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or array",key}
-        }
-        self.val = "".to_string();
-        if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            self.val = format!("{}",c);
-        } else if vmap.is_array() {
-            let c = vmap.as_array().unwrap();
-            let mut retm = BytesMut::with_capacity(c.len());
-            for v in c.iter() {
-                if !v.is_i64() {
-                    asn1obj_new_error!{Asn1ObjBaseError,"{} invalid element {:?}",key,c}
-                }
-                retm.put_u8(v.as_u64().unwrap() as u8);
-            }
-            let a = retm.freeze();
-            self.val = String::from_utf8_lossy(&a).to_string();
-        }
-        return Ok(1);
-    }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if !vmap.is_string() && !vmap.is_array()  {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or array",key}
+    //     }
+    //     self.val = "".to_string();
+    //     if vmap.is_string() {
+    //         let c = vmap.as_str().unwrap();
+    //         self.val = format!("{}",c);
+    //     } else if vmap.is_array() {
+    //         let c = vmap.as_array().unwrap();
+    //         let mut retm = BytesMut::with_capacity(c.len());
+    //         for v in c.iter() {
+    //             if !v.is_i64() {
+    //                 asn1obj_new_error!{Asn1ObjBaseError,"{} invalid element {:?}",key,c}
+    //             }
+    //             retm.put_u8(v.as_u64().unwrap() as u8);
+    //         }
+    //         let a = retm.freeze();
+    //         self.val = String::from_utf8_lossy(&a).to_string();
+    //     }
+    //     return Ok(1);
+    // }
 
 
     fn init_asn1() -> Self {
@@ -1564,58 +1564,58 @@ impl<'de> serde::de::Deserialize<'de> for Asn1OctData {
 
 impl Asn1Op for Asn1OctData {
 
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let mut cs :String = "[".to_string();
-        let mut idx :i32 = 0;
-        for v in self.data.iter() {
-            if idx > 0 {
-                cs.push_str(",");
-            }
-            cs.push_str(&format!("{}",v));
-            idx += 1;
-        }
-        cs.push_str("]");
-        let setjson = serde_json::from_str(&cs).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }        
-        Ok(1)
-    }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let mut cs :String = "[".to_string();
+    //     let mut idx :i32 = 0;
+    //     for v in self.data.iter() {
+    //         if idx > 0 {
+    //             cs.push_str(",");
+    //         }
+    //         cs.push_str(&format!("{}",v));
+    //         idx += 1;
+    //     }
+    //     cs.push_str("]");
+    //     let setjson = serde_json::from_str(&cs).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }        
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if !vmap.is_string() && !vmap.is_array()  {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or array",key}
-        }
-        self.data = Vec::new();
-        if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            for v in c.as_bytes().iter() {
-                self.data.push(*v);
-            }
-        } else if vmap.is_array() {
-            let c = vmap.as_array().unwrap();
-            for v in c.iter() {
-                if !v.is_i64() {
-                    asn1obj_new_error!{Asn1ObjBaseError,"{} invalid element {:?}",key,c}
-                }
-                self.data.push(v.as_u64().unwrap() as u8);
-            }
-        }
-        return Ok(1);
-    }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if !vmap.is_string() && !vmap.is_array()  {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or array",key}
+    //     }
+    //     self.data = Vec::new();
+    //     if vmap.is_string() {
+    //         let c = vmap.as_str().unwrap();
+    //         for v in c.as_bytes().iter() {
+    //             self.data.push(*v);
+    //         }
+    //     } else if vmap.is_array() {
+    //         let c = vmap.as_array().unwrap();
+    //         for v in c.iter() {
+    //             if !v.is_i64() {
+    //                 asn1obj_new_error!{Asn1ObjBaseError,"{} invalid element {:?}",key,c}
+    //             }
+    //             self.data.push(v.as_u64().unwrap() as u8);
+    //         }
+    //     }
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1OctData {
@@ -1736,35 +1736,35 @@ impl<'de> serde::de::Deserialize<'de> for Asn1Null {
 
 impl Asn1Op for Asn1Null {
 
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let setjson = serde_json::from_str(&format!("null")).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let setjson = serde_json::from_str(&format!("null")).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if !vmap.is_null() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid null",key}
-        }
-        self.data = Vec::new();
-        return Ok(1);
-    }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if !vmap.is_null() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid null",key}
+    //     }
+    //     self.data = Vec::new();
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1Null {
@@ -2064,36 +2064,36 @@ impl Asn1Object {
 
 
 impl Asn1Op for Asn1Object {
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let setjson = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let setjson = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                let _ = self.set_value(ASN1_OBJECT_DEFAULT_STR)?;
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        }else {
-            vmap = val.clone();
-        }
-        if !vmap.is_string() {
-            asn1obj_new_error!{Asn1ObjBaseError,"[{}] not valid string {:?}",key,vmap}
-        }
-        let c = vmap.as_str().unwrap();
-        let _ = self.set_value(c)?;
-        return Ok(1);
-    }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             let _ = self.set_value(ASN1_OBJECT_DEFAULT_STR)?;
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     }else {
+    //         vmap = val.clone();
+    //     }
+    //     if !vmap.is_string() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"[{}] not valid string {:?}",key,vmap}
+    //     }
+    //     let c = vmap.as_str().unwrap();
+    //     let _ = self.set_value(c)?;
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1Object {
@@ -2177,49 +2177,49 @@ impl<'de> serde::de::Deserialize<'de> for Asn1Enumerated {
 
 
 impl Asn1Op for Asn1Enumerated {
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let setjson = serde_json::from_str(&format!("{}",self.val)).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.val = 0;
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if !vmap.is_i64() && !vmap.is_string() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or i64",key}
-        }
-        if vmap.is_i64() {
-            let c = vmap.as_i64().unwrap();
-            self.val = c ;
-        } else if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            match c.parse::<i64>() {
-                Ok(fi) => {
-                    self.val = fi;
-                },
-                Err(e) => {
-                    asn1obj_new_error!{Asn1ObjBaseError,"{} val {} error {:?}", key,c,e}
-                }
-            }
-        }
-        return Ok(1);
-    }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.val = 0;
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if !vmap.is_i64() && !vmap.is_string() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or i64",key}
+    //     }
+    //     if vmap.is_i64() {
+    //         let c = vmap.as_i64().unwrap();
+    //         self.val = c ;
+    //     } else if vmap.is_string() {
+    //         let c = vmap.as_str().unwrap();
+    //         match c.parse::<i64>() {
+    //             Ok(fi) => {
+    //                 self.val = fi;
+    //             },
+    //             Err(e) => {
+    //                 asn1obj_new_error!{Asn1ObjBaseError,"{} val {} error {:?}", key,c,e}
+    //             }
+    //         }
+    //     }
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1Enumerated {
@@ -2404,40 +2404,40 @@ impl<'de> serde::de::Deserialize<'de> for Asn1String {
 
 
 impl Asn1Op for Asn1String {
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let setjson = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let setjson = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.val = "".to_string();
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if  !vmap.is_string() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
-        }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.val = "".to_string();
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if  !vmap.is_string() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
+    //     }
 
-        if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            self.val = format!("{}",c);
-        }
-        return Ok(1);
-    }
+    //     if vmap.is_string() {
+    //         let c = vmap.as_str().unwrap();
+    //         self.val = format!("{}",c);
+    //     }
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1String {
@@ -2531,68 +2531,68 @@ impl<'de> serde::de::Deserialize<'de> for Asn1PrintableString {
 
 
 impl Asn1Op for Asn1PrintableString {
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-        let cs = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
-        let ci = serde_json::from_str(&format!("{}",self.flag)).unwrap();
-        setjson[ASN1_JSON_PRINTABLE_STRING] = cs;
-        setjson[ASN1_JSON_INNER_FLAG] = ci;
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+    //     let cs = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
+    //     let ci = serde_json::from_str(&format!("{}",self.flag)).unwrap();
+    //     setjson[ASN1_JSON_PRINTABLE_STRING] = cs;
+    //     setjson[ASN1_JSON_INNER_FLAG] = ci;
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.val = "".to_string();
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if  !vmap.is_string() && !vmap.is_object() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or object",key}
-        }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.val = "".to_string();
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if  !vmap.is_string() && !vmap.is_object() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or object",key}
+    //     }
 
-        if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            self.val = format!("{}",c);
-            self.flag = ASN1_PRINTABLE_FLAG;
-        } else if vmap.is_object() {
-            let c = vmap.as_object().unwrap();
-            let k = c.get(ASN1_JSON_PRINTABLE_STRING);
-            if k.is_none() {
-                asn1obj_new_error!{Asn1ObjBaseError,"{} not found {} in Asn1PrintableString object",key,ASN1_JSON_PRINTABLE_STRING}
-            } 
-            let k = k.unwrap();
-            if !k.is_string() {
-                asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not string",key,ASN1_JSON_PRINTABLE_STRING}
-            }
-            self.val = format!("{}",k.as_str().unwrap());
-            self.flag = ASN1_PRINTABLE_FLAG;
-            let k = c.get(ASN1_JSON_INNER_FLAG);
-            if k.is_some()  {
-                let k = k.unwrap();
-                if k.is_i64() {
-                    let ival = k.as_i64().unwrap() as u8;
-                    if ival != ASN1_PRINTABLE_FLAG && ival != ASN1_PRINTABLE2_FLAG  && ival != ASN1_UTF8STRING_FLAG && ival != ASN1_T61STRING_FLAG {
-                        asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not valid flag",key,ASN1_JSON_INNER_FLAG}
-                    }
-                    self.flag = ival;                    
-                }
-            }
-        }
-        return Ok(1);
-    }
+    //     if vmap.is_string() {
+    //         let c = vmap.as_str().unwrap();
+    //         self.val = format!("{}",c);
+    //         self.flag = ASN1_PRINTABLE_FLAG;
+    //     } else if vmap.is_object() {
+    //         let c = vmap.as_object().unwrap();
+    //         let k = c.get(ASN1_JSON_PRINTABLE_STRING);
+    //         if k.is_none() {
+    //             asn1obj_new_error!{Asn1ObjBaseError,"{} not found {} in Asn1PrintableString object",key,ASN1_JSON_PRINTABLE_STRING}
+    //         } 
+    //         let k = k.unwrap();
+    //         if !k.is_string() {
+    //             asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not string",key,ASN1_JSON_PRINTABLE_STRING}
+    //         }
+    //         self.val = format!("{}",k.as_str().unwrap());
+    //         self.flag = ASN1_PRINTABLE_FLAG;
+    //         let k = c.get(ASN1_JSON_INNER_FLAG);
+    //         if k.is_some()  {
+    //             let k = k.unwrap();
+    //             if k.is_i64() {
+    //                 let ival = k.as_i64().unwrap() as u8;
+    //                 if ival != ASN1_PRINTABLE_FLAG && ival != ASN1_PRINTABLE2_FLAG  && ival != ASN1_UTF8STRING_FLAG && ival != ASN1_T61STRING_FLAG {
+    //                     asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not valid flag",key,ASN1_JSON_INNER_FLAG}
+    //                 }
+    //                 self.flag = ival;                    
+    //             }
+    //         }
+    //     }
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1PrintableString {
@@ -2690,68 +2690,68 @@ impl<'de> serde::de::Deserialize<'de> for Asn1IA5String {
 
 
 impl Asn1Op for Asn1IA5String {
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-        let cs = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
-        let ci = serde_json::from_str(&format!("{}",self.flag)).unwrap();
-        setjson[ASN1_JSON_IA5STRING] = cs;
-        setjson[ASN1_JSON_INNER_FLAG] = ci;
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+    //     let cs = serde_json::from_str(&format!("\"{}\"",self.val)).unwrap();
+    //     let ci = serde_json::from_str(&format!("{}",self.flag)).unwrap();
+    //     setjson[ASN1_JSON_IA5STRING] = cs;
+    //     setjson[ASN1_JSON_INNER_FLAG] = ci;
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.val = "".to_string();
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if  !vmap.is_string() && !vmap.is_object() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or object",key}
-        }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.val = "".to_string();
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if  !vmap.is_string() && !vmap.is_object() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or object",key}
+    //     }
 
-        if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            self.val = format!("{}",c);
-            self.flag = ASN1_PRINTABLE_FLAG;
-        } else if vmap.is_object() {
-            let c = vmap.as_object().unwrap();
-            let k = c.get(ASN1_JSON_IA5STRING);
-            if k.is_none() {
-                asn1obj_new_error!{Asn1ObjBaseError,"{} not found {} in Asn1PrintableString object",key,ASN1_JSON_IA5STRING}
-            } 
-            let k = k.unwrap();
-            if !k.is_string() {
-                asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not string",key,ASN1_JSON_IA5STRING}
-            }
-            self.val = format!("{}",k.as_str().unwrap());
-            self.flag = ASN1_PRINTABLE2_FLAG;
-            let k = c.get(ASN1_JSON_INNER_FLAG);
-            if k.is_some()  {
-                let k = k.unwrap();
-                if k.is_i64() {
-                    let ival = k.as_i64().unwrap() as u8;
-                    if ival != ASN1_PRINTABLE2_FLAG  {
-                        asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not valid flag",key,ASN1_JSON_INNER_FLAG}
-                    }
-                    self.flag = ival;                    
-                }
-            }
-        }
-        return Ok(1);
-    }
+    //     if vmap.is_string() {
+    //         let c = vmap.as_str().unwrap();
+    //         self.val = format!("{}",c);
+    //         self.flag = ASN1_PRINTABLE_FLAG;
+    //     } else if vmap.is_object() {
+    //         let c = vmap.as_object().unwrap();
+    //         let k = c.get(ASN1_JSON_IA5STRING);
+    //         if k.is_none() {
+    //             asn1obj_new_error!{Asn1ObjBaseError,"{} not found {} in Asn1PrintableString object",key,ASN1_JSON_IA5STRING}
+    //         } 
+    //         let k = k.unwrap();
+    //         if !k.is_string() {
+    //             asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not string",key,ASN1_JSON_IA5STRING}
+    //         }
+    //         self.val = format!("{}",k.as_str().unwrap());
+    //         self.flag = ASN1_PRINTABLE2_FLAG;
+    //         let k = c.get(ASN1_JSON_INNER_FLAG);
+    //         if k.is_some()  {
+    //             let k = k.unwrap();
+    //             if k.is_i64() {
+    //                 let ival = k.as_i64().unwrap() as u8;
+    //                 if ival != ASN1_PRINTABLE2_FLAG  {
+    //                     asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not valid flag",key,ASN1_JSON_INNER_FLAG}
+    //                 }
+    //                 self.flag = ival;                    
+    //             }
+    //         }
+    //     }
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1IA5String {
@@ -3243,68 +3243,68 @@ impl Asn1Time {
 
 
 impl Asn1Op for Asn1Time {
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
-        setjson[ASN1_JSON_TIME] = serde_json::from_str(&format!("\"{}\"",self.get_value_str())).unwrap();
-        setjson[ASN1_JSON_INNER_FLAG] = serde_json::from_str(&format!("{}",self.utag)).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let mut setjson :serde_json::value::Value = serde_json::from_str("{}").unwrap();
+    //     setjson[ASN1_JSON_TIME] = serde_json::from_str(&format!("\"{}\"",self.get_value_str())).unwrap();
+    //     setjson[ASN1_JSON_INNER_FLAG] = serde_json::from_str(&format!("{}",self.utag)).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.val = ASN1_TIME_DEFAULT_STR.to_string();
-                self.origval = "".to_string();
-                self.data = Vec::new();
-                self.utag = ASN1_UTCTIME_FLAG;
-                return Ok(0);
-            }
-            vmap = serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if  !vmap.is_string() && !vmap.is_object() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or object",key}
-        }
-        self.utag = ASN1_UTCTIME_FLAG;
-        self.origval = "".to_string();
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.val = ASN1_TIME_DEFAULT_STR.to_string();
+    //             self.origval = "".to_string();
+    //             self.data = Vec::new();
+    //             self.utag = ASN1_UTCTIME_FLAG;
+    //             return Ok(0);
+    //         }
+    //         vmap = serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if  !vmap.is_string() && !vmap.is_object() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string or object",key}
+    //     }
+    //     self.utag = ASN1_UTCTIME_FLAG;
+    //     self.origval = "".to_string();
 
-        if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            let _ = self.set_value_str(c)?;
-        } else if vmap.is_object() {
-            let c = vmap.as_object().unwrap();
-            let k = c.get(ASN1_JSON_TIME);
-            if k.is_none() {
-                asn1obj_new_error!{Asn1ObjBaseError,"{} not found {} in Asn1PrintableString object",key,ASN1_JSON_TIME}
-            } 
-            let k = k.unwrap();
-            if !k.is_string() {
-                asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not string",key,ASN1_JSON_TIME}
-            }
-            let _ = self.set_value_str(k.as_str().unwrap());
-            let k = c.get(ASN1_JSON_INNER_FLAG);
-            if k.is_some()  {
-                let k = k.unwrap();
-                if k.is_i64() {
-                    let ival = k.as_i64().unwrap() as u8;
-                    if ival != ASN1_UTCTIME_FLAG  && ival != ASN1_GENERALTIME_FLAG {
-                        asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not valid flag",key,ASN1_JSON_INNER_FLAG}
-                    }
-                    self.utag = ival;                    
-                }
-            }
-        }
-        return Ok(1);
-    }
+    //     if vmap.is_string() {
+    //         let c = vmap.as_str().unwrap();
+    //         let _ = self.set_value_str(c)?;
+    //     } else if vmap.is_object() {
+    //         let c = vmap.as_object().unwrap();
+    //         let k = c.get(ASN1_JSON_TIME);
+    //         if k.is_none() {
+    //             asn1obj_new_error!{Asn1ObjBaseError,"{} not found {} in Asn1PrintableString object",key,ASN1_JSON_TIME}
+    //         } 
+    //         let k = k.unwrap();
+    //         if !k.is_string() {
+    //             asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not string",key,ASN1_JSON_TIME}
+    //         }
+    //         let _ = self.set_value_str(k.as_str().unwrap());
+    //         let k = c.get(ASN1_JSON_INNER_FLAG);
+    //         if k.is_some()  {
+    //             let k = k.unwrap();
+    //             if k.is_i64() {
+    //                 let ival = k.as_i64().unwrap() as u8;
+    //                 if ival != ASN1_UTCTIME_FLAG  && ival != ASN1_GENERALTIME_FLAG {
+    //                     asn1obj_new_error!{Asn1ObjBaseError,"{}:{} not valid flag",key,ASN1_JSON_INNER_FLAG}
+    //                 }
+    //                 self.utag = ival;                    
+    //             }
+    //         }
+    //     }
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1Time {
@@ -3433,45 +3433,45 @@ impl Asn1BigNum {
 }
 
 impl Asn1Op for Asn1BigNum {
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let s = format!("\"{}\"",self.val.to_str_radix(16));
-        let setjson :serde_json::value::Value = serde_json::from_str(&s).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let s = format!("\"{}\"",self.val.to_str_radix(16));
+    //     let setjson :serde_json::value::Value = serde_json::from_str(&s).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.val = BigUint::parse_bytes(b"0",16).unwrap();
-                self.data = Vec::new();
-                return Ok(0);
-            }
-            vmap =serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if  !vmap.is_string() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
-        }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.val = BigUint::parse_bytes(b"0",16).unwrap();
+    //             self.data = Vec::new();
+    //             return Ok(0);
+    //         }
+    //         vmap =serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if  !vmap.is_string() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
+    //     }
 
-        if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            let ores = BigUint::parse_bytes(c.as_bytes(),16);
-            if ores.is_none() {
-                asn1obj_new_error!{Asn1ObjBaseError,"{} {} not valid biguint",key,c}
-            }
-            self.val = ores.unwrap();
-        }
-        return Ok(1);
-    }
+    //     if vmap.is_string() {
+    //         let c = vmap.as_str().unwrap();
+    //         let ores = BigUint::parse_bytes(c.as_bytes(),16);
+    //         if ores.is_none() {
+    //             asn1obj_new_error!{Asn1ObjBaseError,"{} {} not valid biguint",key,c}
+    //         }
+    //         self.val = ores.unwrap();
+    //     }
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Asn1BigNum {
@@ -3616,40 +3616,40 @@ impl<'de> serde::de::Deserialize<'de> for Asn1BMPString {
 
 
 impl Asn1Op for Asn1BMPString {
-    fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let s = format!("\"{}\"",self.val);
-        let setjson :serde_json::value::Value = serde_json::from_str(&s).unwrap();
-        if key.len() > 0 {
-            val[key] = setjson;    
-        } else {
-            *val = setjson;
-        }
+    // fn encode_json(&self, key :&str,val :&mut serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let s = format!("\"{}\"",self.val);
+    //     let setjson :serde_json::value::Value = serde_json::from_str(&s).unwrap();
+    //     if key.len() > 0 {
+    //         val[key] = setjson;    
+    //     } else {
+    //         *val = setjson;
+    //     }
         
-        Ok(1)
-    }
+    //     Ok(1)
+    // }
 
-    fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
-        let vmap :serde_json::value::Value;
-        if key.len() > 0 {
-            let ores = val.get(key);
-            if ores.is_none() {
-                self.val = "".to_string();
-                return Ok(0);
-            }
-            vmap =serde_json::json!(ores.unwrap());
-        } else {
-            vmap = val.clone();
-        }
-        if  !vmap.is_string() {
-            asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
-        }
+    // fn decode_json(&mut self, key :&str, val :&serde_json::value::Value) -> Result<i32,Box<dyn Error>> {
+    //     let vmap :serde_json::value::Value;
+    //     if key.len() > 0 {
+    //         let ores = val.get(key);
+    //         if ores.is_none() {
+    //             self.val = "".to_string();
+    //             return Ok(0);
+    //         }
+    //         vmap =serde_json::json!(ores.unwrap());
+    //     } else {
+    //         vmap = val.clone();
+    //     }
+    //     if  !vmap.is_string() {
+    //         asn1obj_new_error!{Asn1ObjBaseError,"{} not valid string",key}
+    //     }
 
-        if vmap.is_string() {
-            let c = vmap.as_str().unwrap();
-            self.val = format!("{}",c);
-        }
-        return Ok(1);
-    }
+    //     if vmap.is_string() {
+    //         let c = vmap.as_str().unwrap();
+    //         self.val = format!("{}",c);
+    //     }
+    //     return Ok(1);
+    // }
 
     fn init_asn1() -> Self {
         Self {
