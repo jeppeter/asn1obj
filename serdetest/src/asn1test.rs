@@ -188,13 +188,17 @@ pub struct Asn1X509Algor {
 	pub elem : Asn1Seq<Asn1X509AlgorElem>,
 }
 
-
 #[asn1_sequence()]
 #[derive(Clone)]
 pub struct RsaPssSigInfoElem {
-	pub algo :Asn1ImpSet<Asn1X509Algor,0>,
-	pub cmplx :Asn1ImpSet<Asn1X509Algor,1>,
-	pub size :Asn1ImpSet<Asn1Integer,2>,
+	pub algo :Asn1Opt<Asn1ImpSet<Asn1X509Algor,0>>,
+	pub cmplx :Asn1Opt<Asn1ImpSet<Asn1X509Algor,1>>,
+	pub size :Asn1Opt<Asn1ImpSet<Asn1Integer,2>>,
+}
+
+#[asn1_sequence()]
+pub struct RsaPssSigInfo {
+	pub elem :Asn1Seq<RsaPssSigInfoElem>,
 }
 
 

@@ -147,6 +147,7 @@ impl SequenceSyn {
 		for k in self.parsenames.iter() {			
 			rets.push_str(&format_tab_line(tab + 1, ""));
 			if self.debugenable {
+				rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj::asn1_format_debug!(\"decode {}.{} will decode at {{}}\\n\",retv);",self.sname,k)));
 				rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj::strop::asn1_enter_debug();")));
 			}
 			rets.push_str(&format_tab_line(tab + 1, &format!("let ro = self.{}.decode_asn1(&code[retv.._endsize]);",k)));

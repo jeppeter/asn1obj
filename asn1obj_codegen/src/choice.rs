@@ -146,7 +146,7 @@ impl ChoiceSyn {
 			// rets.push_str(&format_tab_line(tab + 1, "let mut _outf = std::io::stderr();"));
 			// rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
 
-
+			rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj::asn1_format_debug!(\"decode {}.{} will decode at {{}}\\n\",retv);",self.sname,self.selname)));
 			rets.push_str(&format_tab_line(tab + 1, "asn1obj::strop::asn1_enter_debug();"));
 		}
 
