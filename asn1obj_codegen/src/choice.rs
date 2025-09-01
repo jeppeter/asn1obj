@@ -147,7 +147,7 @@ impl ChoiceSyn {
 			// rets.push_str(&format_tab_line(tab + 1, "let mut _outs :String;"));
 
 
-			rets.push_str(&format_tab_line(tab + 1, "asn1_enter_debug();"));
+			rets.push_str(&format_tab_line(tab + 1, "asn1obj::strop::asn1_enter_debug();"));
 		}
 
 		rets.push_str(&format_tab_line(tab + 1,""));
@@ -156,8 +156,8 @@ impl ChoiceSyn {
 			// rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"decode {} retv [{{}}]\\n\",retv);",self.selname)));
 			// rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
 
-			rets.push_str(&format_tab_line(tab + 1, "asn1_leave_debug();"));
-			rets.push_str(&format_tab_line(tab + 1, &format!("asn1_format_debug!(\"decode {} retv [{{}}]\\n\",retv);",self.selname)));
+			rets.push_str(&format_tab_line(tab + 1, "asn1obj::strop::asn1_leave_debug();"));
+			rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj::asn1_format_debug!(\"decode {} retv [{{}}]\\n\",retv);",self.selname)));
 		}
 		rets.push_str(&format_tab_line(tab + 1,""));
 		rets.push_str(&format_tab_line(tab + 1,&format!("let k = self.{}.decode_select()?;", self.selname)));
@@ -166,7 +166,7 @@ impl ChoiceSyn {
 			// rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"select {{}}\\n\",k);")));
 			// rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
 
-			rets.push_str(&format_tab_line(tab + 1, &format!("asn1_format_debug!(\"select {{}}\\n\",k);")));
+			rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj::asn1_format_debug!(\"select {{}}\\n\",k);")));
 		}
 		idx = 0;
 		sidx = 0;
@@ -180,7 +180,7 @@ impl ChoiceSyn {
 					rets.push_str(&format_tab_line(tab + 1,&format!("}} else if k == \"{}\" {{", self.parsenames[idx])));
 				}
 				if self.debugenable {
-					rets.push_str(&format_tab_line(tab + 2, &format!("asn1_enter_debug();")));
+					rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj::strop::asn1_enter_debug();")));
 				}
 
 				rets.push_str(&format_tab_line(tab + 2,&format!("retv += self.{}.decode_asn1(&code[retv.._endsize])?;", self.parsenames[idx])));
@@ -188,8 +188,8 @@ impl ChoiceSyn {
 					// rets.push_str(&format_tab_line(tab + 2, &format!("_outs = format!(\"decode {} retv [{{}}]\\n\",retv);",self.parsenames[idx])));
 					// rets.push_str(&format_tab_line(tab + 2, "let _ = _outf.write(_outs.as_bytes())?;"));
 
-					rets.push_str(&format_tab_line(tab + 2, &format!("asn1_leave_debug();")));
-					rets.push_str(&format_tab_line(tab + 2, &format!("asn1_format_debug!(\"decode {} retv [{{}}]\\n\",retv);",self.parsenames[idx])));
+					rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj::strop::asn1_leave_debug();")));
+					rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj::asn1_format_debug!(\"decode {} retv [{{}}]\\n\",retv);",self.parsenames[idx])));
 				}
 				sidx += 1;
 			}
@@ -239,7 +239,7 @@ impl ChoiceSyn {
 					// rets.push_str(&format_tab_line(tab + 2, &(format!("_outs = format!(\"format {} output {{:?}}\\n\",vk);", self.parsenames[idx]))));
 					// rets.push_str(&format_tab_line(tab + 2, "let _ = _outf.write(_outs.as_bytes())?;"));
 
-					rets.push_str(&format_tab_line(tab + 2, &(format!("asn1_format_debug!(\"format {} output {{:?}}\\n\",vk);", self.parsenames[idx]))));
+					rets.push_str(&format_tab_line(tab + 2, &(format!("asn1obj::asn1_format_debug!(\"format {} output {{:?}}\\n\",vk);", self.parsenames[idx]))));
 				}
 				rets.push_str(&format_tab_line(tab + 2, "for i in 0..vk.len() {"));
 				rets.push_str(&format_tab_line(tab + 3, "_encv.push(vk[i]);"));

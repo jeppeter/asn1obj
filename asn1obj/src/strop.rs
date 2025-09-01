@@ -52,7 +52,7 @@ macro_rules! asn1_format_debug {
 		let mut _c = format!($($arg)+);
 		_c.push_str("\n");
 		let mut _stderr = std::io::stderr();
-		let _cs = asn1_format_debug_tabs();
+		let _cs = asn1obj::strop::asn1_format_debug_tabs();
 		let _ = _stderr.write_all(_cs.as_bytes());
 		let _ = _stderr.write_all(_c.as_bytes());
 	};
@@ -65,7 +65,7 @@ macro_rules! asn1_format_debug_buffer {
 		let _ptr :*const u8 = $buf as *const u8;
 		let  mut _ci :usize;
 		let _totallen: usize = $len as usize;
-		let _cs = asn1_format_debug_tabs();
+		let _cs = asn1obj::strop::asn1_format_debug_tabs();
 		let mut _i :usize = 0;
 		let mut _lasti :usize = 0;
 		let mut _nb :u8;

@@ -36,7 +36,7 @@ use std::io::Write;
 use asn1obj::base::*;
 use asn1obj::complex::*;
 use asn1obj::asn1impl::{Asn1Op,Asn1Selector};
-use asn1obj::strop::asn1_format_line;
+use asn1obj::strop::{asn1_format_line};
 use asn1obj::{asn1obj_new_error,asn1obj_error_class};
 use asn1obj_codegen::{asn1_sequence,asn1_obj_selector,asn1_int_choice,asn1_choice};
 
@@ -175,7 +175,49 @@ fn asn1intload_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSet
 }
 
 
-#[extargs_map_function(asn1load_handler,asn1objload_handler,asn1intload_handler)]
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct Asn1X509AlgorElem {
+	pub algorithm : Asn1Object,
+	pub parameters : Asn1Opt<Asn1Any>,
+}
+
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct Asn1X509Algor {
+	pub elem : Asn1Seq<Asn1X509AlgorElem>,
+}
+
+
+#[asn1_sequence()]
+#[derive(Clone)]
+pub struct RsaPssSigInfoElem {
+	pub algo :Asn1ImpSet<Asn1X509Algor,0>,
+	pub cmplx :Asn1ImpSet<Asn1X509Algor,1>,
+	pub size :Asn1ImpSet<Asn1Integer,2>,
+}
+
+
+fn pssinfodec_handler(ns :NameSpaceEx,_optargset :Option<Arc<RefCell<dyn ArgSetImpl>>>,_ctx :Option<Arc<RefCell<dyn Any>>>) -> Result<(),Box<dyn Error>> {
+
+	let sarr :Vec<String>;
+	let mut stdout = std::io::stdout();
+
+	init_log(ns.clone())?;
+
+	sarr = ns.get_array("subnargs");
+	for f in sarr.iter() {
+		let code = read_file_bytes(f)?;
+		debug_buffer_trace!(code.as_ptr(),code.len(),"[{}]code in",f);
+		let mut rsapriv :RsaPssSigInfoElem = RsaPssSigInfoElem::init_asn1();
+		let _ = rsapriv.decode_asn1(&code)?;
+		rsapriv.print_asn1("RsaPssSigInfoElem",0,&mut stdout)?;
+	}
+	Ok(())
+}
+
+
+#[extargs_map_function(asn1load_handler,asn1objload_handler,asn1intload_handler,pssinfodec_handler)]
 pub fn load_asn1_command(parser :ExtArgsParser) -> Result<(),Box<dyn Error>> {
 	let cmdline = format!(r#"
 	{{
@@ -186,6 +228,9 @@ pub fn load_asn1_command(parser :ExtArgsParser) -> Result<(),Box<dyn Error>> {
 			"$" : "+"
 		}},
 		"asn1intload<asn1intload_handler>##jsonfile ... to load ##" : {{
+			"$" : "+"
+		}},
+		"pssinfodec<pssinfodec_handler>##binfile ... to load RsaPssSigInfoElem##" : {{
 			"$" : "+"
 		}}
 	}}

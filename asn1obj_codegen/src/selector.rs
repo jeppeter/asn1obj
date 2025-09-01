@@ -176,15 +176,15 @@ impl ObjSelectorSyn {
 				// rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"decode {}.{} will decode at {{}}\\n\",retv);",self.sname,k)));
 				// rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
 
-				rets.push_str(&format_tab_line(tab + 1, &format!("asn1_format_debug!(\"decode {}.{} will decode at {{}}\\n\",retv);",self.sname,k)));
+				rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj::asn1_format_debug!(\"decode {}.{} will decode at {{}}\\n\",retv);",self.sname,k)));
 			}
 
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1, &format!("asn1_enter_debug();")));
+				rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj::strop::asn1_enter_debug();")));
 			}
 			rets.push_str(&format_tab_line(tab + 1, &format!("let ro = self.{}.decode_asn1(&code[retv.._endsize]);",k)));
 			if self.debugenable {
-				rets.push_str(&format_tab_line(tab + 1, &format!("asn1_leave_debug();")));
+				rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj::strop::asn1_leave_debug();")));
 			}
 			rets.push_str(&format_tab_line(tab + 1, "if ro.is_err() {"));
 			rets.push_str(&format_tab_line(tab + 2, &format!("let e = ro.err().unwrap();")));
@@ -192,7 +192,7 @@ impl ObjSelectorSyn {
 				// rets.push_str(&format_tab_line(tab + 2, &format!("_outs = format!(\"decode {}.{} error {{:?}}\",e);",self.sname,k)));
 				// rets.push_str(&format_tab_line(tab + 2,"let _ = _outf.write(_outs.as_bytes())?;"));
 
-				rets.push_str(&format_tab_line(tab + 2, &format!("asn1_format_debug!(\"decode {}.{} error {{:?}}\",e);",self.sname,k)));
+				rets.push_str(&format_tab_line(tab + 2, &format!("asn1obj::asn1_format_debug!(\"decode {}.{} error {{:?}}\",e);",self.sname,k)));
 			}
 			rets.push_str(&format_tab_line(tab + 2, "return Err(e);"));
 			rets.push_str(&format_tab_line(tab + 1, "}"));
@@ -241,7 +241,7 @@ impl ObjSelectorSyn {
 				// rets.push_str(&format_tab_line(tab + 1,"let _ = _outf.write(_outs.as_bytes())?;"));
 
 				rets.push_str(&format_tab_line(tab + 1,&format!("_dumpcode = code[_lastv..retv].to_vec();")));
-				rets.push_str(&format_tab_line(tab + 1,&format!("asn1_format_debug_buffer!(_dumpcode.as_ptr(),_dumpcode.len(),\"decode {}.{} retv {{}} _lastv {{}}\",retv,_lastv);",self.sname,k)));
+				rets.push_str(&format_tab_line(tab + 1,&format!("asn1obj::asn1_format_debug_buffer!(_dumpcode.as_ptr(),_dumpcode.len(),\"decode {}.{} retv {{}} _lastv {{}}\",retv,_lastv);",self.sname,k)));
 			}
 		}
 
@@ -250,7 +250,7 @@ impl ObjSelectorSyn {
 			// rets.push_str(&format_tab_line(tab + 1, &format!("_outs = format!(\"{} total {{}}\\n\",retv);", self.sname)));
 			// rets.push_str(&format_tab_line(tab + 1, "let _ = _outf.write(_outs.as_bytes())?;"));
 
-			rets.push_str(&format_tab_line(tab + 1, &format!("asn1_format_debug!(\"{} total {{}}\\n\",retv);", self.sname)));
+			rets.push_str(&format_tab_line(tab + 1, &format!("asn1obj::asn1_format_debug!(\"{} total {{}}\\n\",retv);", self.sname)));
 		}
 
 		rets.push_str(&format_tab_line(tab + 1, ""));
