@@ -2912,17 +2912,6 @@ impl Asn1Time {
         } 
 
         if times.len() == 12 {
-            year = self.parse_value(&times[0..4])?;
-            mon = self.parse_value(&times[4..6])?;
-            mday = self.parse_value(&times[6..8])?;
-            hour = self.parse_value(&times[8..10])?;
-            min = self.parse_value(&times[10..12])?;
-            sec = 0;
-            let ov = self.check_data_valid(year,mon,mday,hour,min,sec);
-            if ov.is_ok() {
-                return Ok((year,mon,mday,hour,min,sec));
-            }
-
             /**/
             year = self.parse_value(&times[0..2])?;
             if year < 70 {
@@ -2936,10 +2925,23 @@ impl Asn1Time {
             min = self.parse_value(&times[8..10])?;
             sec = self.parse_value(&times[10..12])?;
             let ov = self.check_data_valid(year,mon,mday,hour,min,sec);
+            if ov.is_ok() {
+                return Ok((year,mon,mday,hour,min,sec));
+            }
+
+
+            year = self.parse_value(&times[0..4])?;
+            mon = self.parse_value(&times[4..6])?;
+            mday = self.parse_value(&times[6..8])?;
+            hour = self.parse_value(&times[8..10])?;
+            min = self.parse_value(&times[10..12])?;
+            sec = 0;
+            let ov = self.check_data_valid(year,mon,mday,hour,min,sec);
             if ov.is_err() {
                 let e = ov.err().unwrap();
                 return Err(e);
             }
+
             return Ok((year,mon,mday,hour,min,sec));
         }
 

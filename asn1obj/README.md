@@ -2,6 +2,7 @@
 > rust parse ASN.1 format code
 
 ### Release History
+* Sep 5th 2025 to release 0.2.0 version for Asn1Time with first to check 200101120000Z as 2020-01-01 12:00:00 time format check first not for 2001-01-12 00:00:00 first
 * Aug 29th 2025 to release 0.1.26 version as for serde::Serialize serde::Deserialize support
 * Aug 18th 2025 to release 0.1.24 version as for let encode Asn1ImpSet with zero length
 * Jul 25th 2025 to release 0.1.22 version as for debug decode_asn1 with asn1_format_debug and asn1_format_debug_buffer

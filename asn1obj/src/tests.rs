@@ -1452,7 +1452,6 @@ fn test_a021() {
 }
 
 #[test]
-#[allow(deprecated)]
 fn test_a022() {
 	let mut a1 :Asn1Time = Asn1Time::init_asn1();
 	let _ = a1.set_value_str("2022-02-02 01:20:33").unwrap();
@@ -1478,7 +1477,7 @@ fn test_a022() {
 	assert!(dt.hour() == 15);
 	assert!(dt.minute() == 20);
 	assert!(dt.second() == 33);
-	let dt : DateTime<Utc> = Utc.ymd(2021,7,8).and_hms(22,21,0);
+	let dt : DateTime<Utc> = Utc.with_ymd_and_hms(2021,7,8,22,21,0).unwrap();
 	let _ = a1.set_value_time(&dt).unwrap();
 	assert!(ASN1_UTCTIME_FLAG == a1.get_utag());
 
@@ -1505,6 +1504,11 @@ fn test_a022() {
 	v1 = a1.encode_asn1().unwrap();
 	v2 = vec![0x17,0x0d,0x32,0x31,0x30,0x39,0x30,0x38,0x31,0x33,0x33,0x32,0x32,0x32,0x5a];
 	assert!(check_equal_u8(&v1,&v2));
+
+	v1 = vec![0x17,0x0d,0x32,0x30,0x30,0x31,0x30,0x31,0x31,0x32,0x30,0x30,0x30,0x30,0x5a];
+	a1.decode_asn1(&v1).unwrap();
+	assert!(a1.get_value_str() == "2020-01-01 12:00:00");
+
 	//v2 = v2.clone();
 	return;
 }
